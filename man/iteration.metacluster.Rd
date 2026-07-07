@@ -11,15 +11,15 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
 
 \item{set.i}{Vector containing either the desired iterations to be tested}
 
-\item{multicore}{logical, should INFLECT be run in parallel using \link[doParallel]{registerDoParallel}}
+\item{multicore}{Retained for backward compatibility. Hierarchical clustering is now computed once and is not parallelized.}
 
-\item{cores}{If \code{multicore == TRUE}, number of cores to be used. If \code{NULL} max number of cores-1 is used}
+\item{cores}{Retained for backward compatibility.}
 }
 \value{
 metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM-clusters within the FlowSOM.results object.
 }
 \description{
-Metaclustering runs are determined for all cluster numbers in set.i . Hierarchical clustering is used, optionally run in parallel
+Metaclustering runs are determined for all cluster numbers in set.i . Hierarchical clustering is computed once and cut for all requested cluster numbers.
 }
 \seealso{
 \code{\link{INFLECT}}

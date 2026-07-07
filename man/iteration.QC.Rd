@@ -13,7 +13,7 @@ iteration.QC(
   zeroes.in = FALSE,
   only.clustering.markers = TRUE,
   acquired_markers = NULL,
-  uniform.test = "both",
+  uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
   verbose = FALSE,
@@ -45,7 +45,7 @@ iteration.QC(
 
 \item{verbose}{\code{logical} , default is \code{FALSE}}
 
-\item{...}{Additional arguments to pass to this function. Not used currently.}
+\item{...}{Additional arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.}
 }
 \value{
 A \code{list} with 2 items. The first is the unimodality scores stored in U.set. Second is a \code{list} with a \code{logical} matrix for each metaclustering result.

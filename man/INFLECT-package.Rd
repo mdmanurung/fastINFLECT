@@ -2,7 +2,6 @@
 % Please edit documentation in R/INFLECT3-package.R
 \docType{package}
 \name{INFLECT-package}
-\alias{INFLECT}
 \alias{INFLECT-package}
 \title{INFLECT: Discover the metaclustering endpoint for FlowSOM}
 \description{

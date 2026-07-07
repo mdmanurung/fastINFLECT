@@ -2,7 +2,7 @@
 #'
 #' @description Plots the collection.U versus i.set and uses \code{\link{Lfunction}} to determine the inflection point for optimal k.
 #'
-#' @param collection.U Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}
+#' @param collection.U List returned by \code{\link{iteration.QC}}. The first element must be a dataframe with set.i and corresponding unimodality scores.
 #' @param basedata Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}
 #' @param ggtitle Optional title for resulting diagnostic graph. Default \code{NULL}
 #' @return A \code{list} with 4 items. First is a data.frame with the unimodality scores for each metaclustering. Second is a dataframe with the fitted curve. Third is the result of \code{\link{Lfunction}}, lastly the diagnostic plot created from the other three items.
@@ -13,18 +13,30 @@
 QC.to.curve <-
   function(collection.U,
            basedata,
-           ggtitle=NULL) {
+           ggtitle = NULL) {
+    if (!basedata %in% c("Curve", "Points")) {
+      stop('basedata should match either "Curve" or "Points"', call. = FALSE)
+    }
     df.points <- collection.U[[1]]
+    if (!is.data.frame(df.points) ||
+        !all(c("i", "Unimodality") %in% colnames(df.points))) {
+      stop("`collection.U` must contain a data frame with `i` and `Unimodality` columns", call. = FALSE)
+    }
+    if (nrow(df.points) < 5) {
+      stop("`collection.U` must contain at least five rows", call. = FALSE)
+    }
 
-    drc <- drm(data = df.points,
-               formula = Unimodality ~ i ,
-               fct = LL.4())
+    drc <- drc::drm(data = df.points,
+                    formula = Unimodality ~ i,
+                    fct = drc::LL.4())
+    curve.i <- seq_len(max(df.points$i))
     df.curve <-
-      data.frame(x = 1:max(df.points$i) ,
-                 y = predict(object = drc, newdata = data.frame(x = 1:max(df.points$i))))
+      data.frame(x = curve.i,
+                 y = stats::predict(object = drc, newdata = data.frame(i = curve.i)))
 
     if (basedata == "Curve") {
-      result.full <- Lfunction(df.curve[-c(1:4),], cutoff = 1000)
+      lfunction.data <- df.curve[-seq_len(4), ]
+      result.full <- Lfunction(lfunction.data, cutoff = 1000)
 
     }
 
@@ -32,50 +44,59 @@ QC.to.curve <-
       result.full <- Lfunction(df.points, cutoff = 1000)
     }
 
-    if (!basedata %in% c("Curve", "Points")) {
-      stop(cat("basedata should match either \"Curve\" or \"Points\""))
-    }
     setcolors <- RColorBrewer::brewer.pal(name = "Set1", n = 9)
 
     if (basedata == "Curve") {
-      part1 <- df.curve[5:result.full$knee,]
-      part2 <- df.curve[result.full$knee:result.full$range,]
-      touchline1 <- lm(y ~ x, part1)
-      touchline2 <- lm(y ~ x, part2)
+      part1 <- df.curve[df.curve$x >= min(lfunction.data$x) &
+                          df.curve$x <= result.full$knee, , drop = FALSE]
+      part2 <- df.curve[df.curve$x >= result.full$knee &
+                          df.curve$x <= result.full$range, , drop = FALSE]
+      touchline1 <- stats::lm(y ~ x, part1)
+      touchline2 <- stats::lm(y ~ x, part2)
       label <-
         data.frame(x = part2[1, 1], y = part1[1, 2], z = part2[1, 1])
       title <- ggtitle
 
       figure <-
-        ggplot() + geom_line(data = df.curve, aes(x = x, y = y), color = setcolors[1]) + ggtitle(title) +
-        geom_line(data = data.frame(x = part1[, 1], y = fitted(touchline1)), aes(x = x, y = y), color = "black") +
-        geom_line(data = data.frame(x = part2[, 1], y = fitted(touchline2)), aes(x = x, y = y), linetype = 2, color = "black") +
-        geom_vline(aes(xintercept = df.curve[result.full$knee, 1]), linetype = 3, color = setcolors[9]) +
-        geom_point(data = df.points, aes(x = i, y = Unimodality), color = setcolors[2], alpha = 0.7) +
-        theme_classic() + xlab("# of FlowSOM-metaclusters") + ylab("% unimodal distributions across clusters") +
-        scale_x_continuous(breaks = seq(0, max(df.points$i), 25)) + geom_label(data = label, aes(x = x, y = y, label = z))
+        ggplot2::ggplot() +
+        ggplot2::geom_line(data = df.curve, ggplot2::aes(x = x, y = y), color = setcolors[1]) +
+        ggplot2::ggtitle(title) +
+        ggplot2::geom_line(data = data.frame(x = part1[, 1], y = stats::fitted(touchline1)), ggplot2::aes(x = x, y = y), color = "black") +
+        ggplot2::geom_line(data = data.frame(x = part2[, 1], y = stats::fitted(touchline2)), ggplot2::aes(x = x, y = y), linetype = 2, color = "black") +
+        ggplot2::geom_vline(ggplot2::aes(xintercept = result.full$knee), linetype = 3, color = setcolors[9]) +
+        ggplot2::geom_point(data = df.points, ggplot2::aes(x = i, y = Unimodality), color = setcolors[2], alpha = 0.7) +
+        ggplot2::theme_classic() +
+        ggplot2::xlab("# of FlowSOM-metaclusters") +
+        ggplot2::ylab("% unimodal distributions across clusters") +
+        ggplot2::scale_x_continuous(breaks = seq(0, max(df.points$i), 25)) +
+        ggplot2::geom_label(data = label, ggplot2::aes(x = x, y = y, label = z))
 
     }
     if (basedata == "Points") {
-      part1 <- df.points[1:which(df.points$i == result.full$knee), ]
-      part2 <- df.points[which(df.points$i == result.full$knee):which(df.points$i == result.full$range), ]
-      touchline1 <- lm(Unimodality ~ i, part1)
-      touchline2 <- lm(Unimodality ~ i, part2)
+      part1 <- df.points[df.points$i <= result.full$knee, , drop = FALSE]
+      part2 <- df.points[df.points$i >= result.full$knee &
+                           df.points$i <= result.full$range, , drop = FALSE]
+      touchline1 <- stats::lm(Unimodality ~ i, part1)
+      touchline2 <- stats::lm(Unimodality ~ i, part2)
       label <-
         data.frame(x = part2[1, 1], y = part1[1, 2], z = part2[1, 1])
       title <- ggtitle
 
       figure <-
-        ggplot() + geom_line(data = df.curve, aes(x = x, y = y), color = setcolors[1]) + ggtitle(title) +
-        geom_line(data = data.frame(x = part1[, 1], y = fitted(touchline1)), aes(x = x, y = y), color = "black") +
-        geom_line(data = data.frame(x = part2[, 1], y = fitted(touchline2)), aes(x = x, y = y), linetype = 2, color = "black") +
-        geom_vline(aes(xintercept = df.curve[result.full$knee, 1]), linetype = 3, color = setcolors[9]) +
-        geom_point(data = df.points, aes(x = i, y = Unimodality), color = setcolors[2], alpha = 0.7) +
-        theme_classic() + xlab("# of FlowSOM-metaclusters") + ylab("% unimodal distributions across clusters") +
-        scale_x_continuous(breaks = seq(0, max(df.points$i), 25)) + geom_label(data = label, aes(x = x, y = y, label = z))
+        ggplot2::ggplot() +
+        ggplot2::geom_line(data = df.curve, ggplot2::aes(x = x, y = y), color = setcolors[1]) +
+        ggplot2::ggtitle(title) +
+        ggplot2::geom_line(data = data.frame(x = part1[, 1], y = stats::fitted(touchline1)), ggplot2::aes(x = x, y = y), color = "black") +
+        ggplot2::geom_line(data = data.frame(x = part2[, 1], y = stats::fitted(touchline2)), ggplot2::aes(x = x, y = y), linetype = 2, color = "black") +
+        ggplot2::geom_vline(ggplot2::aes(xintercept = result.full$knee), linetype = 3, color = setcolors[9]) +
+        ggplot2::geom_point(data = df.points, ggplot2::aes(x = i, y = Unimodality), color = setcolors[2], alpha = 0.7) +
+        ggplot2::theme_classic() +
+        ggplot2::xlab("# of FlowSOM-metaclusters") +
+        ggplot2::ylab("% unimodal distributions across clusters") +
+        ggplot2::scale_x_continuous(breaks = seq(0, max(df.points$i), 25)) +
+        ggplot2::geom_label(data = label, ggplot2::aes(x = x, y = y, label = z))
     }
 
-    figure
     return(
       list(
         collection.U = df.points,

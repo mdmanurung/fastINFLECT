@@ -1,0 +1,13 @@
+^\\.git$
+^\\.gitignore$
+^\\.Rproj\\.user$
+^\\.Rhistory$
+^\\.RData$
+^\\.Ruserdata$
+^\\.agents$
+^\\.codex$
+^\\.\\.Rcheck$
+^.*\\.Rproj$
+^LICENSE$
+^INFLECT_[^/]+[.]tar[.]gz$
+^INFLECT[.]Rcheck$

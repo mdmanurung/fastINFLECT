@@ -10,7 +10,7 @@ FlowSOMQC(
   zeroes.in = FALSE,
   only.clustering.markers = TRUE,
   acquired_markers = NULL,
-  uniform.test = "both",
+  uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
   verbose = TRUE,
@@ -36,7 +36,7 @@ FlowSOMQC(
 
 \item{verbose}{\code{logical} , default is \code{FALSE}}
 
-\item{...}{Additional arguments to pass to this function. Not used currently.}
+\item{...}{Additional arguments to pass to \code{\link[diptest]{dip.test}}.}
 }
 \value{
 A \code{matrix} with evaluated markers in columns and clusters in rows. Each position in the matrix is \code{logical} indicating a pass or a fail.

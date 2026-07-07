@@ -4,12 +4,14 @@
 \alias{Lfunction}
 \title{Lfunction for determing Inflection Point}
 \usage{
-Lfunction(totaldataframe, cutoff = 1000)
+Lfunction(totaldataframe, cutoff = 1000, plot = FALSE)
 }
 \arguments{
 \item{totaldataframe}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}. This can be the calculcated points collection.U or the fitted curve.}
 
 \item{cutoff}{Integer. Initial Inflection Point calculated on the entire curve is multiplied by \code{cutoff} to determine the new range of the curve that is used as input for \code{\link{leastError}}}
+
+\item{plot}{Logical. If \code{TRUE}, draw the legacy diagnostic base plot.}
 }
 \value{
 \code{list} with 3 items: Inflection Point, the endpoint of the second touchline, and the angle between the two touchlines

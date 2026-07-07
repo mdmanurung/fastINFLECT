@@ -14,52 +14,74 @@
 #' @param th.pvalue Threshold for rejecting Unimodality dip.test result. Default is \code{0.05}. For more information see \link[diptest]{dip.test}
 #' @param th.IQR Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.
 #' @param verbose \code{logical} , default is \code{FALSE}
-#' @param ... Additional arguments to pass to this function. Not used currently.
+#' @param ... Additional arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.
 #'
 #' @return A \code{list} with 2 items. The first is the unimodality scores stored in U.set. Second is a \code{list} with a \code{logical} matrix for each metaclustering result.
 #' @seealso \code{\link{INFLECT}}, \code{\link{iteration.metacluster}}, \code{\link{FlowSOMQC}}
 #'
 #' @export
-iteration.QC<- function(FlowSOM.results, metaclustering.list,set.i, multicore= TRUE, cores=NULL, zeroes.in=FALSE,only.clustering.markers = TRUE, acquired_markers=NULL, uniform.test = "both", th.pvalue = 0.05, th.IQR = 2, verbose = FALSE, ...){
+iteration.QC <- function(FlowSOM.results,
+                         metaclustering.list,
+                         set.i,
+                         multicore = TRUE,
+                         cores = NULL,
+                         zeroes.in = FALSE,
+                         only.clustering.markers = TRUE,
+                         acquired_markers = NULL,
+                         uniform.test = c("both", "spread", "unimodality"),
+                         th.pvalue = 0.05,
+                         th.IQR = 2,
+                         verbose = FALSE,
+                         ...) {
+  uniform.test <- match.arg(uniform.test)
 
-  if(multicore){
-    if(is.null(cores)) {cores <- parallel::detectCores() -1 } else{ cores<-cores
-    }
-    registerDoParallel(cores= cores)
-
-
-    accuracy.set<- foreach(Ui = set.i, .final = function(x) {setNames(x, set.i)}) %dopar% {
-
-      metaclustering <- metaclustering.list[[as.character(Ui)]]
-      FlowSOMQC(FlowSOM.results = FlowSOM.results, metaclustering= metaclustering, zeroes.in=zeroes.in, only.clustering.markers = only.clustering.markers, acquired_markers=acquired_markers, uniform.test = uniform.test, th.pvalue = th.pvalue, th.IQR = th.IQR, verbose = verbose)
-
-    }
-
-    U.set<- foreach(Ui = set.i, .final = function(x) {setNames(x, set.i)}) %dopar% {
-
-      matrix<- accuracy.set[[as.character(Ui)]]
-      return(sum(matrix, na.rm=TRUE)*100 / prod(dim(matrix)))
-
-    }
-    U.set<- data.frame("i"= as.numeric(names(U.set)), "Unimodality"= unlist(U.set))
-  } else{
-    accuracy.set<- list()
-    for ( Ui in set.i){
-      metaclustering <- metaclustering.list[[as.character(Ui)]]
-      qc<- FlowSOMQC(FlowSOM.results = FlowSOM.results, metaclustering= metaclustering, zeroes.in=zeroes.in, only.clustering.markers = only.clustering.markers, acquired_markers=acquired_markers, uniform.test = uniform.test, th.pvalue = th.pvalue, th.IQR = th.IQR, verbose = verbose)
-      accuracy.set[[Ui]] <- qc
-    }
-    accuracy.set <- accuracy.set[!sapply(accuracy.set, is.null)]
-    accuracy.set <- setNames(accuracy.set, as.character(set.i))
-
-    U.set<- list()
-    for (Ui in set.i){
-      matrix<- accuracy.set[[as.character(Ui)]]
-      U.set[[Ui]]<- sum(matrix, na.rm=TRUE) *100 / prod(dim(matrix))
-    }
-    U.set <- U.set[!sapply(U.set, is.null)]
-    U.set <- setNames(U.set, as.character(set.i))
-    U.set<- data.frame("i"= as.numeric(names(U.set)), "Unimodality"= unlist(U.set))
+  run_qc <- function(Ui) {
+    metaclustering <- metaclustering.list[[as.character(Ui)]]
+    accuracy.matrix <- FlowSOMQC(
+      FlowSOM.results = FlowSOM.results,
+      metaclustering = metaclustering,
+      zeroes.in = zeroes.in,
+      only.clustering.markers = only.clustering.markers,
+      acquired_markers = acquired_markers,
+      uniform.test = uniform.test,
+      th.pvalue = th.pvalue,
+      th.IQR = th.IQR,
+      verbose = verbose,
+      ...
+    )
+    list(
+      accuracy.matrix = accuracy.matrix,
+      score = sum(accuracy.matrix, na.rm = TRUE) * 100 / prod(dim(accuracy.matrix))
+    )
   }
-  return(list("U.set"= U.set,"Accuracy.matrixes"=accuracy.set))
+
+  if (multicore) {
+    if (is.null(cores)) {
+      cores <- max(1, parallel::detectCores() - 1)
+    }
+    cluster <- parallel::makeCluster(cores)
+    on.exit(parallel::stopCluster(cluster), add = TRUE)
+    doParallel::registerDoParallel(cluster)
+
+    qc.results <- foreach::foreach(
+      Ui = set.i,
+      .final = function(x) stats::setNames(x, as.character(set.i)),
+      .export = "FlowSOMQC",
+      .packages = c("diptest", "gtools")
+    ) %dopar% {
+      run_qc(Ui)
+    }
+  } else {
+    qc.results <- stats::setNames(lapply(set.i, run_qc), as.character(set.i))
+  }
+
+  accuracy.set <- lapply(qc.results, `[[`, "accuracy.matrix")
+  accuracy.set <- stats::setNames(accuracy.set, names(qc.results))
+  U.values <- vapply(qc.results, `[[`, numeric(1), "score")
+  U.set <- data.frame(
+    i = as.numeric(names(U.values)),
+    Unimodality = unname(U.values)
+  )
+
+  return(list("U.set" = U.set, "Accuracy.matrixes" = accuracy.set))
 }

@@ -7,7 +7,7 @@
 QC.to.curve(collection.U, basedata, ggtitle = NULL)
 }
 \arguments{
-\item{collection.U}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}}
+\item{collection.U}{List returned by \code{\link{iteration.QC}}. The first element must be a dataframe with set.i and corresponding unimodality scores.}
 
 \item{basedata}{Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}}
 

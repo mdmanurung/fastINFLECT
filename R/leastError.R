@@ -9,17 +9,19 @@
 #' @export
 #'
 leastError <- function(dataframe) {
-  # Dataframe should be a dataframe or matrix with 2 columns denoting the x and y values of the fitted line/ Unimodality set.
+  if (nrow(dataframe) < 5) {
+    stop("`dataframe` must contain at least five rows", call. = FALSE)
+  }
 
   eval <- list()
 
   for (row in 5:(nrow(dataframe))) {
     part1 <- dataframe[1:row, ]
-    resid1 <- resid(lm(y ~ x, part1))
+    resid1 <- stats::resid(stats::lm(y ~ x, part1))
     rmse1 <- sqrt(mean(resid1 ^ 2))
 
     part2 <- dataframe[row:nrow(dataframe), ]
-    resid2 <- resid(lm(y ~ x, part2))
+    resid2 <- stats::resid(stats::lm(y ~ x, part2))
     rmse2 <- sqrt(mean(resid2 ^ 2))
 
     combine <-

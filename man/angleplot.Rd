@@ -4,14 +4,7 @@
 \alias{angleplot}
 \title{Plot the two halves of the curve with touchlines and display angle}
 \usage{
-angleplot(
-  part1 = part1,
-  part2 = part2,
-  test1 = test1,
-  test2 = test2,
-  main = kneepoint,
-  angle = angle1
-)
+angleplot(part1, part2, test1, test2, main, angle)
 }
 \arguments{
 \item{part1}{Datapoints from start to kneepoint}

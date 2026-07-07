@@ -4,59 +4,68 @@
 #'
 #' @param totaldataframe Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}. This can be the calculcated points collection.U or the fitted curve.
 #' @param cutoff Integer. Initial Inflection Point calculated on the entire curve is multiplied by \code{cutoff} to determine the new range of the curve that is used as input for \code{\link{leastError}}
+#' @param plot Logical. If \code{TRUE}, draw the legacy diagnostic base plot.
 #' @seealso \code{\link{INFLECT}} , \code{\link{QC.to.curve}},\code{\link{leastError}}
 #'
 #' @return \code{list} with 3 items: Inflection Point, the endpoint of the second touchline, and the angle between the two touchlines
 #'
 #' @export
 
-Lfunction <- function(totaldataframe, cutoff = 1000) {
-  colnames(totaldataframe) <- c("x", "y")
-  kneepoint <- leastError(totaldataframe[1:nrow(totaldataframe), ])
+Lfunction <- function(totaldataframe, cutoff = 1000, plot = FALSE) {
+  if (ncol(totaldataframe) < 2) {
+    stop("`totaldataframe` must contain at least two columns", call. = FALSE)
+  }
+  totaldataframe <- data.frame(
+    x = totaldataframe[[1]],
+    y = totaldataframe[[2]]
+  )
+
+  kneepoint <- leastError(totaldataframe)
 
   part1 <- totaldataframe[1:kneepoint, ]
   part2 <- totaldataframe[kneepoint:nrow(totaldataframe), ]
-  test1 <- lm(y ~ x, part1)
-  test2 <- lm(y ~ x, part2)
+  test1 <- stats::lm(y ~ x, part1)
+  test2 <- stats::lm(y ~ x, part2)
   angle1 <-
     LinesAngles(rev(test1$coefficients), rev(test2$coefficients))
 
-  newrange <- kneepoint * cutoff
+  newrange <- max(5, as.integer(kneepoint * cutoff))
   oldrange <- newrange
-  angleplot(part1, part2, test1, test2, totaldataframe[kneepoint, 1], angle1)
-  if (newrange > nrow(totaldataframe))
+  if (isTRUE(plot)) {
+    angleplot(part1, part2, test1, test2, totaldataframe[kneepoint, 1], angle1)
+  }
+  if (newrange > nrow(totaldataframe)) {
     return(list(
       "knee" = totaldataframe[kneepoint, 1],
       "range" = totaldataframe[nrow(totaldataframe), 1],
       "angle" = angle1
     ))
-  else {
+  } else {
     repeat {
       oldangle <- angle1
       oldkneepoint <- kneepoint
       kneepoint <- leastError(totaldataframe[1:newrange, ])
       part1 <- totaldataframe[1:kneepoint, ]
       part2 <- totaldataframe[kneepoint:newrange, ]
-      test1 <- lm(y ~ x, part1)
-      test2 <- lm(y ~ x, part2)
+      test1 <- stats::lm(y ~ x, part1)
+      test2 <- stats::lm(y ~ x, part2)
 
       angle1 <- LinesAngles(rev(test1$coefficients), rev(test2$coefficients))
-      angleplot(part1, part2, test1, test2, main = totaldataframe[kneepoint, 1], angle1)
+      if (isTRUE(plot)) {
+        angleplot(part1, part2, test1, test2, main = totaldataframe[kneepoint, 1], angle1)
+      }
       if (kneepoint >= oldkneepoint) {
         oldrange <- newrange
         break
       }
       oldrange <- newrange
 
-      newrange <- kneepoint * cutoff
-      if (newrange < 20) {
-        newrange <- 20
-      }
+      newrange <- min(nrow(totaldataframe), max(20, as.integer(kneepoint * cutoff)))
 
     }
     return(list(
       "knee" = totaldataframe[oldkneepoint, 1],
-      "range" = totaldataframe[oldrange, ],
+      "range" = totaldataframe[oldrange, 1],
       "angle" = oldangle
     ))
   }

@@ -16,7 +16,7 @@
 #' # SOM-clustered to 375 clusters.
 #' flowsom <- system.file("extdata", "Levine32sample.Rdata", package="INFLECT")
 #' load(flowsom)
-#' inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= c(150,200), cores= 4, zeroes.in=FALSE)
+#' inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= 5:12, multicore=FALSE, zeroes.in=FALSE)
 #'
 #' # Display diagnostic graph
 #' inflect.results$ggplot
@@ -27,26 +27,37 @@
 #'
 #' @export
 
-marker.performance <- function(inflect.results, ggtitle = NULL, markers) {
+marker.performance <- function(inflect.results, ggtitle = NULL, markers = NULL) {
+  if (!inherits(inflect.results, "inflect.results")) {
+    stop("`inflect.results` must inherit from class 'inflect.results'", call. = FALSE)
+  }
+
+  accuracy.sets <- inflect.results$accuracy.sets
+  if (is.null(accuracy.sets)) {
+    accuracy.sets <- inflect.results$Accuracy.sets
+  }
+  if (is.null(accuracy.sets) || length(accuracy.sets) == 0) {
+    stop("`inflect.results` must contain accuracy matrices", call. = FALSE)
+  }
 
   if (!is.null(markers)){
 
     # Verify whether markers match colnames in accuracy matrices
-    if (class(markers) != "character" ) {
+    if (!is.character(markers)) {
       stop( "Error in marker.performance: markers should be a vector of strings" )
     } else  {
-      if(!all(markers %in% colnames(inflect.results$Accuracy.sets[[1]]))) {
+      if(!all(markers %in% colnames(accuracy.sets[[1]]))) {
         stop( "Error: markers should match colnames of matrices in inflect.results$Accuracy.sets" )
       }
 
     }
 
   } else {
-    markers<- colnames(inflect.results$Accuracy.sets[[1]])
+    markers <- colnames(accuracy.sets[[1]])
   }
 
-  success.rate<- lapply( inflect.results$Accuracy.sets, function(x){
-    x<- x[,markers]
+  success.rate<- lapply(accuracy.sets, function(x){
+    x<- x[, markers, drop = FALSE]
     apply(x, 2, sum, na.rm=TRUE)*100 / apply(x, 2, length)
   })
   success.rate<- as.data.frame(do.call(rbind, success.rate))
@@ -55,9 +66,13 @@ marker.performance <- function(inflect.results, ggtitle = NULL, markers) {
 
 
   # Dataframe is prepared, continue on to figure generation
-  figure<- ggplot(success.rate, aes(y= Performance, x= Marker, color=i))+geom_boxplot(outlier.alpha=0)+geom_jitter(shape=1, alpha=0.5)+
-    theme_bw() + scale_color_gradient(low = "#66C2A5", high="#E41A1C") + theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) + ylab("Marker performance (% passed within metaclusterings)")
-  if(!is.null(ggtitle)){figure<- figure + ggtitle(label = ggtitle)}
-  figure
+  figure <- ggplot2::ggplot(success.rate, ggplot2::aes(y = Performance, x = Marker, color = i)) +
+    ggplot2::geom_boxplot(outlier.alpha = 0) +
+    ggplot2::geom_jitter(shape = 1, alpha = 0.5) +
+    ggplot2::theme_bw() +
+    ggplot2::scale_color_gradient(low = "#66C2A5", high = "#E41A1C") +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    ggplot2::ylab("Marker performance (% passed within metaclusterings)")
+  if(!is.null(ggtitle)){figure <- figure + ggplot2::ggtitle(label = ggtitle)}
   return(list("marker.dataframe"= success.rate, "plot" = figure))
 }

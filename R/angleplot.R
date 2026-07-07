@@ -14,22 +14,25 @@
 #'
 
 angleplot <-
-  function(part1 = part1,
-           part2 = part2,
-           test1 = test1,
-           test2 = test2,
-           main = kneepoint,
-           angle = angle1) {
-    par(fin = c(6, 1), mar = c(0, 0, 0, 0))
-    plot(part1, xlim = c(0, 300), ylim = c(50, 100))
-    points(part2, col = "red")
-    abline(test1)
-    abline(test2, col = 'red')
-    text(x = 80,
+  function(part1,
+           part2,
+           test1,
+           test2,
+           main,
+           angle) {
+    oldpar <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(oldpar), add = TRUE)
+
+    graphics::par(fin = c(6, 1), mar = c(0, 0, 0, 0))
+    graphics::plot(part1, xlim = c(0, 300), ylim = c(50, 100))
+    graphics::points(part2, col = "red")
+    graphics::abline(test1)
+    graphics::abline(test2, col = "red")
+    graphics::text(x = 80,
          y = 85,
          paste("Kneepoint=", main),
          cex = 0.8)
-    text(x = 80,
+    graphics::text(x = 80,
          y = 75,
          paste("Angle=", angle),
          cex = 0.8)

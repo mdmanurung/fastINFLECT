@@ -4,7 +4,7 @@
 \alias{marker.performance}
 \title{Plot marker performance across metaclustering results}
 \usage{
-marker.performance(inflect.results, ggtitle = NULL, markers)
+marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 }
 \arguments{
 \item{inflect.results}{A inflect.results object resulting from \code{\link{INFLECT}}.}
@@ -27,7 +27,7 @@ color gradient denotes \code{set.i} .
 # SOM-clustered to 375 clusters.
 flowsom <- system.file("extdata", "Levine32sample.Rdata", package="INFLECT")
 load(flowsom)
-inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= c(150,200), cores= 4, zeroes.in=FALSE)
+inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= 5:12, multicore=FALSE, zeroes.in=FALSE)
 
 # Display diagnostic graph
 inflect.results$ggplot

@@ -1,9 +1,10 @@
-#' Create an INFLECT results object
+#' Create a fastINFLECT results object
 #'
 #' @description
 #' `inflect.results` is an S3 list class containing the inflection point,
 #' diagnostic curve, metaclustering results, and QC accuracy matrices returned by
-#' [INFLECT()].
+#' [INFLECT()]. The class name remains `inflect.results` for compatibility with
+#' the original INFLECT API.
 #'
 #' @param collection.U Data frame containing the Unimodality scores for each
 #'   `i` in `set.i`.
@@ -16,6 +17,7 @@
 #' @param accuracy.sets List containing [FlowSOMQC()] results per
 #'   metaclustering.
 #' @param Accuracy.sets Backward-compatible alias for `accuracy.sets`.
+#' @param provenance List containing normalized inputs and runtime metadata.
 #'
 #' @return An S3 object with class `inflect.results`.
 #' @keywords internal
@@ -26,12 +28,17 @@ new_inflect_results <- function(collection.U,
                                 ggplot,
                                 metaclustering.list = list(),
                                 accuracy.sets = NULL,
-                                Accuracy.sets = NULL) {
+                                Accuracy.sets = NULL,
+                                selection = NULL,
+                                provenance = list()) {
   if (is.null(accuracy.sets)) {
     accuracy.sets <- Accuracy.sets
   }
   if (is.null(accuracy.sets)) {
     accuracy.sets <- list()
+  }
+  if (!is.list(provenance)) {
+    stop("`provenance` must be a list", call. = FALSE)
   }
 
   validate_inflect_results(structure(
@@ -42,7 +49,9 @@ new_inflect_results <- function(collection.U,
       ggplot = ggplot,
       metaclustering.list = metaclustering.list,
       Accuracy.sets = accuracy.sets,
-      accuracy.sets = accuracy.sets
+      accuracy.sets = accuracy.sets,
+      selection = selection,
+      provenance = provenance
     ),
     class = c("inflect.results", "list")
   ))
@@ -60,7 +69,8 @@ validate_inflect_results <- function(x) {
     "ggplot",
     "metaclustering.list",
     "Accuracy.sets",
-    "accuracy.sets"
+    "accuracy.sets",
+    "provenance"
   )
   missing_fields <- setdiff(required, names(x))
   if (length(missing_fields) > 0) {
@@ -84,6 +94,9 @@ validate_inflect_results <- function(x) {
   }
   if (!is.list(x$accuracy.sets)) {
     stop("`accuracy.sets` must be a list", call. = FALSE)
+  }
+  if (!is.list(x$provenance)) {
+    stop("`provenance` must be a list", call. = FALSE)
   }
   if (!identical(x$Accuracy.sets, x$accuracy.sets)) {
     stop("`Accuracy.sets` and `accuracy.sets` must be identical", call. = FALSE)

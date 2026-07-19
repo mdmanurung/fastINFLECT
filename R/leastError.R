@@ -14,8 +14,10 @@ leastError <- function(dataframe) {
   }
 
   eval <- list()
+  last_split <- nrow(dataframe) - 1L
+  first_split <- min(5L, last_split)
 
-  for (row in 5:(nrow(dataframe))) {
+  for (row in first_split:last_split) {
     part1 <- dataframe[1:row, ]
     resid1 <- stats::resid(stats::lm(y ~ x, part1))
     rmse1 <- sqrt(mean(resid1 ^ 2))

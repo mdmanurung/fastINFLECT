@@ -11,7 +11,7 @@ marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 
 \item{ggtitle}{Optional. Character string to plot as title.}
 
-\item{markers}{Which markers should be included in the plot? A vector of strings (must match FlowSOM.results$prettyColnames). If \code{NULL}, all clustering.markers are displayed.}
+\item{markers}{Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.}
 }
 \value{
 \code{list} with 2 items. First is the melted dataframe with the marker performance (\\%) per marker per metaclustering. Second is a ggplot object, a boxplot with marker
@@ -25,7 +25,7 @@ color gradient denotes \code{set.i} .
 \examples{
 # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
 # SOM-clustered to 375 clusters.
-flowsom <- system.file("extdata", "Levine32sample.Rdata", package="INFLECT")
+flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
 load(flowsom)
 inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= 5:12, multicore=FALSE, zeroes.in=FALSE)
 

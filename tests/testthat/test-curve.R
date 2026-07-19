@@ -22,6 +22,29 @@ test_that("Lfunction returns scalar knee and range without plotting", {
   expect_false(is.data.frame(refined$range))
 })
 
+test_that("Lfunction handles the smallest supported curve without a one-point second line", {
+  testthat::skip_if_not_installed("LearnGeom")
+  source_pkg_file("leastError.R")
+  source_pkg_file("angleplot.R")
+  source_pkg_file("Lfunction.R")
+
+  assign("LinesAngles", LearnGeom::LinesAngles, envir = globalenv())
+  on.exit(rm("LinesAngles", envir = globalenv()), add = TRUE)
+
+  result <- Lfunction(
+    data.frame(
+      x = 5:9,
+      y = c(10, 25, 45, 58, 64)
+    ),
+    cutoff = 1000,
+    plot = FALSE
+  )
+
+  expect_length(result$knee, 1)
+  expect_length(result$range, 1)
+  expect_false(is.na(result$angle))
+})
+
 test_that("leastError rejects too-short input clearly", {
   source_pkg_file("leastError.R")
 

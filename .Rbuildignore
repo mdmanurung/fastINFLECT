@@ -11,3 +11,8 @@
 ^LICENSE$
 ^INFLECT_[^/]+[.]tar[.]gz$
 ^INFLECT[.]Rcheck$
+^fastINFLECT_[^/]+[.]tar[.]gz$
+^fastINFLECT[.]Rcheck$
+^data-raw$
+^src/.*[.]o$
+^src/.*[.]so$

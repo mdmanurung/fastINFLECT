@@ -1,4 +1,6 @@
 test_that("FlowSOMQC spread-only test handles constant marker values", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
   source_pkg_file("FlowSOM-QC.R")
 
   fake <- make_fake_flowsom(

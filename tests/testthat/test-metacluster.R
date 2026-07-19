@@ -1,5 +1,6 @@
 test_that("iteration.metacluster matches repeated hclust metaclustering calls", {
   source_pkg_file("metaClustering-hclust.R")
+  source_pkg_file("som-adapter.R")
   source_pkg_file("iteration-metacluster.R")
 
   codes <- matrix(
@@ -13,7 +14,11 @@ test_that("iteration.metacluster matches repeated hclust metaclustering calls", 
     ncol = 2,
     byrow = TRUE
   )
-  flowsom <- list(map = list(codes = codes))
+  flowsom <- make_fake_flowsom(
+    matrix(rep(1, 10), ncol = 2, dimnames = list(NULL, c("CD3", "CD4")))
+  )
+  flowsom$map$codes <- codes
+  flowsom$map$nNodes <- nrow(codes)
   set.i <- 2:4
 
   expected <- stats::setNames(

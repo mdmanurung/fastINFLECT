@@ -36,3 +36,47 @@ make_fake_flowsom <- function(values, cols_used = seq_len(ncol(values))) {
   class(object) <- "FlowSOM"
   object
 }
+
+make_fake_kohonen <- function(data,
+                              codes,
+                              unit.classif,
+                              distance.weights = NULL,
+                              user.weights = NULL) {
+  if (!is.list(data)) {
+    data <- list(X = as.matrix(data))
+  } else {
+    data <- lapply(data, as.matrix)
+  }
+
+  if (!is.list(codes)) {
+    codes <- list(X = as.matrix(codes))
+  } else {
+    codes <- lapply(codes, as.matrix)
+  }
+
+  if (is.null(names(data))) {
+    names(data) <- paste0("layer", seq_along(data))
+  }
+  if (is.null(names(codes))) {
+    names(codes) <- names(data)[seq_along(codes)]
+  }
+
+  if (is.null(distance.weights)) {
+    distance.weights <- rep(1, length(codes))
+  }
+  if (is.null(user.weights)) {
+    user.weights <- rep(1, length(codes))
+  }
+
+  object <- list(
+    data = data,
+    unit.classif = as.integer(unit.classif),
+    grid = list(pts = matrix(seq_len(nrow(codes[[1]]) * 2), ncol = 2)),
+    codes = codes,
+    distance.weights = distance.weights,
+    user.weights = user.weights,
+    whatmap = seq_along(codes)
+  )
+  class(object) <- "kohonen"
+  object
+}

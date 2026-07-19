@@ -2,12 +2,12 @@
 % Please edit documentation in R/iteration-metacluster.R
 \name{iteration.metacluster}
 \alias{iteration.metacluster}
-\title{Run iterative metaclustering on SOM-clustered FlowSOM object}
+\title{Run iterative metaclustering on SOM-clustered objects}
 \usage{
 iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
 }
 \arguments{
-\item{FlowSOM.results}{A FlowSOM object with completed SOM clustering, either after full FlowSOM function or after BuildSOM}
+\item{FlowSOM.results}{A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.}
 
 \item{set.i}{Vector containing either the desired iterations to be tested}
 
@@ -16,10 +16,14 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
 \item{cores}{Retained for backward compatibility.}
 }
 \value{
-metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM-clusters within the FlowSOM.results object.
+metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.
 }
 \description{
-Metaclustering runs are determined for all cluster numbers in set.i . Hierarchical clustering is computed once and cut for all requested cluster numbers.
+Metaclustering runs are determined for all cluster numbers in
+\code{set.i}. In the original INFLECT workflow, each requested k was handled as a
+separate scan point. fastINFLECT computes the Ward.D2 hierarchy once and cuts
+it for all requested cluster numbers, preserving the hierarchical strategy
+while avoiding repeated work.
 }
 \seealso{
 \code{\link{INFLECT}}

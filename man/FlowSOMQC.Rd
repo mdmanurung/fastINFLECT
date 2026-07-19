@@ -18,15 +18,15 @@ FlowSOMQC(
 )
 }
 \arguments{
-\item{FlowSOM.results}{A FlowSOM object with completed SOM clustering, either after full FlowSOM function or after BuildSOM}
+\item{FlowSOM.results}{A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.}
 
 \item{metaclustering}{Vector with metacluster codes for all SOM-clusters.}
 
 \item{zeroes.in}{Should be values at and below \code{0} be included. Recommended default for mass cytometry data is \code{FALSE}}
 
-\item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified in FlowSOM.results$map$colsUsed}
+\item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.}
 
-\item{acquired_markers}{Vector of column names with marker data to be evaluated by INFLECT. Ignored if \code{only.clustering.markers == TRUE}}
+\item{acquired_markers}{Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}}
 
 \item{uniform.test}{What tests are performed per marker per cluster. Options are "both", "spread" , or "unimodality" as a string.}
 
@@ -34,7 +34,7 @@ FlowSOMQC(
 
 \item{th.IQR}{Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.}
 
-\item{verbose}{\code{logical} , default is \code{FALSE}}
+\item{verbose}{\code{logical} , default is \code{TRUE}}
 
 \item{...}{Additional arguments to pass to \code{\link[diptest]{dip.test}}.}
 }
@@ -42,7 +42,12 @@ FlowSOMQC(
 A \code{matrix} with evaluated markers in columns and clusters in rows. Each position in the matrix is \code{logical} indicating a pass or a fail.
 }
 \description{
-Unimodality score is calculated for cluster results. Per marker per cluster \link[diptest]{dip.test} is applied and inter-quartile range is assessed.
+Unimodality score is calculated for cluster results. Per marker
+per cluster \link[diptest]{dip.test} is applied and inter-quartile range is
+assessed. This function preserves the original INFLECT marker-level QC
+criterion so users can inspect or reproduce the base statistic directly; the
+faster package-level sweep reuses the same criterion through memoised helper
+code.
 }
 \seealso{
 \code{\link{INFLECT}} , \code{\link{iteration.QC}}

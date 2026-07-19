@@ -1,0 +1,51 @@
+url: https://mdmanurung.github.io/INFLECT/
+
+template:
+  bootstrap: 5
+
+home:
+  title: fastINFLECT
+  description: >
+    A fast reimplementation of the original INFLECT package for selecting
+    FlowSOM and kohonen metaclustering endpoints from marker-unimodality
+    diagnostics.
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+    right: [search, github]
+
+articles:
+- title: Benchmarks and method comparisons
+  navbar: Benchmarks
+  contents:
+  - benchmark-inflect-vs-consensus
+  - comparing-metaclustering
+
+reference:
+- title: Main workflow
+  contents:
+  - INFLECT
+  - FlowSOMQC
+  - marker.performance
+- title: Metaclustering and QC internals
+  contents:
+  - iteration.metacluster
+  - iteration.QC
+  - metaClusteringhclust
+  - QC.to.curve
+  - Lfunction
+  - leastError
+  - angleplot
+- title: Selection helpers and diagnostics
+  contents:
+  - computemode
+  - inflect_kneedle
+  - inflect_threshold_k
+  - bimodality.coefficient
+- title: Result methods
+  contents:
+  - print.inflect.results
+  - summary.inflect.results
+  - plot.inflect.results
+  - as.data.frame.inflect.results

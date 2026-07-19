@@ -1,28 +1,35 @@
-Package: INFLECT
-Title: Discover the metaclustering endpoint for FlowSOM
+Package: fastINFLECT
+Title: Fast discovery of the metaclustering endpoint for SOM objects
 Type: Package
 Author: Jan VERHOEFF
 Maintainer: Jan VERHOEFF <j.verhoeff@amsterdamumc.nl>
-Description: Quality control and determination of optimal k for FlowSOM high-dimensional clustering data. Iteratively clusters and evaluates resulting clusters for marker unimodality. Translates this into a unimodality score and plots it into a diagnostic graph. On the fitted curve of this unimodality score INFLECT determines the inflection point where unimodality stops increasing for greater numbers of clusters.
-Version: 0.2.1
+URL: https://mdmanurung.github.io/INFLECT, https://github.com/mdmanurung/INFLECT
+BugReports: https://github.com/mdmanurung/INFLECT/issues
+Description: Fast quality control and determination of optimal k for high-dimensional FlowSOM and kohonen SOM clustering data. fastINFLECT is a fast reimplementation of the original INFLECT package and keeps the core marker-unimodality method and the exported INFLECT() workflow while replacing the expensive repeated per-k quality-control loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. It iteratively clusters and evaluates resulting clusters for marker unimodality, translates this into a unimodality score, and plots it into a diagnostic graph. On the fitted curve of this unimodality score fastINFLECT determines the inflection point where unimodality stops increasing for greater numbers of clusters.
+Version: 1.0.0
 Depends:
     R (>= 3.6)
-Imports: 
-    doParallel,
+Imports:
     drc,
     diptest,
     FlowSOM,
-    foreach,
     ggplot2,
     gtools,
     LearnGeom,
     parallel,
+    Rcpp,
     RColorBrewer,
     reshape2
+LinkingTo:
+    Rcpp
 Encoding: UTF-8
 License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
-Suggests: 
+Suggests:
+    kohonen,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

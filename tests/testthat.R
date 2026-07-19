@@ -1,4 +1,4 @@
 library(testthat)
-library(INFLECT)
+library(fastINFLECT)
 
-test_check("INFLECT")
+test_check("fastINFLECT")

@@ -1,17 +1,22 @@
-#' @title Run iterative metaclustering on SOM-clustered FlowSOM object
+#' @title Run iterative metaclustering on SOM-clustered objects
 #'
-#' @description Metaclustering runs are determined for all cluster numbers in set.i . Hierarchical clustering is computed once and cut for all requested cluster numbers.
+#' @description Metaclustering runs are determined for all cluster numbers in
+#' `set.i`. In the original INFLECT workflow, each requested k was handled as a
+#' separate scan point. fastINFLECT computes the Ward.D2 hierarchy once and cuts
+#' it for all requested cluster numbers, preserving the hierarchical strategy
+#' while avoiding repeated work.
 #'
-#' @param FlowSOM.results A FlowSOM object with completed SOM clustering, either after full FlowSOM function or after BuildSOM
+#' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Vector containing either the desired iterations to be tested
 #' @param multicore Retained for backward compatibility. Hierarchical clustering is now computed once and is not parallelized.
 #' @param cores Retained for backward compatibility.
 #'
-#' @return metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM-clusters within the FlowSOM.results object.
+#' @return metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.
 #' @seealso \code{\link{INFLECT}}
 #'
 #' @export
 iteration.metacluster <- function(FlowSOM.results, set.i, multicore = TRUE, cores = NULL) {
+  FlowSOM.results <- as_inflect_som(FlowSOM.results)
   codes <- FlowSOM.results$map$codes
   fit <- stats::hclust(stats::dist(codes, method = "minkowski"), method = "ward.D2")
   cutree.result <- stats::cutree(fit, k = set.i)

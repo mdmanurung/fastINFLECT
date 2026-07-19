@@ -2,8 +2,9 @@
 ##
 ## The two computational levers implemented here are:
 ##   1. `.inflect_dip_pvalue()` reproduces the table-based p-value of
-##      `diptest::dip.test()` bit-for-bit from the raw dip statistic returned by
-##      the ~12x-cheaper `diptest::dip()`, so no pass/fail decision changes.
+##      `diptest::dip.test()` from the raw dip statistic returned by the
+##      ~12x-cheaper `diptest::dip()`. The public p-value closure also mirrors
+##      `dip.test()`'s incomplete-case handling before calling the fast path.
 ##   2. `.inflect_prepare_qc()` / `.inflect_accuracy_matrix()` factor the QC of a
 ##      single metaclustering so that `iteration.QC()` can memoise the accuracy
 ##      of each distinct dendrogram subtree (SOM-node set) across all k.
@@ -36,8 +37,13 @@
 }
 
 ## Type-7 inter-quartile range, via the O(n) compiled path when available and
-## stats::quantile() otherwise. The two agree bit-for-bit.
+## stats::quantile() otherwise. Missing values deliberately fall through to
+## stats::quantile() so the legacy error behaviour is preserved.
 .inflect_iqr <- function(x) {
+  if (anyNA(x)) {
+    qs <- stats::quantile(x, names = FALSE)
+    return(qs[[4L]] - qs[[2L]])
+  }
   if (.inflect_have_cpp()) {
     return(.inflect_iqr_cpp(x))
   }
@@ -45,14 +51,35 @@
   qs[[4L]] - qs[[2L]]
 }
 
-## Bit-exact reproduction of the table branch of diptest::dip.test(): from the raw
+## Exact reproduction of the table branch of diptest::dip.test(): from the raw
 ## dip statistic `D` and sample size `n` it returns the interpolated p-value.
 ##
-## The interpolation `1 - approx(grid, Pr, rule = 2, xout = sqrt(n) * D)` is done
-## directly (findInterval + a clamped linear step) instead of via stats::approx(),
-## whose per-call setup (regularize.values, argument checks) dominated the fast
-## engine's profile. Ties among small-n table rows only occur at the low-Pr end,
-## far from the decision region, so the pass/fail outcome is identical.
+## For n <= 8, ties in the tabulated grid affect stats::approx()'s regularisation,
+## so those few cases use the exact approx() route. Larger n use the compiled
+## direct interpolation path when available; this avoids approx() setup overhead in
+## the hot path while keeping p-values matched to dip.test().
+.inflect_dip_pvalue_approx <- function(D, n, qd, nn, P.s) {
+  max.n <- max(nn)
+  if (is.na(D) || n <= 3L) {
+    return(1)
+  }
+  if (n >= max.n) {
+    n0 <- n1 <- max.n
+    i.n <- i2 <- length(nn)
+    f.n <- 0
+  } else {
+    i.n <- findInterval(n, nn)
+    n0 <- nn[i.n]
+    i2 <- i.n + 1L
+    n1 <- nn[i2]
+    f.n <- (n - n0) / (n1 - n0)
+  }
+  y.0 <- sqrt(n0) * qd[i.n, ]
+  y.1 <- sqrt(n1) * qd[i2, ]
+  sD <- sqrt(n) * D
+  1 - stats::approx(y.0 + f.n * (y.1 - y.0), P.s, rule = 2, xout = sD)[["y"]]
+}
+
 .inflect_dip_pvalue <- function(D, n) {
   qd <- .inflect_qdiptab()
   nn <- as.integer(dimnames(qd)[["n"]])
@@ -61,18 +88,37 @@
   L <- length(nn)
   M <- length(P.s)
 
-  if (.inflect_have_cpp()) {
-    return(.inflect_dip_pvalue_cpp(as.numeric(D), as.integer(n), qd, nn, P.s))
+  D <- as.numeric(D)
+  n <- as.integer(n)
+  if (length(n) == 1L && length(D) != 1L) {
+    n <- rep.int(n, length(D))
+  }
+  if (length(n) != length(D)) {
+    stop("`D` and `n` must have the same length, or `n` must be length 1.", call. = FALSE)
+  }
+  p <- numeric(length(D))
+  simple <- is.na(D) | n <= 3L
+  p[simple] <- 1
+
+  exact <- !simple & n <= 8L
+  if (any(exact)) {
+    p[exact] <- vapply(which(exact), function(idx) {
+      .inflect_dip_pvalue_approx(D[[idx]], n[[idx]], qd, nn, P.s)
+    }, numeric(1))
   }
 
-  p <- numeric(length(D))
-  for (idx in seq_along(D)) {
+  fast <- !simple & !exact
+  if (!any(fast)) {
+    return(p)
+  }
+  if (.inflect_have_cpp()) {
+    p[fast] <- .inflect_dip_pvalue_cpp(D[fast], n[fast], qd, nn, P.s)
+    return(p)
+  }
+
+  for (idx in which(fast)) {
     ni <- n[idx]
     Di <- D[idx]
-    if (is.na(Di) || ni <= 3L) {
-      p[idx] <- 1
-      next
-    }
     if (ni >= max.n) {
       n0 <- n1 <- max.n
       i.n <- i2 <- L
@@ -124,8 +170,12 @@
     force(dots)
     function(me) do.call(diptest::dip.test, c(list(me), dots))$p.value
   } else {
-    ## diptest::dip() sorts internally, so `me` need not be pre-sorted.
-    function(me) .inflect_dip_pvalue(diptest::dip(me), length(me))
+    function(me) {
+      ## dip.test() drops incomplete cases before computing dip(); mirror that
+      ## cleanup before the faster statistic-plus-table route.
+      me <- me[stats::complete.cases(me)]
+      .inflect_dip_pvalue(diptest::dip(me), length(me))
+    }
   }
 }
 

@@ -29,6 +29,25 @@ cache_path <- if (length(local_cache)) {
 }
 cache <- readRDS(cache_path)
 library(ggplot2)
+pkg_version <- function(pkg) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    as.character(utils::packageVersion(pkg))
+  } else {
+    NA_character_
+  }
+}
+vignette_reproducibility <- function() {
+  data.frame(
+    Component = c("R", "fastINFLECT", "FlowSOM", "diptest"),
+    Version = c(
+      as.character(getRversion()),
+      pkg_version("fastINFLECT"),
+      pkg_version("FlowSOM"),
+      pkg_version("diptest")
+    ),
+    stringsAsFactors = FALSE
+  )
+}
 ```
 
 ## Introduction
@@ -351,5 +370,5 @@ require targeted gating.
 ---
 
 ```{r session-info}
-sessionInfo()
+knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```

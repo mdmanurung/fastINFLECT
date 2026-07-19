@@ -24,8 +24,6 @@
   - `Lfunction()` : Lfunction for determing Inflection Point
   - `leastError()` : Determine kneepoint based on minimizing fitting
     errors
-  - `angleplot()` : Plot the two halves of the curve with touchlines and
-    display angle
 
 ## Selection helpers and diagnostics
 

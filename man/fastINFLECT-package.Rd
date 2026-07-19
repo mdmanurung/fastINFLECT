@@ -23,9 +23,9 @@ and benchmarked comparisons.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://mdmanurung.github.io/INFLECT}
-  \item \url{https://github.com/mdmanurung/INFLECT}
-  \item Report bugs at \url{https://github.com/mdmanurung/INFLECT/issues}
+  \item \url{https://mdmanurung.github.io/fastINFLECT}
+  \item \url{https://github.com/mdmanurung/fastINFLECT}
+  \item Report bugs at \url{https://github.com/mdmanurung/fastINFLECT/issues}
 }
 
 }

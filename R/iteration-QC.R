@@ -17,7 +17,7 @@
 #' @param uniform.test What tests are performed per marker per cluster. Options are "both", "spread" , or "unimodality" as a string.
 #' @param th.pvalue Threshold for rejecting Unimodality dip.test result. Default is \code{0.05}. For more information see \link[diptest]{dip.test}
 #' @param th.IQR Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.
-#' @param max.n.diptest Optional integer. If set, each (cluster, marker) sample is randomly subsampled to at most this many events before the dip test. This removes the sample-size sensitivity of the dip test (large clusters otherwise make it reject unimodality for trivial deviations) at the cost of exact reproduction of the legacy score. Subsampling is seeded and therefore deterministic. Default \code{NULL} (no subsampling; results are identical to the legacy implementation).
+#' @param max.n.diptest Optional integer. If set, each (cluster, marker) sample is randomly subsampled to at most this many events before the dip test. This removes the sample-size sensitivity of the dip test (large clusters otherwise make it reject unimodality for trivial deviations) at the cost of direct legacy-score comparability. Subsampling is seeded and therefore deterministic. Default \code{NULL} preserves the legacy scoring path.
 #' @param seed Integer base seed used for the optional subsampling. Default \code{1L}.
 #' @param verbose \code{logical} , default is \code{FALSE}
 #' @param ... Additional arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.

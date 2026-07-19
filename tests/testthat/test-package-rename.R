@@ -11,3 +11,24 @@ test_that("package metadata and native registration use fastINFLECT", {
   expect_true(any(grepl("R_init_fastINFLECT", rcpp_cpp, fixed = TRUE)))
   expect_false(any(grepl("useDynLib\\(INFLECT", namespace)))
 })
+
+test_that("release metadata and rendered docs point at fastINFLECT", {
+  root <- find_package_root()
+  desc <- read.dcf(file.path(root, "DESCRIPTION"))[1, ]
+  pkgdown <- readLines(file.path(root, "_pkgdown.yml"), warn = FALSE)
+
+  expect_true(grepl("github.com/mdmanurung/fastINFLECT", desc[["URL"]], fixed = TRUE))
+  expect_identical(unname(desc[["BugReports"]]), "https://github.com/mdmanurung/fastINFLECT/issues")
+  expect_true(any(grepl("mdmanurung.github.io/fastINFLECT", pkgdown, fixed = TRUE)))
+
+  docs_to_check <- file.path(root, c(
+    "vignettes/comparing-metaclustering.html",
+    "docs/articles/comparing-metaclustering.html",
+    "docs/search.json"
+  ))
+  docs_to_check <- docs_to_check[file.exists(docs_to_check)]
+  if (length(docs_to_check)) {
+    stale <- unlist(lapply(docs_to_check, readLines, warn = FALSE), use.names = FALSE)
+    expect_false(any(grepl("INFLECT_0.2.1", stale, fixed = TRUE)))
+  }
+})

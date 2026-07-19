@@ -47,7 +47,7 @@ iteration.QC(
 
 \item{verbose}{\code{logical} , default is \code{FALSE}}
 
-\item{max.n.diptest}{Optional integer. If set, each (cluster, marker) sample is randomly subsampled to at most this many events before the dip test. This removes the sample-size sensitivity of the dip test (large clusters otherwise make it reject unimodality for trivial deviations) at the cost of exact reproduction of the legacy score. Subsampling is seeded and therefore deterministic. Default \code{NULL} (no subsampling; results are identical to the legacy implementation).}
+\item{max.n.diptest}{Optional integer. If set, each (cluster, marker) sample is randomly subsampled to at most this many events before the dip test. This removes the sample-size sensitivity of the dip test (large clusters otherwise make it reject unimodality for trivial deviations) at the cost of direct legacy-score comparability. Subsampling is seeded and therefore deterministic. Default \code{NULL} preserves the legacy scoring path.}
 
 \item{seed}{Integer base seed used for the optional subsampling. Default \code{1L}.}
 

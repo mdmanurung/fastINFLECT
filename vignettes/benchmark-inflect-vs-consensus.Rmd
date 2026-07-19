@@ -34,6 +34,25 @@ library(ggplot2)
 
 fmt_secs <- function(x) ifelse(x < 1, sprintf("%.2f s", x), sprintf("%.1f s", x))
 fmt_x <- function(x) sprintf("%.0f×", x)
+pkg_version <- function(pkg) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    as.character(utils::packageVersion(pkg))
+  } else {
+    NA_character_
+  }
+}
+vignette_reproducibility <- function() {
+  data.frame(
+    Component = c("R", "fastINFLECT", "FlowSOM", "diptest"),
+    Version = c(
+      as.character(getRversion()),
+      pkg_version("fastINFLECT"),
+      pkg_version("FlowSOM"),
+      pkg_version("diptest")
+    ),
+    stringsAsFactors = FALSE
+  )
+}
 ```
 
 ## The task being benchmarked
@@ -175,7 +194,7 @@ knitr::kable(eff_tbl, align = c("l", "r"))
 
 This work reduction is separate from the faster cell kernel: the original path
 uses `diptest::dip.test()` in every cluster-marker cell, while the new path uses
-`diptest::dip()` plus the same p-value table interpolation and small Rcpp
+`diptest::dip()` plus legacy-matched p-value interpolation and small Rcpp
 accelerators. The default score remains matched to the legacy score; the speed
 gain comes from avoiding repeated cells and cheaper equivalent cell evaluation.
 
@@ -332,5 +351,5 @@ chosen k, but fastINFLECT is the cheaper and more informative way to *choose* th
 ---
 
 ```{r session-info}
-cache$session_info
+knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```

@@ -12,6 +12,7 @@
 #'
 #' @return None, plot is generated using the basic R plot function.
 #'
+#' @noRd
 
 angleplot <-
   function(part1,

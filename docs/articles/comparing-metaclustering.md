@@ -143,7 +143,9 @@ summary(cache$inflect)
 #>   knee range    angle n_points min_i max_i min_unimodality max_unimodality
 #> 1   12    25 14.11648       21     5    25            92.5        98.50543
 #>   n_markers uniform.test th.pvalue th.IQR zeroes.in basedata package_version
-#> 1        32         both      0.05      2     FALSE    Curve           0.2.1
+#> 1        32         both      0.05      2     FALSE    Curve           1.0.0
+#>   k_inflection k_kneedle k_threshold
+#> 1           12         8           8
 ```
 
 The `knee` column is fastINFLECT’s recommended number of metaclusters.
@@ -344,7 +346,7 @@ knitr::kable(cq_tbl, align = c("l", "r", "r", "r", "r", "r", "r"))
 | FlowSOM auto-k         |      9 |            9 |                  93.8 |                   81.2 |                  5 |                   7 |
 | Hierarchical (ward.D2) |     10 |           10 |                  95.3 |                   90.6 |                  5 |                   7 |
 | fastINFLECT inflection |     12 |           12 |                  96.9 |                   90.6 |                  5 |                   8 |
-| fastINFLECT threshold  |     12 |           12 |                  96.9 |                   90.6 |                  5 |                   8 |
+| fastINFLECT threshold  |      8 |            8 |                  95.3 |                   90.6 |                  4 |                   6 |
 
 This simple view is the direct cluster-quality audit: methods whose
 histograms shift toward 100% produce metaclusters where marker
@@ -412,79 +414,12 @@ targeted gating.
 -----
 
 ``` r
-sessionInfo()
-#> R version 4.5.1 (2025-06-13)
-#> Platform: x86_64-conda-linux-gnu
-#> Running under: Rocky Linux 8.10 (Green Obsidian)
-#> 
-#> Matrix products: default
-#> BLAS/LAPACK: /exports/archive/hg-funcgenom-research/mdmanurung/conda/envs/R4_51/lib/libopenblasp-r0.3.29.so;  LAPACK version 3.12.0
-#> 
-#> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-#> 
-#> time zone: Europe/Amsterdam
-#> tzcode source: system (glibc)
-#> 
-#> attached base packages:
-#> [1] stats     graphics  grDevices utils     datasets  methods   base     
-#> 
-#> other attached packages:
-#> [1] ggplot2_4.0.3
-#> 
-#> loaded via a namespace (and not attached):
-#>   [1] tidyselect_1.2.1            dplyr_1.1.4                
-#>   [3] farver_2.1.2                S7_0.2.2                   
-#>   [5] fastmap_1.2.0               TH.data_1.1-5              
-#>   [7] tweenr_2.0.3                XML_3.99-0.17              
-#>   [9] digest_0.6.39               lifecycle_1.0.5            
-#>  [11] cluster_2.1.8.2             survival_3.8-6             
-#>  [13] magrittr_2.0.5              compiler_4.5.1             
-#>  [15] rlang_1.2.0                 sass_0.4.10                
-#>  [17] drc_3.0-1                   tools_4.5.1                
-#>  [19] plotrix_3.8-14              igraph_2.1.4               
-#>  [21] yaml_2.3.12                 knitr_1.51                 
-#>  [23] ggsignif_0.6.4              labeling_0.4.3             
-#>  [25] htmlwidgets_1.6.4           FlowSOM_2.18.0             
-#>  [27] plyr_1.8.9                  RColorBrewer_1.1-3         
-#>  [29] ConsensusClusterPlus_1.74.0 abind_1.4-8                
-#>  [31] multcomp_1.4-30             Rtsne_0.17                 
-#>  [33] withr_3.0.3                 purrr_1.2.2                
-#>  [35] RProtoBufLib_2.22.0         BiocGenerics_0.56.0        
-#>  [37] desc_1.4.3                  grid_4.5.1                 
-#>  [39] polyclip_1.10-7             stats4_4.5.1               
-#>  [41] ggpubr_0.6.3                scales_1.4.0               
-#>  [43] gtools_3.9.5                iterators_1.0.14           
-#>  [45] MASS_7.3-65                 dichromat_2.0-0.1          
-#>  [47] mvtnorm_1.3-7               cli_3.6.6                  
-#>  [49] rmarkdown_2.31              ragg_1.5.0                 
-#>  [51] generics_0.1.4              otel_0.2.0                 
-#>  [53] reshape2_1.4.5              cachem_1.1.0               
-#>  [55] flowCore_2.22.1             ggforce_0.5.0              
-#>  [57] stringr_1.6.0               splines_4.5.1              
-#>  [59] parallel_4.5.1              matrixStats_1.5.0          
-#>  [61] vctrs_0.7.3                 Matrix_1.7-5               
-#>  [63] sandwich_3.1-1              jsonlite_2.0.0             
-#>  [65] carData_3.0-6               cytolib_2.22.0             
-#>  [67] car_3.1-5                   S4Vectors_0.48.0           
-#>  [69] rstatix_0.7.3               Formula_1.2-5              
-#>  [71] systemfonts_1.3.1           foreach_1.5.2              
-#>  [73] diptest_0.77-2              ggnewscale_0.5.2           
-#>  [75] tidyr_1.3.1                 jquerylib_0.1.4            
-#>  [77] colorRamps_2.3.4            glue_1.8.1                 
-#>  [79] LearnGeom_1.5               pkgdown_2.2.0              
-#>  [81] codetools_0.2-20            INFLECT_0.2.1              
-#>  [83] stringi_1.8.7               gtable_0.3.6               
-#>  [85] tibble_3.3.0                pillar_1.11.1              
-#>  [87] htmltools_0.5.9             R6_2.6.1                   
-#>  [89] textshaping_1.0.4           doParallel_1.0.17          
-#>  [91] lattice_0.22-9              evaluate_1.0.5             
-#>  [93] Biobase_2.70.0              backports_1.5.1            
-#>  [95] broom_1.0.12                bslib_0.10.0               
-#>  [97] Rcpp_1.1.2                  xfun_0.59                  
-#>  [99] zoo_1.8-15                  fs_2.1.0                   
-#> [101] pkgconfig_2.0.3
+knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```
+
+| Component   | Version |
+| :---------- | :------ |
+| R           | 4.5.1   |
+| fastINFLECT | 1.0.0   |
+| FlowSOM     | 2.18.0  |
+| diptest     | 0.77.2  |

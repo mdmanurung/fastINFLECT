@@ -49,7 +49,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mdmanurung/INFLECT/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mdmanurung/fastINFLECT/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -75,7 +75,7 @@
 </h3>
 <ul>
 <li>
-<strong>Much faster, identical results.</strong> The QC sweep memoises each distinct SOM-node set (hierarchical metaclusterings are nested, so there are only ~<code>2·nNodes</code> distinct clusters across <em>any</em> sweep) and uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with a bit-exact p-value plus small Rcpp accelerators. A full dense sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds instead of hours — byte-identical to previous output. Because dense sweeps are now cheap, the diagnostic curve and its inflection point are far better resolved.</li>
+<strong>Much faster, legacy-matched results.</strong> The QC sweep memoises each distinct SOM-node set (hierarchical metaclusterings are nested, so there are only ~<code>2·nNodes</code> distinct clusters across <em>any</em> sweep) and uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds instead of hours while preserving the original QC decisions. Because dense sweeps are now cheap, the diagnostic curve and its inflection point are far better resolved.</li>
 <li>
 <strong>Clearer answer to “how many clusters”.</strong> <code><a href="reference/INFLECT.html">INFLECT()</a></code> reports three recommended k values: the LL.4 <code>inflection</code> (default), a nonparametric <code>kneedle</code> knee, and a <code>threshold</code> — the smallest k reaching a target unimodality (<code>target=</code>), which directly encodes “no cluster with residual bimodal marker expression, without over-clustering”.</li>
 <li>
@@ -93,8 +93,8 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/mdmanurung/INFLECT/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/mdmanurung/INFLECT/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/mdmanurung/fastINFLECT/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/mdmanurung/fastINFLECT/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 

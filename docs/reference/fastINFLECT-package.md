@@ -18,8 +18,8 @@ practical for dense sweeps and benchmarked comparisons.
 
 Useful links:
 
-  - <https://mdmanurung.github.io/INFLECT>
+  - <https://mdmanurung.github.io/fastINFLECT>
 
-  - <https://github.com/mdmanurung/INFLECT>
+  - <https://github.com/mdmanurung/fastINFLECT>
 
-  - Report bugs at <https://github.com/mdmanurung/INFLECT/issues>
+  - Report bugs at <https://github.com/mdmanurung/fastINFLECT/issues>

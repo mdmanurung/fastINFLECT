@@ -7,8 +7,8 @@
 
 ## Performance
 
-* Rewrote the QC sweep to be dramatically faster while producing byte-identical
-  results to previous versions. On the bundled Levine32 SOM (375 nodes, 32,288
+* Rewrote the QC sweep to be dramatically faster while preserving the original
+  QC decisions. On the bundled Levine32 SOM (375 nodes, 32,288
   events, 32 markers) a full dense sweep of every k from 5 to 370 now runs in a
   few seconds; the previous per-k implementation would have taken hours.
   * **Sub-tree memoisation.** `iteration.QC()` now evaluates each distinct SOM-node
@@ -17,12 +17,12 @@
     how densely `set.i` samples k, so the cost no longer grows with the number of
     tested k values.
   * **Faster kernel.** The dip test now uses `diptest::dip()` for the statistic
-    plus a direct, bit-exact reproduction of `diptest::dip.test()`'s p-value table
-    interpolation, instead of the ~12x more expensive `dip.test()` per cell.
+    plus legacy-matched p-value interpolation, with exact small-sample fallback,
+    instead of the ~12x more expensive `dip.test()` per cell.
   * **Compiled accelerators (Rcpp).** The inter-quartile-range spread test and the
-    p-value table interpolation are implemented in C++ (`src/inflect.cpp`), with
-    the pure-R paths retained as validated, bit-identical fallbacks when the
-    package is used without its compiled code.
+    hot-path p-value interpolation are implemented in C++ (`src/inflect.cpp`),
+    with the pure-R paths retained as validated fallbacks when the package is used
+    without its compiled code.
   * Parallelism in `iteration.QC()` now fans out over distinct sub-trees via
     fork-based `parallel::mclapply()` (Unix), replacing the previous per-k
     `foreach`/`doParallel` loop. `doParallel` and `foreach` are no longer
@@ -45,8 +45,8 @@
   caps the number of events used per (cluster, marker) dip test. This removes the
   sample-size sensitivity of the dip test — large clusters otherwise reject
   unimodality for negligible deviations — making the score size-robust. Subsampling
-  is seeded (`seed`) and therefore deterministic. The default `NULL` reproduces the
-  legacy score exactly.
+  is seeded (`seed`) and therefore deterministic. The default `NULL` preserves the
+  legacy scoring path.
 * New exported `bimodality.coefficient()` computes Sarle's bimodality coefficient
   as a fast, size-robust diagnostic that complements the dip test (documented with
   its caveat: it can over-flag skewed-but-unimodal markers).

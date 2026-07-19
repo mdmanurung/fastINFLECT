@@ -112,11 +112,11 @@ projected from sampled original dip.test cells. A single
 ConsensusClusterPlus run is the fair consensus baseline; calling
 metaClustering\_consensus() per k repeats that work 21 times.
 
-fastINFLECT scans the whole range in **1.1 s**. The original INFLECT
-loop is projected at **120.9 s** (**108×** slower). The fair consensus
-baseline — one ConsensusClusterPlus run — takes **56.7 s** (**51×**
+fastINFLECT scans the whole range in **1.4 s**. The original INFLECT
+loop is projected at **226.7 s** (**162×** slower). The fair consensus
+baseline — one ConsensusClusterPlus run — takes **56.7 s** (**41×**
 slower), and the common per-k convenience pattern takes **500.4 s**
-(**447×** slower). fastINFLECT is the cheapest and is the only one that
+(**358×** slower). fastINFLECT is the cheapest and is the only one that
 also returns a recommended k.
 
 -----
@@ -157,7 +157,7 @@ knitr::kable(eff_tbl, align = c("l", "r"))
 
 This work reduction is separate from the faster cell kernel: the
 original path uses `diptest::dip.test()` in every cluster-marker cell,
-while the new path uses `diptest::dip()` plus the same p-value table
+while the new path uses `diptest::dip()` plus legacy-matched p-value
 interpolation and small Rcpp accelerators. The default score remains
 matched to the legacy score; the speed gain comes from avoiding repeated
 cells and cheaper equivalent cell evaluation.
@@ -350,8 +350,8 @@ score.
 ## Conclusion
 
 For the practical task of scanning k to choose a metaclustering,
-fastINFLECT is both **much faster** — about 108× faster than the
-original INFLECT loop in this cache, and 447× faster than the common
+fastINFLECT is both **much faster** — about 162× faster than the
+original INFLECT loop in this cache, and 358× faster than the common
 per-k consensus pattern — and **more decisive**, returning an objective
 recommended k on the same unimodality metric used to judge every method.
 Consensus metaclustering remains a reasonable way to *build* a partition
@@ -361,68 +361,12 @@ to *choose* that k.
 -----
 
 ``` r
-cache$session_info
-#> R version 4.5.1 (2025-06-13)
-#> Platform: x86_64-conda-linux-gnu
-#> Running under: Rocky Linux 8.10 (Green Obsidian)
-#> 
-#> Matrix products: default
-#> BLAS/LAPACK: /exports/archive/hg-funcgenom-research/mdmanurung/conda/envs/R4_51/lib/libopenblasp-r0.3.29.so;  LAPACK version 3.12.0
-#> 
-#> locale:
-#>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-#>  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-#>  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-#> [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-#> 
-#> time zone: Europe/Amsterdam
-#> tzcode source: system (glibc)
-#> 
-#> attached base packages:
-#> [1] stats     graphics  grDevices utils     datasets  methods   base     
-#> 
-#> other attached packages:
-#> [1] fastINFLECT_1.0.0 testthat_3.3.2    FlowSOM_2.18.0    igraph_2.1.4     
-#> 
-#> loaded via a namespace (and not attached):
-#>  [1] gtable_0.3.6                ggplot2_4.0.3              
-#>  [3] ConsensusClusterPlus_1.74.0 rstatix_0.7.3              
-#>  [5] Biobase_2.70.0              lattice_0.22-9             
-#>  [7] vctrs_0.7.3                 tools_4.5.1                
-#>  [9] generics_0.1.4              parallel_4.5.1             
-#> [11] stats4_4.5.1                sandwich_3.1-1             
-#> [13] tibble_3.3.0                cluster_2.1.8.2            
-#> [15] drc_3.0-1                   pkgconfig_2.0.3            
-#> [17] Matrix_1.7-5                ggnewscale_0.5.2           
-#> [19] RColorBrewer_1.1-3          S7_0.2.2                   
-#> [21] desc_1.4.3                  S4Vectors_0.48.0           
-#> [23] lifecycle_1.0.5             stringr_1.6.0              
-#> [25] compiler_4.5.1              farver_2.1.2               
-#> [27] brio_1.1.5                  ggforce_0.5.0              
-#> [29] codetools_0.2-20            carData_3.0-6              
-#> [31] flowCore_2.22.1             Formula_1.2-5              
-#> [33] pillar_1.11.1               car_3.1-5                  
-#> [35] ggpubr_0.6.3                tidyr_1.3.1                
-#> [37] MASS_7.3-65                 diptest_0.77-2             
-#> [39] abind_1.4-8                 multcomp_1.4-30            
-#> [41] RProtoBufLib_2.22.0         gtools_3.9.5               
-#> [43] tidyselect_1.2.1            stringi_1.8.7              
-#> [45] mvtnorm_1.3-7               Rtsne_0.17                 
-#> [47] reshape2_1.4.5              dplyr_1.1.4                
-#> [49] purrr_1.2.2                 splines_4.5.1              
-#> [51] polyclip_1.10-7             rprojroot_2.1.1            
-#> [53] grid_4.5.1                  cli_3.6.6                  
-#> [55] magrittr_2.0.5              survival_3.8-6             
-#> [57] dichromat_2.0-0.1           XML_3.99-0.17              
-#> [59] pkgbuild_1.4.8              TH.data_1.1-5              
-#> [61] broom_1.0.12                withr_3.0.3                
-#> [63] scales_1.4.0                backports_1.5.1            
-#> [65] plotrix_3.8-14              matrixStats_1.5.0          
-#> [67] otel_0.2.0                  ggsignif_0.6.4             
-#> [69] cytolib_2.22.0              zoo_1.8-15                 
-#> [71] LearnGeom_1.5               rlang_1.2.0                
-#> [73] Rcpp_1.1.2                  glue_1.8.1                 
-#> [75] tweenr_2.0.3                BiocGenerics_0.56.0        
-#> [77] pkgload_1.5.2               plyr_1.8.9                 
-#> [79] R6_2.6.1                    colorRamps_2.3.4
+knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```
+
+| Component   | Version |
+| :---------- | :------ |
+| R           | 4.5.1   |
+| fastINFLECT | 1.0.0   |
+| FlowSOM     | 2.18.0  |
+| diptest     | 0.77.2  |

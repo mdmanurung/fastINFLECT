@@ -8,8 +8,9 @@
 //
 //  * inflect_iqr_cpp()          - type-7 IQR in O(n) via std::nth_element,
 //                                 bit-compatible with stats::quantile(type = 7).
-//  * inflect_dip_pvalue_cpp()   - vectorised, allocation-light reproduction of the
-//                                 table-interpolation p-value of diptest::dip.test().
+//  * inflect_dip_pvalue_cpp()   - vectorised, allocation-light interpolation for
+//                                 regular tabulated dip-test rows. The R wrapper
+//                                 handles small-n exactness and input cleanup.
 //
 // Both have pure-R equivalents in R/inflect-qc-core.R; the R paths are the
 // reference implementation and the fallback when the package is used without its

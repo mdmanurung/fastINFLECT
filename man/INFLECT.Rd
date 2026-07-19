@@ -51,7 +51,7 @@ INFLECT(
 
 \item{verbose}{\code{logical}, default is \code{FALSE}.}
 
-\item{max.n.diptest}{Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. \code{2000}) makes the score size-robust. Subsampling is seeded and deterministic. Default \code{NULL} reproduces the legacy score exactly.}
+\item{max.n.diptest}{Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. \code{2000}) makes the score size-robust. Subsampling is seeded and deterministic. Default \code{NULL} preserves the legacy scoring path.}
 
 \item{seed}{Integer base seed for the optional \code{max.n.diptest} subsampling. Default \code{1L}.}
 

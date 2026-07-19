@@ -79,25 +79,49 @@ test_that("memoisation holds across uniform.test modes and zeroes.in", {
   }
 })
 
-test_that("fast dip p-value matches diptest::dip.test decisions", {
+test_that("fast dip p-value matches diptest::dip.test p-values", {
   skip_if_not_installed("diptest")
   source_pkg_file("inflect-qc-core.R")
 
   set.seed(42)
-  disagreements <- 0L
-  for (n in c(6, 20, 60, 250)) {
+  max_diff <- 0
+  for (n in c(4:12, 20, 60, 250)) {
     for (gen in list(function(m) rnorm(m),
                      function(m) c(rnorm(m %/% 2), rnorm(m - m %/% 2, 6)),
                      function(m) rexp(m))) {
       for (rep in 1:6) {
         x <- gen(n)
-        p_ref <- suppressWarnings(diptest::dip.test(x))$p.value
-        p_fast <- .inflect_dip_pvalue(diptest::dip(x), length(x))
-        disagreements <- disagreements + as.integer((p_ref >= 0.05) != (p_fast >= 0.05))
+        p_ref <- suppressWarnings(diptest::dip.test(x)$p.value)
+        p_fast <- suppressWarnings(.inflect_dip_pvalue(diptest::dip(x), length(x)))
+        max_diff <- max(max_diff, abs(p_ref - p_fast))
       }
     }
   }
-  expect_identical(disagreements, 0L)
+  expect_lt(max_diff, 1e-12)
+
+  x <- rnorm(20)
+  D <- rep(suppressWarnings(diptest::dip(x)), 3L)
+  expect_equal(.inflect_dip_pvalue(D, length(x)),
+               rep(.inflect_dip_pvalue(D[[1L]], length(x)), 3L))
+  expect_error(.inflect_dip_pvalue(D, c(length(x), length(x) + 1L)),
+               "same length")
+})
+
+test_that("unimodality dip path preserves dip.test incomplete-case handling", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("FlowSOM-QC.R")
+  source_pkg_file("metaClustering-hclust.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(4L)
+  fs$data[c(3, 40, 81), "CD3"] <- NA_real_
+  mc <- as.integer(rep(1:3, length.out = fs$map$nNodes))
+
+  expect_no_error(FlowSOMQC(fs, mc, uniform.test = "unimodality", verbose = FALSE))
+  expect_error(FlowSOMQC(fs, mc, uniform.test = "spread", verbose = FALSE),
+               "missing values")
 })
 
 test_that("size-robust subsampling is deterministic and bounded", {

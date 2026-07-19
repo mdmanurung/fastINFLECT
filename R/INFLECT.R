@@ -21,7 +21,7 @@
 #' @param uniform.test What tests are performed per marker per cluster. Options are \code{"both"}, \code{"spread"}, or \code{"unimodality"}.
 #' @param th.pvalue Threshold for rejecting the unimodality \link[diptest]{dip.test} result. Default is \code{0.05}.
 #' @param th.IQR Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.
-#' @param max.n.diptest Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. \code{2000}) makes the score size-robust. Subsampling is seeded and deterministic. Default \code{NULL} reproduces the legacy score exactly.
+#' @param max.n.diptest Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. \code{2000}) makes the score size-robust. Subsampling is seeded and deterministic. Default \code{NULL} preserves the legacy scoring path.
 #' @param seed Integer base seed for the optional \code{max.n.diptest} subsampling. Default \code{1L}.
 #' @param target Target unimodality (fraction in \code{(0,1]} or percentage in \code{(1,100]}) used to report the smallest k with no residual bimodal clusters. Default \code{0.95}. See \code{\link{inflect_threshold_k}}.
 #' @param verbose \code{logical}, default is \code{FALSE}.

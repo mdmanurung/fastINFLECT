@@ -11,12 +11,12 @@ This repository acknowledges the original INFLECT implementation and keeps its p
 
 ### What's new in 1.0.0
 
-- **Much faster, identical results.** The QC sweep memoises each distinct SOM-node
+- **Much faster, legacy-matched results.** The QC sweep memoises each distinct SOM-node
   set (hierarchical metaclusterings are nested, so there are only ~`2·nNodes`
-  distinct clusters across *any* sweep) and uses `diptest::dip()` with a bit-exact
-  p-value plus small Rcpp accelerators. A full dense sweep of every k on the bundled
-  Levine32 SOM (375 nodes) runs in a few seconds instead of hours — byte-identical
-  to previous output. Because dense sweeps are now cheap, the diagnostic curve and
+  distinct clusters across *any* sweep) and uses `diptest::dip()` with
+  legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense
+  sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds
+  instead of hours while preserving the original QC decisions. Because dense sweeps are now cheap, the diagnostic curve and
   its inflection point are far better resolved.
 - **Clearer answer to "how many clusters".** `INFLECT()` reports three recommended
   k values: the LL.4 `inflection` (default), a nonparametric `kneedle` knee, and a

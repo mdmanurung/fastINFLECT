@@ -40,7 +40,7 @@ are removed and inflection point is calculated on the fitted curve."></head><bod
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mdmanurung/INFLECT/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mdmanurung/fastINFLECT/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -50,7 +50,7 @@ are removed and inflection point is calculated on the fitted curve."></head><bod
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Run the fastINFLECT computation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/INFLECT/blob/HEAD/R/INFLECT.R" class="external-link"><code>R/INFLECT.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/fastINFLECT/blob/HEAD/R/INFLECT.R" class="external-link"><code>R/INFLECT.R</code></a></small>
       <div class="d-none name"><code>INFLECT.Rd</code></div>
     </div>
 
@@ -145,7 +145,7 @@ are removed and inflection point is calculated on the fitted curve.</p>
 
 
 <dt id="arg-max-n-diptest">max.n.diptest<a class="anchor" aria-label="anchor" href="#arg-max-n-diptest"></a></dt>
-<dd><p>Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. <code>2000</code>) makes the score size-robust. Subsampling is seeded and deterministic. Default <code>NULL</code> reproduces the legacy score exactly.</p></dd>
+<dd><p>Optional integer cap on the number of events used per (cluster, marker) dip test. Because the dip test's power grows with sample size, large clusters otherwise reject unimodality for negligible deviations, biasing the score. Setting a cap (e.g. <code>2000</code>) makes the score size-robust. Subsampling is seeded and deterministic. Default <code>NULL</code> preserves the legacy scoring path.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>

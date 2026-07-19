@@ -108,7 +108,7 @@ INFLECT(
     size, large clusters otherwise reject unimodality for negligible
     deviations, biasing the score. Setting a cap (e.g. `2000`) makes the
     score size-robust. Subsampling is seeded and deterministic. Default
-    `NULL` reproduces the legacy score exactly.
+    `NULL` preserves the legacy scoring path.
 
   - seed:
     

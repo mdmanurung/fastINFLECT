@@ -1,4 +1,4 @@
-url: https://mdmanurung.github.io/INFLECT/
+url: https://mdmanurung.github.io/fastINFLECT/
 
 template:
   bootstrap: 5
@@ -36,7 +36,6 @@ reference:
   - QC.to.curve
   - Lfunction
   - leastError
-  - angleplot
 - title: Selection helpers and diagnostics
   contents:
   - computemode

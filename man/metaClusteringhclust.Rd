@@ -2,7 +2,7 @@
 % Please edit documentation in R/metaClustering-hclust.R
 \name{metaClusteringhclust}
 \alias{metaClusteringhclust}
-\title{Metaclustering function based on hierarchical clustering}
+\title{Hierarchical (Ward) metaclustering of SOM codes}
 \usage{
 metaClusteringhclust(data, nClus)
 }
@@ -15,7 +15,7 @@ metaClusteringhclust(data, nClus)
 A \code{scalar} of \code{length(SOMclusters)} with metacluster identity.
 }
 \description{
-Orphaned function from FlowSOM, imported here.
+Performs hierarchical metaclustering of SOM cluster codes using Ward's D2 linkage, adapted from FlowSOM.
 }
 \seealso{
 \code{\link{INFLECT}}

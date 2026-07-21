@@ -1,19 +1,17 @@
 #' @title Run the fastINFLECT computation
 #'
-#' @description Wrapper function combining all aspects of the fastINFLECT
-#' reimplementation: iterative metaclustering, marker-unimodality testing, and
-#' inflection point determination. The exported function is still named
-#' `INFLECT()` for continuity with the original INFLECT API, but the package
-#' now uses a memoised, benchmarked engine that avoids the original repeated
-#' per-k QC loop.
-#' Default options include fewer calculations at higher cluster numbers, zeroes
-#' are removed and inflection point is calculated on the fitted curve.
+#' @description Runs iterative metaclustering, marker-unimodality testing, and
+#' inflection point determination. The exported function is named `INFLECT()`
+#' for continuity with the original INFLECT API; the package uses a memoised
+#' engine that avoids the original repeated per-k QC loop.
+#' By default, fewer cluster numbers are evaluated at higher k, zero-valued
+#' events are excluded, and the inflection point is computed on the fitted curve.
 #'
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Vector containing either the desired iterations to be tested, or if \code{length(set.i)==2}, the point where iterations are spaced apart by 5 or 10. Intended to limit computation time
 #' @param multicore logical, should the QC sweep be run in parallel (fork-based \code{\link[parallel]{mclapply}} over distinct SOM-node subtrees on Unix). Ignored on Windows.
 #' @param cores If \code{multicore == TRUE}, number of cores to be used. If \code{NULL} max number of cores-1 is used
-#' @param zeroes.in Should be values at and below \code{0} be included. Recommeded default is \code{FALSE}
+#' @param zeroes.in Should values at and below \code{0} be included. Recommended default is \code{FALSE}
 #' @param only.clustering.markers If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.
 #' @param acquired_markers Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}
 #' @param basedata Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}

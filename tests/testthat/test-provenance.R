@@ -42,9 +42,9 @@ test_that("normalize_set_i expands length-two inputs using current INFLECT rules
   source_pkg_file("inflect-provenance.R", envir = env)
 
   fake <- make_fake_flowsom(
-    matrix(rep(1, 20), ncol = 2, dimnames = list(NULL, c("CD3", "CD4")))
+    matrix(rep(1, 20), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
+    n_nodes = 100L
   )
-  fake$map$nNodes <- 100L
 
   expect_identical(
     env$normalize_set_i(c(10, 20), fake),

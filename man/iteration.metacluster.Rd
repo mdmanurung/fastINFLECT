@@ -19,11 +19,9 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
 metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.
 }
 \description{
-Metaclustering runs are determined for all cluster numbers in
-\code{set.i}. In the original INFLECT workflow, each requested k was handled as a
-separate scan point. fastINFLECT computes the Ward.D2 hierarchy once and cuts
-it for all requested cluster numbers, preserving the hierarchical strategy
-while avoiding repeated work.
+Computes metaclusterings for all cluster numbers in \code{set.i}.
+The Ward.D2 hierarchy is built once from the SOM codebook and then cut at
+each requested k, rather than recomputing a separate clustering per k.
 }
 \seealso{
 \code{\link{INFLECT}}

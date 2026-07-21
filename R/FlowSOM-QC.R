@@ -1,11 +1,10 @@
 #' @title Cluster quality control using diptest and IQR check
 #'
-#' @description Unimodality score is calculated for cluster results. Per marker
-#' per cluster \link[diptest]{dip.test} is applied and inter-quartile range is
-#' assessed. This function preserves the original INFLECT marker-level QC
-#' criterion so users can inspect or reproduce the base statistic directly; the
-#' faster package-level sweep reuses the same criterion through memoised helper
-#' code.
+#' @description Computes the unimodality score for cluster results. Per marker
+#' per cluster, \link[diptest]{dip.test} is applied and inter-quartile range is
+#' assessed. This function implements the original INFLECT marker-level QC
+#' criterion. The package-level sweep in \code{\link{iteration.QC}} reuses the
+#' same criterion through memoised helper code.
 #'
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param metaclustering Vector with metacluster codes for all SOM-clusters.
@@ -46,6 +45,11 @@ FlowSOMQC <- function(FlowSOM.results,
   } else if (!is.integer(metaclustering)) {
     stop("Error in FlowSOM.QC: The 'metaclustering' parameter required a 'integer' of metaclustering results")
   }
+  metaclustering <- .inflect_normalize_metaclustering(
+    metaclustering = metaclustering,
+    n_nodes = FlowSOM.results$map$nNodes,
+    label = "`metaclustering`"
+  )
 
   prep <- .inflect_prepare_qc(
     view = FlowSOM.results,

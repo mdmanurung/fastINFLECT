@@ -4,6 +4,15 @@ test_that("vignette cache exposes cluster-level quality histograms", {
 
   cache <- readRDS(cache_path)
 
+  expect_true(all(c("cache_provenance", "machine") %in% names(cache)))
+  expect_true(all(c("dataset_hash", "codes_hash", "k_range", "source_hashes") %in%
+                    names(cache$cache_provenance)))
+  expect_identical(cache$cache_provenance$k_range, cache$k_range)
+  expect_true(all(nzchar(unlist(cache$cache_provenance$source_hashes))))
+  expect_false(is.null(cache$machine$inflect_version))
+  expect_false(is.na(cache$machine$inflect_version))
+  expect_null(cache$session_info)
+
   expect_true(all(c(
     "cluster_quality_df",
     "cluster_quality_summary",

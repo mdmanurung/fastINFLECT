@@ -33,7 +33,7 @@ iteration.QC(
 
 \item{cores}{If \code{multicore == TRUE}, number of cores to be used. If \code{NULL} max number of cores-1 is used.}
 
-\item{zeroes.in}{Should be values at and below \code{0} be included. Recommeded default for mass cytometry data is \code{FALSE}}
+\item{zeroes.in}{Should be values at and below \code{0} be included. Recommended default for mass cytometry data is \code{FALSE}}
 
 \item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.}
 
@@ -57,11 +57,10 @@ iteration.QC(
 A \code{list} with 2 items. The first is the unimodality scores stored in U.set. Second is a \code{list} with a \code{logical} matrix for each metaclustering result.
 }
 \description{
-Unimodality score is calculated for all calculated
-metaclusterings. This is the central fast reimplementation of the original
-INFLECT QC sweep: each distinct SOM-node subtree is evaluated once, then the
-per-k accuracy matrices are assembled from that cache. The marker-level
-pass/fail definition remains aligned with the original \code{FlowSOMQC()} method.
+Unimodality scores are computed for all metaclusterings in
+\code{set.i}. Each distinct SOM-node subtree is evaluated once; the per-k
+accuracy matrices are assembled from that cache. The marker-level pass/fail
+definition is aligned with the original \code{FlowSOMQC()} method.
 }
 \seealso{
 \code{\link{INFLECT}}, \code{\link{iteration.metacluster}}, \code{\link{FlowSOMQC}}

@@ -1,5 +1,5 @@
-#' @title Internal - Returns the mode of a numeric vector
-#' @description This function is used internally to determine the mode of a numeric vector. Adapted from \pkg{SPADEVizR}
+#' @title Estimate the mode of a numeric vector
+#' @description Estimates the mode of a numeric vector from a Gaussian kernel density curve. Adapted from \pkg{SPADEVizR}.
 #' @param x a numeric vector
 #' @return a list with 2 numeric values specifying the mode "x" and it associated density "y"
 #' @export

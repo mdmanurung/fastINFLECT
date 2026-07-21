@@ -29,7 +29,7 @@
 
 <!-- end list -->
 
-  - `computemode()` : Internal - Returns the mode of a numeric vector
+  - `computemode()` : Estimate the mode of a numeric vector
   - `inflect_kneedle()` : Locate the knee of a diminishing-returns curve
     (Kneedle)
   - `inflect_threshold_k()` : Smallest k that reaches a target

@@ -1,13 +1,26 @@
-# GarciaVallejoLab
+# fastINFLECT
 
-Repository for projects developed within the lab of JJ. Garcia-Vallejo
+Fast quality control and determination of optimal k for FlowSOM and kohonen
+high-dimensional SOM clustering data.
 
-## fastINFLECT
-Fast quality control and determination of optimal k for FlowSOM and kohonen high-dimensional SOM clustering data. fastINFLECT is a fast reimplementation of the original INFLECT package: it keeps the same central method of scanning metaclusterings for marker unimodality and locating the inflection point, while replacing the expensive repeated per-k QC loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. On the fitted curve of this unimodality score fastINFLECT determines the point where unimodality stops increasing for greater numbers of clusters.
+fastINFLECT reimplements the original INFLECT package for speed. It scans
+metaclusterings for marker unimodality, locates the inflection point on the
+fitted unimodality curve, and replaces the expensive repeated per-k QC loop
+with memoised hierarchy cuts, faster dip-test p-value lookup, and small
+compiled accelerators. On the fitted curve of this unimodality score,
+fastINFLECT determines the point where unimodality stops increasing for greater
+numbers of clusters.
 
 ### Relationship to original INFLECT
 
-This repository acknowledges the original INFLECT implementation and keeps its public `INFLECT()` workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original marker-unimodality idea fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.
+fastINFLECT is derived from the original INFLECT implementation developed by
+Jan Verhoeff in the lab of JJ. Garcia-Vallejo at the
+[GarciaVallejoLab](https://github.com/jnverhoeff/GarciaVallejoLab). The package
+keeps the original marker-unimodality idea and its public `INFLECT()` workflow
+as the main user entry point. The new package name reflects the focus of this
+reimplementation: making the original algorithm fast enough for dense k sweeps,
+explicit benchmark comparisons, and direct inspection of residual bimodal marker
+expression.
 
 ### What's new in 1.0.0
 
@@ -16,11 +29,11 @@ This repository acknowledges the original INFLECT implementation and keeps its p
   distinct clusters across *any* sweep) and uses `diptest::dip()` with
   legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense
   sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds
-  instead of hours while preserving the original QC decisions. Because dense sweeps are now cheap, the diagnostic curve and
-  its inflection point are far better resolved.
+  instead of hours while preserving the original QC decisions. Dense sweeps being
+  cheap means the diagnostic curve and its inflection point are far better resolved.
 - **Clearer answer to "how many clusters".** `INFLECT()` reports three recommended
   k values: the LL.4 `inflection` (default), a nonparametric `kneedle` knee, and a
-  `threshold` — the smallest k reaching a target unimodality (`target=`), which
+  `threshold`, the smallest k reaching a target unimodality (`target=`), which
   directly encodes "no cluster with residual bimodal marker expression, without
   over-clustering".
 - **Size-robust scoring.** `max.n.diptest=` caps the events per dip test (seeded,

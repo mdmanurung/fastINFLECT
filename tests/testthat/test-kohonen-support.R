@@ -29,6 +29,41 @@ test_that("as_inflect_som normalizes kohonen SOM objects", {
   expect_equal(view$inflect_source$type, "kohonen")
 })
 
+test_that("as_inflect_som validates FlowSOM mapping and marker indices", {
+  source_pkg_file("som-adapter.R")
+
+  base <- make_fake_flowsom(
+    matrix(
+      rep(1:20, length.out = 20),
+      ncol = 2,
+      dimnames = list(NULL, c("CD3", "CD4"))
+    )
+  )
+  base$map$nNodes <- 2L
+  base$map$codes <- matrix(
+    c(1, 2, 3, 4),
+    nrow = 2,
+    dimnames = list(NULL, c("CD3", "CD4"))
+  )
+  base$map$mapping <- matrix(rep(1:2, length.out = nrow(base$data)), ncol = 1)
+
+  missing_mapping <- base
+  missing_mapping$map$mapping[1, 1] <- NA_integer_
+  expect_error(as_inflect_som(missing_mapping), "must not contain missing values")
+
+  out_of_range <- base
+  out_of_range$map$mapping[1, 1] <- 3L
+  expect_error(as_inflect_som(out_of_range), "outside `seq_len\\(map\\$nNodes\\)`")
+
+  short_mapping <- base
+  short_mapping$map$mapping <- matrix(short_mapping$map$mapping[-1, 1], ncol = 1)
+  expect_error(as_inflect_som(short_mapping), "length must match")
+
+  bad_cols <- base
+  bad_cols$map$colsUsed <- c(1L, 3L)
+  expect_error(as_inflect_som(bad_cols), "valid data column indices")
+})
+
 test_that("as_inflect_som uses fused numeric code layers for kohonen XYF objects", {
   source_pkg_file("som-adapter.R")
 

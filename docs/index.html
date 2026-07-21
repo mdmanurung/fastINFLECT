@@ -58,26 +58,23 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="garciavallejolab">GarciaVallejoLab<a class="anchor" aria-label="anchor" href="#garciavallejolab"></a>
+<div class="page-header"><h1 id="fastinflect">fastINFLECT<a class="anchor" aria-label="anchor" href="#fastinflect"></a>
 </h1></div>
-<p>Repository for projects developed within the lab of JJ. Garcia-Vallejo</p>
-<div class="section level2">
-<h2 id="fastinflect">fastINFLECT<a class="anchor" aria-label="anchor" href="#fastinflect"></a>
-</h2>
-<p>Fast quality control and determination of optimal k for FlowSOM and kohonen high-dimensional SOM clustering data. fastINFLECT is a fast reimplementation of the original INFLECT package: it keeps the same central method of scanning metaclusterings for marker unimodality and locating the inflection point, while replacing the expensive repeated per-k QC loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. On the fitted curve of this unimodality score fastINFLECT determines the point where unimodality stops increasing for greater numbers of clusters.</p>
+<p>Fast quality control and determination of optimal k for FlowSOM and kohonen high-dimensional SOM clustering data.</p>
+<p>fastINFLECT reimplements the original INFLECT package for speed. It scans metaclusterings for marker unimodality, locates the inflection point on the fitted unimodality curve, and replaces the expensive repeated per-k QC loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. On the fitted curve of this unimodality score, fastINFLECT determines the point where unimodality stops increasing for greater numbers of clusters.</p>
 <div class="section level3">
 <h3 id="relationship-to-original-inflect">Relationship to original INFLECT<a class="anchor" aria-label="anchor" href="#relationship-to-original-inflect"></a>
 </h3>
-<p>This repository acknowledges the original INFLECT implementation and keeps its public <code><a href="reference/INFLECT.html">INFLECT()</a></code> workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original marker-unimodality idea fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.</p>
+<p>fastINFLECT is derived from the original INFLECT implementation developed by Jan Verhoeff in the lab of JJ. Garcia-Vallejo at the <a href="https://github.com/jnverhoeff/GarciaVallejoLab" class="external-link">GarciaVallejoLab</a>. The package keeps the original marker-unimodality idea and its public <code><a href="reference/INFLECT.html">INFLECT()</a></code> workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original algorithm fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.</p>
 </div>
 <div class="section level3">
-<h3 id="whats-new-in-1-0-0">What’s new in 1.0.0<a class="anchor" aria-label="anchor" href="#whats-new-in-1-0-0"></a>
+<h3 id="whats-new-in-100">What’s new in 1.0.0<a class="anchor" aria-label="anchor" href="#whats-new-in-100"></a>
 </h3>
 <ul>
 <li>
-<strong>Much faster, legacy-matched results.</strong> The QC sweep memoises each distinct SOM-node set (hierarchical metaclusterings are nested, so there are only ~<code>2·nNodes</code> distinct clusters across <em>any</em> sweep) and uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds instead of hours while preserving the original QC decisions. Because dense sweeps are now cheap, the diagnostic curve and its inflection point are far better resolved.</li>
+<strong>Much faster, legacy-matched results.</strong> The QC sweep memoises each distinct SOM-node set (hierarchical metaclusterings are nested, so there are only ~<code>2·nNodes</code> distinct clusters across <em>any</em> sweep) and uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds instead of hours while preserving the original QC decisions. Dense sweeps being cheap means the diagnostic curve and its inflection point are far better resolved.</li>
 <li>
-<strong>Clearer answer to “how many clusters”.</strong> <code><a href="reference/INFLECT.html">INFLECT()</a></code> reports three recommended k values: the LL.4 <code>inflection</code> (default), a nonparametric <code>kneedle</code> knee, and a <code>threshold</code> — the smallest k reaching a target unimodality (<code>target=</code>), which directly encodes “no cluster with residual bimodal marker expression, without over-clustering”.</li>
+<strong>Clearer answer to “how many clusters”.</strong> <code><a href="reference/INFLECT.html">INFLECT()</a></code> reports three recommended k values: the LL.4 <code>inflection</code> (default), a nonparametric <code>kneedle</code> knee, and a <code>threshold</code>, the smallest k reaching a target unimodality (<code>target=</code>), which directly encodes “no cluster with residual bimodal marker expression, without over-clustering”.</li>
 <li>
 <strong>Size-robust scoring.</strong> <code>max.n.diptest=</code> caps the events per dip test (seeded, deterministic) so large clusters no longer make the dip test over-powered.</li>
 <li>
@@ -87,7 +84,6 @@
 <li>
 <strong>Levine metacluster quality audit.</strong> The comparison vignette includes all-cluster histograms of per-metacluster marker-unimodality pass rates for FlowSOM consensus, FlowSOM auto-k, hierarchical cuts, and fastINFLECT.</li>
 </ul>
-</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

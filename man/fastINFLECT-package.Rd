@@ -6,19 +6,21 @@
 \alias{fastINFLECT-package}
 \title{fastINFLECT: Fast discovery of the metaclustering endpoint for SOM objects}
 \description{
-fastINFLECT is a fast reimplementation of the original INFLECT package for
-selecting a FlowSOM or kohonen metaclustering endpoint from marker
-unimodality. The public \code{INFLECT()} workflow and the original diagnostic
-interpretation are retained; the implementation replaces repeated per-k QC
-work with memoised SOM-node subtree scoring, faster dip-test p-value lookup,
-and small Rcpp accelerators.
+fastINFLECT reimplements the INFLECT method for selecting a FlowSOM or
+kohonen metaclustering endpoint from marker unimodality. The public
+\code{INFLECT()} workflow and diagnostic interpretation are retained; the
+implementation replaces repeated per-k QC work with memoised SOM-node
+subtree scoring, faster dip-test p-value lookup, and Rcpp accelerators.
 
-The original INFLECT method established the package's core idea: choose k by
-scanning metaclusterings, measuring whether marker expression is unimodal
-within each cluster, and locating the inflection point where additional
-clusters stop improving that score. fastINFLECT acknowledges that work and
-focuses this repository on making the same method practical for dense sweeps
-and benchmarked comparisons.
+The core INFLECT idea: choose k by scanning metaclusterings, measuring
+whether marker expression is unimodal within each cluster, and locating the
+inflection point where additional clusters stop improving that score.
+fastINFLECT targets the same method at dense sweeps and benchmarked
+comparisons.
+
+The original INFLECT implementation was developed by Jan Verhoeff in the
+lab of JJ. Garcia-Vallejo and is available at
+\url{https://github.com/jnverhoeff/GarciaVallejoLab}.
 }
 \seealso{
 Useful links:

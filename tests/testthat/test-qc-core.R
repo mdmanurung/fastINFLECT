@@ -124,6 +124,104 @@ test_that("unimodality dip path preserves dip.test incomplete-case handling", {
                "missing values")
 })
 
+test_that("spread scoring uses full marker expression when dip subsampling is enabled", {
+  source_pkg_file("inflect-qc-core.R")
+
+  expr <- matrix(
+    c(rep(0, 50), rep(100, 50)),
+    ncol = 1,
+    dimnames = list(NULL, "CD3")
+  )
+  full <- .inflect_accuracy_row(
+    expr = expr,
+    zeroes.in = TRUE,
+    uniform.test = "spread",
+    th.pvalue = 0.05,
+    th.IQR = 50,
+    p_of = function(x) 1,
+    subsample = NULL,
+    seed = 1L
+  )
+  capped <- .inflect_accuracy_row(
+    expr = expr,
+    zeroes.in = TRUE,
+    uniform.test = "spread",
+    th.pvalue = 0.05,
+    th.IQR = 50,
+    p_of = function(x) 1,
+    subsample = 4L,
+    seed = 1L
+  )
+
+  expect_false(unname(full[["CD3"]]))
+  expect_identical(capped, full)
+})
+
+test_that("metaclustering inputs fail early instead of dropping events", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("FlowSOM-QC.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(5L)
+  n_nodes <- fs$map$nNodes
+
+  expect_error(
+    FlowSOMQC(fs, as.integer(rep(1L, n_nodes - 1L)), verbose = FALSE),
+    "one entry per SOM node"
+  )
+  expect_error(
+    FlowSOMQC(fs, as.integer(rep(1L, n_nodes + 1L)), verbose = FALSE),
+    "one entry per SOM node"
+  )
+  expect_error(
+    FlowSOMQC(fs, as.integer(c(rep(1L, n_nodes - 1L), NA)), verbose = FALSE),
+    "must not contain missing values"
+  )
+  expect_error(
+    FlowSOMQC(fs, as.integer(c(rep(1L, n_nodes - 1L), 0L)), verbose = FALSE),
+    "positive integers"
+  )
+
+  gapped <- FlowSOMQC(
+    fs,
+    as.integer(rep(c(2L, 4L), length.out = n_nodes)),
+    uniform.test = "spread",
+    verbose = FALSE
+  )
+  expect_equal(nrow(gapped), 2L)
+  expect_equal(rownames(gapped), c("1", "2"))
+
+  ml <- list("2" = as.integer(rep(1L, n_nodes - 1L)))
+  expect_error(
+    iteration.QC(fs, ml, set.i = 2L, multicore = FALSE, verbose = FALSE),
+    "one entry per SOM node"
+  )
+})
+
+test_that("max.n.diptest is validated once at the QC boundary", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(6L)
+  ml <- list("2" = as.integer(rep(1:2, length.out = fs$map$nNodes)))
+  bad_caps <- list(0L, 3L, NA_integer_, -1L, c(4L, 5L), 4.5)
+
+  for (cap in bad_caps) {
+    expect_error(
+      iteration.QC(fs, ml, set.i = 2L, multicore = FALSE,
+                   max.n.diptest = cap, verbose = FALSE),
+      "`max.n.diptest`"
+    )
+  }
+  expect_identical(.inflect_validate_max_n_diptest(4L), 4L)
+  expect_no_error(
+    iteration.QC(fs, ml, set.i = 2L, multicore = FALSE,
+                 max.n.diptest = 10L, verbose = FALSE)
+  )
+})
+
 test_that("size-robust subsampling is deterministic and bounded", {
   source_pkg_file("som-adapter.R")
   source_pkg_file("inflect-qc-core.R")

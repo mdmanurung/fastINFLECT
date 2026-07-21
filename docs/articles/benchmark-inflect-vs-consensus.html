@@ -116,7 +116,7 @@
 <span><span class="va">inflect_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span><span class="va">dataset</span>, set.i <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">25</span>, multicore <span class="op">=</span> <span class="cn">FALSE</span>, zeroes.in <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Original INFLECT pattern: one FlowSOMQC-style score per k, using dip.test()</span></span>
-<span><span class="co"># inside every cluster-marker cell. The benchmark projects this cost from sampled</span></span>
+<span><span class="co"># inside every cluster-marker cell. The benchmark estimates this cost from sampled</span></span>
 <span><span class="co"># original cells because a full old-engine run is intentionally slow.</span></span>
 <span><span class="va">ml</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/iteration.metacluster.html">iteration.metacluster</a></span><span class="op">(</span><span class="va">dataset</span>, set.i <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">25</span>, multicore <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">legacy_qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">5</span><span class="op">:</span><span class="fl">25</span>, <span class="kw">function</span><span class="op">(</span><span class="va">k</span><span class="op">)</span> <span class="op">{</span></span>
@@ -132,6 +132,9 @@
 <span><span class="co"># (b) Amortized: a single ConsensusClusterPlus run to maxK yields every k at once</span></span>
 <span><span class="co">#     (this is what (a) slices internally). The fairest consensus baseline.</span></span>
 <span><span class="va">ccp</span> <span class="op">&lt;-</span> <span class="fu">ConsensusClusterPlus</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ConsensusClusterPlus/man/ConsensusClusterPlus.html" class="external-link">ConsensusClusterPlus</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">codes</span><span class="op">)</span>, maxK <span class="op">=</span> <span class="fl">25</span>, seed <span class="op">=</span> <span class="fl">42</span>,</span>
+<span>                                                  reps <span class="op">=</span> <span class="fl">100</span>, pItem <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>                                                  pFeature <span class="op">=</span> <span class="fl">1</span>, clusterAlg <span class="op">=</span> <span class="st">"hc"</span>,</span>
+<span>                                                  distance <span class="op">=</span> <span class="st">"euclidean"</span>,</span>
 <span>                                                  plot <span class="op">=</span> <span class="cn">NULL</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co"># ... score ccp[[k]]$consensusClass for each k ...</span></span></code></pre></div>
 <hr>
@@ -139,11 +142,11 @@
 <div class="section level2">
 <h2 id="runtime">Runtime<a class="anchor" aria-label="anchor" href="#runtime"></a>
 </h2>
-<p>Time to scan <code>k = 5:25</code> (21 values) and obtain a quality score at every k. Both consensus variants produce identical partitions; only their cost differs. The original-INFLECT bar is a conservative projection from 168 sampled original <code>dip.test()</code> cluster-marker cells and excludes small metaclustering and curve-fit overhead.</p>
+<p>Time to scan <code>k = 5:25</code> (21 values) and obtain a quality score at every k. Both consensus variants produce identical partitions; only their cost differs. The original-INFLECT bar is an estimate from 168 sampled original <code>dip.test()</code> cluster-marker cells; the cache records its sampling standard error, and the estimate excludes small metaclustering and curve-fit overhead.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fastINFLECT 1.0"</span>,</span>
-<span>             <span class="st">"Original INFLECT\n(projected)"</span>,</span>
+<span>             <span class="st">"Original INFLECT\n(estimated)"</span>,</span>
 <span>             <span class="st">"FlowSOM consensus\n(single run)"</span>,</span>
 <span>             <span class="st">"FlowSOM consensus\n(per-k convenience)"</span><span class="op">)</span>,</span>
 <span>  seconds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">totals</span><span class="op">$</span><span class="va">inflect_scan_seconds</span>,</span>
@@ -167,11 +170,11 @@
 <span>       title <span class="op">=</span> <span class="st">"Scanning k = 5:25"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">theme_minimal</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="benchmark-inflect-vs-consensus_files/figure-html/runtime-bar-1.png" class="r-plt" alt="Wall-clock to scan k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is projected from sampled original dip.test cells. A single ConsensusClusterPlus run is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times." width="100%"><p class="caption">
-Wall-clock to scan k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is projected from sampled original dip.test cells. A single ConsensusClusterPlus run is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times.
+<img src="benchmark-inflect-vs-consensus_files/figure-html/runtime-bar-1.png" class="r-plt" alt="Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is estimated from sampled original dip.test cells. A single ConsensusClusterPlus run plus QC scoring is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times." width="100%"><p class="caption">
+Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is estimated from sampled original dip.test cells. A single ConsensusClusterPlus run plus QC scoring is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times.
 </p>
 </div>
-<p>fastINFLECT scans the whole range in <strong>1.4 s</strong>. The original INFLECT loop is projected at <strong>226.7 s</strong> (<strong>162×</strong> slower). The fair consensus baseline — one ConsensusClusterPlus run — takes <strong>56.7 s</strong> (<strong>41×</strong> slower), and the common per-k convenience pattern takes <strong>500.4 s</strong> (<strong>358×</strong> slower). fastINFLECT is the cheapest and is the only one that also returns a recommended k.</p>
+<p>fastINFLECT scans the whole range in <strong>1.4 s</strong>. The original INFLECT loop is estimated at <strong>340.2 s</strong> (SE <strong>25.3 s</strong>) (<strong>252×</strong> slower). The fair consensus baseline — one ConsensusClusterPlus run — takes <strong>62.9 s</strong> (<strong>47×</strong> slower), and the common per-k convenience pattern takes <strong>677.9 s</strong> (<strong>502×</strong> slower). fastINFLECT is the cheapest and is the only one that also returns a recommended k.</p>
 <hr>
 </div>
 <div class="section level2">
@@ -415,7 +418,7 @@ Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSO
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>For the practical task of scanning k to choose a metaclustering, fastINFLECT is both <strong>much faster</strong> — about 162× faster than the original INFLECT loop in this cache, and 358× faster than the common per-k consensus pattern — and <strong>more decisive</strong>, returning an objective recommended k on the same unimodality metric used to judge every method. Consensus metaclustering remains a reasonable way to <em>build</em> a partition at a chosen k, but fastINFLECT is the cheaper and more informative way to <em>choose</em> that k.</p>
+<p>For the practical task of scanning k to choose a metaclustering, fastINFLECT is both <strong>much faster</strong> — about 252× faster than the original INFLECT loop in this cache, and 502× faster than the common per-k consensus pattern — and <strong>more decisive</strong>, returning an objective recommended k on the same unimodality metric used to judge every method. Consensus metaclustering remains a reasonable way to <em>build</em> a partition at a chosen k, but fastINFLECT is the cheaper and more informative way to <em>choose</em> that k.</p>
 <hr>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu">vignette_reproducibility</span><span class="op">(</span><span class="op">)</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -427,7 +430,7 @@ Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSO
 <tbody>
 <tr class="odd">
 <td align="left">R</td>
-<td align="left">4.5.1</td>
+<td align="left">R version 4.5.1 (2025-06-13)</td>
 </tr>
 <tr class="even">
 <td align="left">fastINFLECT</td>
@@ -440,6 +443,10 @@ Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSO
 <tr class="even">
 <td align="left">diptest</td>
 <td align="left">0.77.2</td>
+</tr>
+<tr class="odd">
+<td align="left">ConsensusClusterPlus</td>
+<td align="left">1.74.0</td>
 </tr>
 </tbody>
 </table>

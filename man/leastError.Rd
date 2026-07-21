@@ -2,7 +2,7 @@
 % Please edit documentation in R/leastError.R
 \name{leastError}
 \alias{leastError}
-\title{Determine kneepoint based on minimizing fitting errors}
+\title{Determine kneepoint by minimizing fitting errors}
 \usage{
 leastError(dataframe)
 }
@@ -13,7 +13,7 @@ leastError(dataframe)
 Integer denoting the row of dataframe whose coordinate provides the kneepoint
 }
 \description{
-Evaluates the errors for two fitted lines on both parts of a collection of points. Function calculates the errors for a split on each element and selects the one with least amount of error. Internal function of \code{\link{Lfunction}}
+For each candidate split of a point collection, fits two lines and computes the weighted combined RMSE. Returns the split index with the smallest combined error. This is the split criterion used by \code{\link{Lfunction}}.
 }
 \seealso{
 \code{\link{INFLECT}} , \code{\link{QC.to.curve}},\code{\link{Lfunction}}

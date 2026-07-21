@@ -33,7 +33,7 @@ INFLECT(
 
 \item{cores}{If \code{multicore == TRUE}, number of cores to be used. If \code{NULL} max number of cores-1 is used}
 
-\item{zeroes.in}{Should be values at and below \code{0} be included. Recommeded default is \code{FALSE}}
+\item{zeroes.in}{Should values at and below \code{0} be included. Recommended default is \code{FALSE}}
 
 \item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.}
 
@@ -64,14 +64,12 @@ An S3 \code{inflect.results} object containing a dataframe with Unimodality scor
 Running the individual function \code{\link{iteration.metacluster}} and \code{\link{QC.to.curve}} might provide more options and flexibility.
 }
 \description{
-Wrapper function combining all aspects of the fastINFLECT
-reimplementation: iterative metaclustering, marker-unimodality testing, and
-inflection point determination. The exported function is still named
-\code{INFLECT()} for continuity with the original INFLECT API, but the package
-now uses a memoised, benchmarked engine that avoids the original repeated
-per-k QC loop.
-Default options include fewer calculations at higher cluster numbers, zeroes
-are removed and inflection point is calculated on the fitted curve.
+Runs iterative metaclustering, marker-unimodality testing, and
+inflection point determination. The exported function is named \code{INFLECT()}
+for continuity with the original INFLECT API; the package uses a memoised
+engine that avoids the original repeated per-k QC loop.
+By default, fewer cluster numbers are evaluated at higher k, zero-valued
+events are excluded, and the inflection point is computed on the fitted curve.
 }
 \examples{
 

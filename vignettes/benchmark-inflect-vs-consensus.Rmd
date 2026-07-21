@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 )
 
 # Precomputed by data-raw/make-benchmark-cache.R. ConsensusClusterPlus is slow,
-# and the original-INFLECT baseline is projected from sampled legacy dip.test
+# and the original-INFLECT baseline is estimated from sampled legacy dip.test
 # cells, so timings are measured once offline and displayed here.
 local_cache_candidates <- c(
   file.path("..", "inst", "extdata", "benchmark_cache.rds"),
@@ -34,21 +34,15 @@ library(ggplot2)
 
 fmt_secs <- function(x) ifelse(x < 1, sprintf("%.2f s", x), sprintf("%.1f s", x))
 fmt_x <- function(x) sprintf("%.0f×", x)
-pkg_version <- function(pkg) {
-  if (requireNamespace(pkg, quietly = TRUE)) {
-    as.character(utils::packageVersion(pkg))
-  } else {
-    NA_character_
-  }
-}
 vignette_reproducibility <- function() {
   data.frame(
-    Component = c("R", "fastINFLECT", "FlowSOM", "diptest"),
+    Component = c("R", "fastINFLECT", "FlowSOM", "diptest", "ConsensusClusterPlus"),
     Version = c(
-      as.character(getRversion()),
-      pkg_version("fastINFLECT"),
-      pkg_version("FlowSOM"),
-      pkg_version("diptest")
+      cache$machine$r_version,
+      cache$machine$inflect_version,
+      cache$machine$flowsom_version,
+      cache$machine$diptest_version,
+      cache$machine$consensusclusterplus_version
     ),
     stringsAsFactors = FALSE
   )
@@ -94,7 +88,7 @@ inflect_res <- INFLECT(dataset, set.i = 5:25, multicore = FALSE, zeroes.in = FAL
 
 ```{r original-inflect-scan, eval = FALSE}
 # Original INFLECT pattern: one FlowSOMQC-style score per k, using dip.test()
-# inside every cluster-marker cell. The benchmark projects this cost from sampled
+# inside every cluster-marker cell. The benchmark estimates this cost from sampled
 # original cells because a full old-engine run is intentionally slow.
 ml <- iteration.metacluster(dataset, set.i = 5:25, multicore = FALSE)
 legacy_qc <- lapply(5:25, function(k) {
@@ -112,6 +106,9 @@ for (k in 5:25) mc_k <- metaClustering_consensus(codes, k = k, seed = 42)
 # (b) Amortized: a single ConsensusClusterPlus run to maxK yields every k at once
 #     (this is what (a) slices internally). The fairest consensus baseline.
 ccp <- ConsensusClusterPlus::ConsensusClusterPlus(t(codes), maxK = 25, seed = 42,
+                                                  reps = 100, pItem = 0.9,
+                                                  pFeature = 1, clusterAlg = "hc",
+                                                  distance = "euclidean",
                                                   plot = NULL, verbose = FALSE)
 # ... score ccp[[k]]$consensusClass for each k ...
 ```
@@ -122,15 +119,15 @@ ccp <- ConsensusClusterPlus::ConsensusClusterPlus(t(codes), maxK = 25, seed = 42
 
 Time to scan `k = 5:25` (21 values) and obtain a quality score at every k. Both
 consensus variants produce identical partitions; only their cost differs. The
-original-INFLECT bar is a conservative projection from
+original-INFLECT bar is an estimate from
 `r cache$efficiency$legacy_projection$sampled_tests` sampled original
-`dip.test()` cluster-marker cells and excludes small metaclustering and curve-fit
-overhead.
+`dip.test()` cluster-marker cells; the cache records its sampling standard error,
+and the estimate excludes small metaclustering and curve-fit overhead.
 
-```{r runtime-bar, fig.height = 3.6, fig.cap = "Wall-clock to scan k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is projected from sampled original dip.test cells. A single ConsensusClusterPlus run is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times."}
+```{r runtime-bar, fig.height = 3.6, fig.cap = "Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is estimated from sampled original dip.test cells. A single ConsensusClusterPlus run plus QC scoring is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times."}
 rt <- data.frame(
   method = c("fastINFLECT 1.0",
-             "Original INFLECT\n(projected)",
+             "Original INFLECT\n(estimated)",
              "FlowSOM consensus\n(single run)",
              "FlowSOM consensus\n(per-k convenience)"),
   seconds = c(cache$totals$inflect_scan_seconds,
@@ -156,8 +153,9 @@ ggplot(rt, aes(x = seconds, y = method, fill = engine)) +
 ```
 
 fastINFLECT scans the whole range in **`r fmt_secs(cache$totals$inflect_scan_seconds)`**.
-The original INFLECT loop is projected at
-**`r fmt_secs(cache$totals$legacy_inflect_scan_seconds)`**
+The original INFLECT loop is estimated at
+**`r fmt_secs(cache$totals$legacy_inflect_scan_seconds)`** (SE
+**`r fmt_secs(cache$totals$legacy_inflect_scan_seconds_se)`**)
 (**`r fmt_x(cache$totals$speedup_legacy_inflect)`** slower).
 The fair consensus baseline — one ConsensusClusterPlus run — takes
 **`r fmt_secs(cache$totals$amortized_seconds)`**

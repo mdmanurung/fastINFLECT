@@ -27,6 +27,11 @@ as_inflect_flowsom <- function(object) {
   }
 
   data <- inflect_matrix(object$data, "`FlowSOM.results$data`")
+  if (!is.numeric(data)) {
+    stop("FlowSOM `data` must be numeric", call. = FALSE)
+  }
+  storage.mode(data) <- "double"
+
   pretty_colnames <- object$prettyColnames
   if (is.null(pretty_colnames)) {
     pretty_colnames <- colnames(data)
@@ -39,23 +44,47 @@ as_inflect_flowsom <- function(object) {
   }
 
   codes <- inflect_matrix(object$map$codes, "`FlowSOM.results$map$codes`")
-  mapping <- object$map$mapping
-  if (is.null(dim(mapping))) {
-    mapping <- matrix(mapping, ncol = 1)
+  if (!is.numeric(codes)) {
+    stop("FlowSOM `map$codes` must be numeric", call. = FALSE)
   }
-  mapping <- as.integer(mapping[, 1])
+  storage.mode(codes) <- "double"
 
   n_nodes <- object$map$nNodes
   if (is.null(n_nodes)) {
     n_nodes <- nrow(codes)
   }
   n_nodes <- as.integer(n_nodes)
+  if (length(n_nodes) != 1L || is.na(n_nodes) || n_nodes < 1L) {
+    stop("FlowSOM `map$nNodes` must be a positive integer", call. = FALSE)
+  }
+  if (n_nodes != nrow(codes)) {
+    stop("FlowSOM `map$nNodes` must match the number of code rows", call. = FALSE)
+  }
+
+  mapping <- object$map$mapping
+  if (is.null(dim(mapping))) {
+    mapping <- matrix(mapping, ncol = 1)
+  }
+  mapping <- as.integer(mapping[, 1])
+  if (length(mapping) != nrow(data)) {
+    stop("FlowSOM `map$mapping` length must match the number of data rows", call. = FALSE)
+  }
+  if (anyNA(mapping)) {
+    stop("FlowSOM `map$mapping` must not contain missing values", call. = FALSE)
+  }
+  if (any(mapping < 1L) || any(mapping > n_nodes)) {
+    stop("FlowSOM `map$mapping` contains node ids outside `seq_len(map$nNodes)`", call. = FALSE)
+  }
 
   cols_used <- object$map$colsUsed
   if (is.null(cols_used)) {
     cols_used <- seq_len(ncol(data))
   }
   cols_used <- as.integer(cols_used)
+  if (length(cols_used) == 0L || anyNA(cols_used) ||
+      any(cols_used < 1L) || any(cols_used > ncol(data))) {
+    stop("FlowSOM `map$colsUsed` must contain valid data column indices", call. = FALSE)
+  }
 
   new_inflect_som_view(
     data = data,

@@ -31,8 +31,10 @@ marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 ## Value
 
 `list` with 2 items. First is the melted dataframe with the marker
-performance (\\ performance on the y-axis, markers on the x-axis and the
-color scale denoting the amount of metaclusters evaluated.
+performance percentage per marker per metaclustering. Second is a ggplot
+object, a boxplot with marker performance on the y-axis, markers on the
+x-axis and the color scale denoting the amount of metaclusters
+evaluated.
 
 ## Examples
 

@@ -42,12 +42,11 @@ FlowSOMQC(
 A \code{matrix} with evaluated markers in columns and clusters in rows. Each position in the matrix is \code{logical} indicating a pass or a fail.
 }
 \description{
-Unimodality score is calculated for cluster results. Per marker
-per cluster \link[diptest]{dip.test} is applied and inter-quartile range is
-assessed. This function preserves the original INFLECT marker-level QC
-criterion so users can inspect or reproduce the base statistic directly; the
-faster package-level sweep reuses the same criterion through memoised helper
-code.
+Computes the unimodality score for cluster results. Per marker
+per cluster, \link[diptest]{dip.test} is applied and inter-quartile range is
+assessed. This function implements the original INFLECT marker-level QC
+criterion. The package-level sweep in \code{\link{iteration.QC}} reuses the
+same criterion through memoised helper code.
 }
 \seealso{
 \code{\link{INFLECT}} , \code{\link{iteration.QC}}

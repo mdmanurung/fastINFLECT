@@ -29,21 +29,15 @@ cache_path <- if (length(local_cache)) {
 }
 cache <- readRDS(cache_path)
 library(ggplot2)
-pkg_version <- function(pkg) {
-  if (requireNamespace(pkg, quietly = TRUE)) {
-    as.character(utils::packageVersion(pkg))
-  } else {
-    NA_character_
-  }
-}
 vignette_reproducibility <- function() {
   data.frame(
-    Component = c("R", "fastINFLECT", "FlowSOM", "diptest"),
+    Component = c("R", "fastINFLECT", "FlowSOM", "diptest", "ConsensusClusterPlus"),
     Version = c(
-      as.character(getRversion()),
-      pkg_version("fastINFLECT"),
-      pkg_version("FlowSOM"),
-      pkg_version("diptest")
+      cache$machine$r_version,
+      cache$machine$inflect_version,
+      cache$machine$flowsom_version,
+      cache$machine$diptest_version,
+      cache$machine$consensusclusterplus_version
     ),
     stringsAsFactors = FALSE
   )

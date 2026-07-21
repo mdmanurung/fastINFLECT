@@ -51,6 +51,30 @@ time_median <- function(expr, reps = 1L) {
   }, numeric(1)))
 }
 
+pkg_version <- function(pkg) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    as.character(utils::packageVersion(pkg))
+  } else {
+    NA_character_
+  }
+}
+
+object_hash <- function(object) {
+  path <- tempfile(fileext = ".rds")
+  on.exit(unlink(path), add = TRUE)
+  saveRDS(object, path, version = 2, compress = FALSE)
+  unname(tools::md5sum(path))
+}
+
+file_hashes <- function(paths) {
+  paths <- paths[file.exists(paths)]
+  stats::setNames(unname(tools::md5sum(paths)), paths)
+}
+
+cache_provenance_matches <- function(cache, provenance) {
+  is.list(cache) && identical(cache$cache_provenance, provenance)
+}
+
 make_qc_context <- function(som, only.clustering.markers = TRUE,
                             acquired_markers = NULL) {
   view <- getFromNamespace("as_inflect_som", "fastINFLECT")(som)
@@ -182,13 +206,14 @@ benchmark_legacy_inflect <- function(context,
     rows[[idx]] <- data.frame(
       k = k,
       seconds = mean(timings) * nrow(cells),
+      seconds_se = stats::sd(timings) / sqrt(length(timings)) * nrow(cells),
       sampled_seconds = sum(timings),
       sampled_tests = length(sample_idx),
       n_cluster_marker_tests = nrow(cells),
       mean_seconds_per_test = mean(timings),
       unimodality = unimodality_by_k[as.character(k)],
-      method = "Original INFLECT (projected)",
-      timing_type = "projected_from_sampled_diptest_cells",
+      method = "Original INFLECT (estimated)",
+      timing_type = "estimated_from_sampled_diptest_cells",
       stringsAsFactors = FALSE
     )
   }
@@ -392,6 +417,39 @@ build_marker_histogram <- function(context,
 
 k_range <- 5:25
 context <- make_qc_context(dataset)
+consensus_params <- list(
+  reps = 100L,
+  pItem = 0.9,
+  pFeature = 1,
+  clusterAlg = "hc",
+  distance = "euclidean",
+  seed = 42L
+)
+cache_provenance <- list(
+  dataset_hash = object_hash(list(
+    data = dataset$data,
+    mapping = dataset$map$mapping,
+    colsUsed = dataset$map$colsUsed
+  )),
+  codes_hash = object_hash(codes),
+  k_range = k_range,
+  seed = 42L,
+  consensus_params = consensus_params,
+  package_versions = list(
+    fastINFLECT = getFromNamespace("inflect_package_version", "fastINFLECT")(),
+    FlowSOM = pkg_version("FlowSOM"),
+    diptest = pkg_version("diptest"),
+    ConsensusClusterPlus = pkg_version("ConsensusClusterPlus")
+  ),
+  source_hashes = file_hashes(c(
+    "R/som-adapter.R",
+    "R/inflect-qc-core.R",
+    "R/FlowSOM-QC.R",
+    "R/iteration-QC.R",
+    "R/iteration-metacluster.R",
+    "data-raw/make-benchmark-cache.R"
+  ))
+)
 
 # ── 2. fastINFLECT: one memoised sweep over k_range ──────────────────────────
 message("Timing fastINFLECT fast engine over k = 5:25 ...")
@@ -419,7 +477,7 @@ inflect_curve <- data.frame(
 unimodality_by_k <- stats::setNames(inflect_curve$unimodality, inflect_curve$k)
 
 # ── 3. Original INFLECT: sampled legacy cell timings ─────────────────────────
-message("Projecting original INFLECT runtime from sampled dip.test cells ...")
+message("Estimating original INFLECT runtime from sampled dip.test cells ...")
 legacy_inflect <- benchmark_legacy_inflect(
   context = context,
   metaclustering.list = inflect_res$metaclustering.list,
@@ -429,31 +487,36 @@ legacy_inflect <- benchmark_legacy_inflect(
   zeroes.in = FALSE
 )
 legacy_inflect_scan_seconds <- sum(legacy_inflect$seconds)
-message(sprintf("  original INFLECT projected scan: %.1f s from %d sampled cells",
-                legacy_inflect_scan_seconds, sum(legacy_inflect$sampled_tests)))
+legacy_inflect_scan_seconds_se <- sqrt(sum(legacy_inflect$seconds_se ^ 2, na.rm = TRUE))
+message(sprintf("  original INFLECT estimated scan: %.1f +/- %.1f s from %d sampled cells",
+                legacy_inflect_scan_seconds, legacy_inflect_scan_seconds_se,
+                sum(legacy_inflect$sampled_tests)))
 
 # ── 4. Consensus metaclustering: one ConsensusClusterPlus per k ──────────────
 if (!is.null(existing_cache) && !refresh_consensus &&
+    cache_provenance_matches(existing_cache, cache_provenance) &&
     all(c("consensus_df", "amortized_df", "totals") %in% names(existing_cache))) {
-  message("Reusing existing FlowSOM consensus timings. Set INFLECT_REFRESH_CONSENSUS=1 to retime.")
+  message("Reusing existing FlowSOM consensus timings with matching provenance. Set INFLECT_REFRESH_CONSENSUS=1 to retime.")
   consensus_df <- existing_cache$consensus_df
   consensus_scan_seconds <- existing_cache$totals$consensus_scan_seconds
   consensus_per_k_median <- existing_cache$totals$consensus_per_k_median
   amortized_seconds <- existing_cache$totals$amortized_seconds
   amortized_df <- existing_cache$amortized_df
 } else {
-  message("Timing FlowSOM consensus metaclustering per k (this is the slow part) ...")
+  message("Timing FlowSOM consensus metaclustering plus QC scoring per k ...")
   consensus_rows <- vector("list", length(k_range))
   for (i in seq_along(k_range)) {
     k <- k_range[i]
     t_k <- as.numeric(system.time({
       mc <- suppressMessages(metaClustering_consensus(codes, k = k, seed = 42))
+      unimodality <- uni_score(mc)
     })[["elapsed"]])
     consensus_rows[[i]] <- data.frame(
       k = k,
-      unimodality = uni_score(mc),
+      unimodality = unimodality,
       method = "FlowSOM consensus",
       seconds = t_k,
+      timing_type = "partition_plus_qc_scoring",
       stringsAsFactors = FALSE
     )
     message(sprintf("  k = %2d : %.2f s", k, t_k))
@@ -465,17 +528,22 @@ if (!is.null(existing_cache) && !refresh_consensus &&
   ## Amortized: a single ConsensusClusterPlus run up to max(k) yields every k at
   ## once (metaClustering_consensus() just slices one such run). This is the
   ## fairest consensus baseline for scanning k; even so it does not pick k.
-  message("Timing a single amortized ConsensusClusterPlus(maxK) run ...")
+  message("Timing a single amortized ConsensusClusterPlus(maxK) run plus QC scoring ...")
   amortized_seconds <- as.numeric(system.time({
     ccp <- suppressMessages(ConsensusClusterPlus::ConsensusClusterPlus(
-      t(codes), maxK = max(k_range), reps = 100, pItem = 0.9, pFeature = 1,
+      t(codes), maxK = max(k_range), reps = consensus_params$reps,
+      pItem = consensus_params$pItem, pFeature = consensus_params$pFeature,
       title = tempfile("ccp"), plot = NULL, verbose = FALSE,
-      clusterAlg = "hc", distance = "euclidean", seed = 42))
+      clusterAlg = consensus_params$clusterAlg,
+      distance = consensus_params$distance,
+      seed = consensus_params$seed))
+    amortized_df <- do.call(rbind, lapply(k_range, function(k) {
+      data.frame(k = k, unimodality = uni_score(ccp[[k]]$consensusClass),
+                 method = "FlowSOM consensus (single run)",
+                 timing_type = "single_consensus_run_plus_qc_scoring",
+                 stringsAsFactors = FALSE)
+    }))
   })[["elapsed"]])
-  amortized_df <- do.call(rbind, lapply(k_range, function(k) {
-    data.frame(k = k, unimodality = uni_score(ccp[[k]]$consensusClass),
-               method = "FlowSOM consensus (single run)", stringsAsFactors = FALSE)
-  }))
   message(sprintf("  single amortized run: %.1f s (vs %.1f s for %d separate calls)",
                   amortized_seconds, consensus_scan_seconds, length(k_range)))
 }
@@ -539,17 +607,19 @@ efficiency <- list(
   legacy_projection = list(
     sampled_tests = sum(legacy_inflect$sampled_tests),
     sample_per_k = 8L,
-    timing_type = "projected_from_sampled_diptest_cells",
+    seconds_se = legacy_inflect_scan_seconds_se,
+    timing_type = "estimated_from_sampled_diptest_cells",
     note = paste(
-      "Projected from sampled original FlowSOMQC cluster-marker cells using",
-      "diptest::dip.test(); excludes small metaclustering and curve-fitting overhead,",
-      "so it is a conservative original-INFLECT scan estimate."
+      "Estimated from sampled original FlowSOMQC cluster-marker cells using",
+      "diptest::dip.test(); the reported standard error reflects sampled cell",
+      "timings and does not include small metaclustering or curve-fitting overhead."
     )
   )
 )
 
 # ── 9. Assemble and save ─────────────────────────────────────────────────────
 cache <- list(
+  cache_provenance = cache_provenance,
   k_range = k_range,
   comparison_df = rbind(
     inflect_curve[, c("k", "unimodality", "method")],
@@ -570,6 +640,7 @@ cache <- list(
     consensus_per_k_median = consensus_per_k_median,
     amortized_seconds = amortized_seconds,
     legacy_inflect_scan_seconds = legacy_inflect_scan_seconds,
+    legacy_inflect_scan_seconds_se = legacy_inflect_scan_seconds_se,
     speedup = consensus_scan_seconds / inflect_scan_seconds,
     speedup_amortized = amortized_seconds / inflect_scan_seconds,
     speedup_legacy_inflect = legacy_inflect_scan_seconds / inflect_scan_seconds
@@ -578,9 +649,11 @@ cache <- list(
     cores = parallel::detectCores(),
     sysname = Sys.info()[["sysname"]],
     r_version = R.version.string,
-    inflect_version = getFromNamespace("inflect_package_version", "fastINFLECT")()
-  ),
-  session_info = sessionInfo()
+    inflect_version = cache_provenance$package_versions$fastINFLECT,
+    flowsom_version = cache_provenance$package_versions$FlowSOM,
+    diptest_version = cache_provenance$package_versions$diptest,
+    consensusclusterplus_version = cache_provenance$package_versions$ConsensusClusterPlus
+  )
 )
 
 out_path <- existing_cache_path
@@ -598,7 +671,7 @@ stopifnot(
         names(cache$marker_histogram))
 )
 message(sprintf(paste0(
-  "fastINFLECT scan: %.2fs | original INFLECT projected: %.1fs | ",
+  "fastINFLECT scan: %.2fs | original INFLECT estimated: %.1fs | ",
   "consensus scan: %.1fs | speedups: original ~%.0fx, consensus ~%.0fx"
 ),
 inflect_scan_seconds, legacy_inflect_scan_seconds, consensus_scan_seconds,

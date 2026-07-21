@@ -19,9 +19,16 @@ source_pkg_file <- function(file, envir = globalenv()) {
   sys.source(file.path(pkg_root, "R", file), envir = envir)
 }
 
-make_fake_flowsom <- function(values, cols_used = seq_len(ncol(values))) {
+make_fake_flowsom <- function(values,
+                              cols_used = seq_len(ncol(values)),
+                              n_nodes = 1L) {
   values <- as.matrix(values)
+  n_nodes <- as.integer(n_nodes)
+  if (length(n_nodes) != 1L || is.na(n_nodes) || n_nodes < 1L) {
+    stop("`n_nodes` must be a positive integer", call. = FALSE)
+  }
   mapping <- matrix(rep(1L, nrow(values)), ncol = 1)
+  codes <- values[rep(1L, n_nodes), , drop = FALSE]
   object <- list(
     data = values,
     scale = FALSE,
@@ -29,8 +36,8 @@ make_fake_flowsom <- function(values, cols_used = seq_len(ncol(values))) {
     map = list(
       colsUsed = cols_used,
       mapping = mapping,
-      nNodes = 1L,
-      codes = values[1, , drop = FALSE]
+      nNodes = n_nodes,
+      codes = codes
     )
   )
   class(object) <- "FlowSOM"

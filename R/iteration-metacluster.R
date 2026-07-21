@@ -1,10 +1,8 @@
 #' @title Run iterative metaclustering on SOM-clustered objects
 #'
-#' @description Metaclustering runs are determined for all cluster numbers in
-#' `set.i`. In the original INFLECT workflow, each requested k was handled as a
-#' separate scan point. fastINFLECT computes the Ward.D2 hierarchy once and cuts
-#' it for all requested cluster numbers, preserving the hierarchical strategy
-#' while avoiding repeated work.
+#' @description Computes metaclusterings for all cluster numbers in `set.i`.
+#' The Ward.D2 hierarchy is built once from the SOM codebook and then cut at
+#' each requested k, rather than recomputing a separate clustering per k.
 #'
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Vector containing either the desired iterations to be tested

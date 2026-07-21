@@ -2,12 +2,12 @@
 % Please edit documentation in R/Lfunction.R
 \name{Lfunction}
 \alias{Lfunction}
-\title{Lfunction for determing Inflection Point}
+\title{Lfunction for determining Inflection Point}
 \usage{
 Lfunction(totaldataframe, cutoff = 1000, plot = FALSE)
 }
 \arguments{
-\item{totaldataframe}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}. This can be the calculcated points collection.U or the fitted curve.}
+\item{totaldataframe}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}. This can be the calculated points collection.U or the fitted curve.}
 
 \item{cutoff}{Integer. Initial Inflection Point calculated on the entire curve is multiplied by \code{cutoff} to determine the new range of the curve that is used as input for \code{\link{leastError}}}
 
@@ -17,7 +17,7 @@ Lfunction(totaldataframe, cutoff = 1000, plot = FALSE)
 \code{list} with 3 items: Inflection Point, the endpoint of the second touchline, and the angle between the two touchlines
 }
 \description{
-Wrapper function for \code{\link{leastError}} with an option for refining the Inflection Point, by limiting the range of of points to evaluate for fitting line errors. Default is to not use the refinement.
+Wrapper around \code{\link{leastError}} with an option to refine the Inflection Point by limiting the range of points evaluated for fitting line errors. Refinement is disabled by default.
 }
 \seealso{
 \code{\link{INFLECT}} , \code{\link{QC.to.curve}},\code{\link{leastError}}

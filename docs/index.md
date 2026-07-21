@@ -1,18 +1,17 @@
-# GarciaVallejoLab
-
-Repository for projects developed within the lab of JJ. Garcia-Vallejo
-
-## fastINFLECT
+# fastINFLECT
 
 Fast quality control and determination of optimal k for FlowSOM and
-kohonen high-dimensional SOM clustering data. fastINFLECT is a fast
-reimplementation of the original INFLECT package: it keeps the same
-central method of scanning metaclusterings for marker unimodality and
-locating the inflection point, while replacing the expensive repeated
-per-k QC loop with memoised hierarchy cuts, faster dip-test p-value
-lookup, and small compiled accelerators. On the fitted curve of this
-unimodality score fastINFLECT determines the point where unimodality
-stops increasing for greater numbers of clusters.
+kohonen high-dimensional SOM clustering data.
+
+fastINFLECT is a fast reimplementation of the original INFLECT package:
+it keeps the same central method of scanning metaclusterings for marker
+unimodality and locating the inflection point, while replacing the
+expensive repeated per-k QC loop with memoised hierarchy cuts, faster
+dip-test p-value lookup, and small compiled accelerators. On the fitted
+curve of this unimodality score fastINFLECT determines the point where
+unimodality stops increasing for greater numbers of clusters.
+
+This repository is developed within the lab of JJ. Garcia-Vallejo.
 
 ### Relationship to original INFLECT
 

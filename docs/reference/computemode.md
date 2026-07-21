@@ -1,7 +1,7 @@
-# Internal - Returns the mode of a numeric vector
+# Estimate the mode of a numeric vector
 
-This function is used internally to determine the mode of a numeric
-vector. Adapted from SPADEVizR
+Estimates the mode of a numeric vector from a Gaussian kernel density
+curve. Adapted from SPADEVizR.
 
 ## Usage
 

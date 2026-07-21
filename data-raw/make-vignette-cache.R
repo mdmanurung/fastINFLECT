@@ -24,6 +24,30 @@ existing_cache_path <- file.path("inst", "extdata", "vignette_cache.rds")
 existing_cache <- if (file.exists(existing_cache_path)) readRDS(existing_cache_path) else NULL
 refresh_cache <- identical(Sys.getenv("FASTINFLECT_REFRESH_VIGNETTE_CACHE"), "1")
 
+pkg_version <- function(pkg) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    as.character(utils::packageVersion(pkg))
+  } else {
+    NA_character_
+  }
+}
+
+object_hash <- function(object) {
+  path <- tempfile(fileext = ".rds")
+  on.exit(unlink(path), add = TRUE)
+  saveRDS(object, path, version = 2, compress = FALSE)
+  unname(tools::md5sum(path))
+}
+
+file_hashes <- function(paths) {
+  paths <- paths[file.exists(paths)]
+  stats::setNames(unname(tools::md5sum(paths)), paths)
+}
+
+cache_provenance_matches <- function(cache, provenance) {
+  is.list(cache) && identical(cache$cache_provenance, provenance)
+}
+
 # ── 1. Load the bundled dataset ──────────────────────────────────────────────
 message("Loading Levine32sample dataset...")
 data_path <- system.file("extdata", "Levine32sample.Rdata", package = "fastINFLECT")
@@ -113,9 +137,36 @@ bin_cluster_quality <- function(cluster_quality_df) {
 
 # ── 3. Sweep k = 5:25 for consensus and hierarchical ─────────────────────────
 k_range <- 5:25
+cache_provenance <- list(
+  dataset_hash = object_hash(list(
+    data = dataset$data,
+    mapping = dataset$map$mapping,
+    colsUsed = dataset$map$colsUsed
+  )),
+  codes_hash = object_hash(codes),
+  k_range = k_range,
+  seed = 42L,
+  package_versions = list(
+    fastINFLECT = getFromNamespace("inflect_package_version", "fastINFLECT")(),
+    FlowSOM = pkg_version("FlowSOM"),
+    diptest = pkg_version("diptest"),
+    ConsensusClusterPlus = pkg_version("ConsensusClusterPlus")
+  ),
+  source_hashes = file_hashes(c(
+    "R/som-adapter.R",
+    "R/inflect-qc-core.R",
+    "R/FlowSOM-QC.R",
+    "R/iteration-QC.R",
+    "R/iteration-metacluster.R",
+    "R/INFLECT.R",
+    "data-raw/make-vignette-cache.R"
+  ))
+)
+
 if (!is.null(existing_cache) && !refresh_cache &&
+    cache_provenance_matches(existing_cache, cache_provenance) &&
     all(c("comparison_df", "autok_point", "inflect", "mp_plot") %in% names(existing_cache))) {
-  message("Reusing existing vignette sweep cache. Set FASTINFLECT_REFRESH_VIGNETTE_CACHE=1 to retime.")
+  message("Reusing existing vignette sweep cache with matching provenance. Set FASTINFLECT_REFRESH_VIGNETTE_CACHE=1 to retime.")
   comparison_df <- existing_cache$comparison_df
   autok_point <- existing_cache$autok_point
   inflect_res <- existing_cache$inflect
@@ -217,6 +268,7 @@ cluster_quality_bins <- bin_cluster_quality(cluster_quality_df)
 
 # ── 7. Save the cache ─────────────────────────────────────────────────────────
 cache <- list(
+  cache_provenance = cache_provenance,
   comparison_df = comparison_df,
   autok_point   = autok_point,
   inflect       = inflect_res,
@@ -225,7 +277,15 @@ cache <- list(
   cluster_quality_summary = cluster_quality_summary,
   cluster_quality_bins = cluster_quality_bins,
   k_range       = k_range,
-  session_info  = sessionInfo()
+  machine = list(
+    cores = parallel::detectCores(),
+    sysname = Sys.info()[["sysname"]],
+    r_version = R.version.string,
+    inflect_version = cache_provenance$package_versions$fastINFLECT,
+    flowsom_version = cache_provenance$package_versions$FlowSOM,
+    diptest_version = cache_provenance$package_versions$diptest,
+    consensusclusterplus_version = cache_provenance$package_versions$ConsensusClusterPlus
+  )
 )
 
 out_path <- existing_cache_path

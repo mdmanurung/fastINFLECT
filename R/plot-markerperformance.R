@@ -1,14 +1,13 @@
 #' @title Plot marker performance across metaclustering results
 #'
 #' @description Plots the marker performance across metaclusterings in a boxplot. Performance score is the percentage of clusters
-#' where a marker passed the \link[diptest]{dip.test} and IQR test per metaclustering. Information is displayed in a boxplot,
-#' color gradient denotes \code{set.i} .
+#' where a marker passed the \link[diptest]{dip.test} and IQR test per metaclustering. The color gradient denotes \code{set.i}.
 #'
 #' @param inflect.results A inflect.results object resulting from \code{\link{INFLECT}}.
 #' @param ggtitle Optional. Character string to plot as title.
 #' @param markers Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.
 #'
-#' @return \code{list} with 2 items. First is the melted dataframe with the marker performance (\%) per marker per metaclustering. Second is a ggplot object, a boxplot with marker
+#' @return \code{list} with 2 items. First is the melted dataframe with the marker performance percentage per marker per metaclustering. Second is a ggplot object, a boxplot with marker
 #' performance on the y-axis, markers on the x-axis and the color scale denoting the amount of metaclusters evaluated.
 #'
 #' @examples

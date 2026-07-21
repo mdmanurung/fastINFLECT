@@ -149,6 +149,44 @@
   p
 }
 
+.inflect_validate_max_n_diptest <- function(max.n) {
+  if (is.null(max.n)) {
+    return(NULL)
+  }
+  if (length(max.n) != 1L ||
+      !is.numeric(max.n) ||
+      is.na(max.n) ||
+      !is.finite(max.n) ||
+      max.n < 4L ||
+      max.n != as.integer(max.n)) {
+    stop("`max.n.diptest` must be NULL or a single integer >= 4.", call. = FALSE)
+  }
+  as.integer(max.n)
+}
+
+.inflect_normalize_metaclustering <- function(metaclustering,
+                                              n_nodes,
+                                              label = "`metaclustering`") {
+  if (!is.integer(metaclustering)) {
+    stop(label, " must be an integer vector", call. = FALSE)
+  }
+  if (length(metaclustering) != n_nodes) {
+    stop(label, " must contain one entry per SOM node", call. = FALSE)
+  }
+  if (anyNA(metaclustering)) {
+    stop(label, " must not contain missing values", call. = FALSE)
+  }
+  if (any(metaclustering < 1L)) {
+    stop(label, " labels must be positive integers", call. = FALSE)
+  }
+
+  labels <- sort(unique(metaclustering))
+  if (!identical(labels, seq_len(max(labels)))) {
+    metaclustering <- match(metaclustering, labels)
+  }
+  as.integer(metaclustering)
+}
+
 ## Apply the zeroes.in rule exactly as FlowSOMQC did: drop non-positive values and,
 ## if fewer than five positives remain, left-pad with zeros back up to five.
 .inflect_marker_expression <- function(values, zeroes.in) {
@@ -225,12 +263,14 @@
   do_iqr <- uniform.test != "unimodality"
   for (j in seq_along(markers)) {
     me <- .inflect_marker_expression(expr[, j], zeroes.in)
-    if (!is.null(subsample)) {
-      me <- .inflect_maybe_subsample(me, subsample, seed + j)
-    }
     uniform <- TRUE
     if (do_dip) {
-      uniform <- p_of(me) >= th.pvalue
+      me_dip <- if (!is.null(subsample)) {
+        .inflect_maybe_subsample(me, subsample, seed + j)
+      } else {
+        me
+      }
+      uniform <- p_of(me_dip) >= th.pvalue
     }
     ## `uniform && (iqr < th)` is FALSE whenever `uniform` is already FALSE, so
     ## skipping the (sorting) IQR call in that case is exact, not an approximation.

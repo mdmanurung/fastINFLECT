@@ -1,6 +1,6 @@
-#' @title Metaclustering function based on hierarchical clustering
+#' @title Hierarchical (Ward) metaclustering of SOM codes
 #'
-#' @description Orphaned function from FlowSOM, imported here.
+#' @description Performs hierarchical metaclustering of SOM cluster codes using Ward's D2 linkage, adapted from FlowSOM.
 #'
 #' @param data Matrix with the median values for each clustering parameter for all SOM clusters.
 #' @param nClus Amount of metaclusters to be obtained.

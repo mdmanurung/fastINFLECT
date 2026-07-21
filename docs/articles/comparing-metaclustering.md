@@ -417,9 +417,10 @@ targeted gating.
 knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```
 
-| Component   | Version |
-| :---------- | :------ |
-| R           | 4.5.1   |
-| fastINFLECT | 1.0.0   |
-| FlowSOM     | 2.18.0  |
-| diptest     | 0.77.2  |
+| Component            | Version                      |
+| :------------------- | :--------------------------- |
+| R                    | R version 4.5.1 (2025-06-13) |
+| fastINFLECT          | 1.0.0                        |
+| FlowSOM              | 2.18.0                       |
+| diptest              | 0.77.2                       |
+| ConsensusClusterPlus | 1.74.0                       |

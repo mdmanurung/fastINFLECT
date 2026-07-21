@@ -2,7 +2,7 @@
 % Please edit documentation in R/computemode.R
 \name{computemode}
 \alias{computemode}
-\title{Internal - Returns the mode of a numeric vector}
+\title{Estimate the mode of a numeric vector}
 \usage{
 computemode(x)
 }
@@ -13,5 +13,5 @@ computemode(x)
 a list with 2 numeric values specifying the mode "x" and it associated density "y"
 }
 \description{
-This function is used internally to determine the mode of a numeric vector. Adapted from \pkg{SPADEVizR}
+Estimates the mode of a numeric vector from a Gaussian kernel density curve. Adapted from \pkg{SPADEVizR}.
 }

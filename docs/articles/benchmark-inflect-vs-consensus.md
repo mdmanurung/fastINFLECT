@@ -39,7 +39,7 @@ inflect_res <- INFLECT(dataset, set.i = 5:25, multicore = FALSE, zeroes.in = FAL
 
 ``` r
 # Original INFLECT pattern: one FlowSOMQC-style score per k, using dip.test()
-# inside every cluster-marker cell. The benchmark projects this cost from sampled
+# inside every cluster-marker cell. The benchmark estimates this cost from sampled
 # original cells because a full old-engine run is intentionally slow.
 ml <- iteration.metacluster(dataset, set.i = 5:25, multicore = FALSE)
 legacy_qc <- lapply(5:25, function(k) {
@@ -57,6 +57,9 @@ for (k in 5:25) mc_k <- metaClustering_consensus(codes, k = k, seed = 42)
 # (b) Amortized: a single ConsensusClusterPlus run to maxK yields every k at once
 #     (this is what (a) slices internally). The fairest consensus baseline.
 ccp <- ConsensusClusterPlus::ConsensusClusterPlus(t(codes), maxK = 25, seed = 42,
+                                                  reps = 100, pItem = 0.9,
+                                                  pFeature = 1, clusterAlg = "hc",
+                                                  distance = "euclidean",
                                                   plot = NULL, verbose = FALSE)
 # ... score ccp[[k]]$consensusClass for each k ...
 ```
@@ -67,14 +70,15 @@ ccp <- ConsensusClusterPlus::ConsensusClusterPlus(t(codes), maxK = 25, seed = 42
 
 Time to scan `k = 5:25` (21 values) and obtain a quality score at every
 k. Both consensus variants produce identical partitions; only their cost
-differs. The original-INFLECT bar is a conservative projection from 168
-sampled original `dip.test()` cluster-marker cells and excludes small
-metaclustering and curve-fit overhead.
+differs. The original-INFLECT bar is an estimate from 168 sampled
+original `dip.test()` cluster-marker cells; the cache records its
+sampling standard error, and the estimate excludes small metaclustering
+and curve-fit overhead.
 
 ``` r
 rt <- data.frame(
   method = c("fastINFLECT 1.0",
-             "Original INFLECT\n(projected)",
+             "Original INFLECT\n(estimated)",
              "FlowSOM consensus\n(single run)",
              "FlowSOM consensus\n(per-k convenience)"),
   seconds = c(cache$totals$inflect_scan_seconds,
@@ -99,25 +103,25 @@ ggplot(rt, aes(x = seconds, y = method, fill = engine)) +
   theme_minimal(base_size = 11)
 ```
 
-![Wall-clock to scan k = 5:25. fastINFLECT evaluates every distinct
-SOM-node subtree once and reuses it across all k. Original INFLECT is
-projected from sampled original dip.test cells. A single
-ConsensusClusterPlus run is the fair consensus baseline; calling
-metaClustering\_consensus() per k repeats that work 21
+![Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every
+distinct SOM-node subtree once and reuses it across all k. Original
+INFLECT is estimated from sampled original dip.test cells. A single
+ConsensusClusterPlus run plus QC scoring is the fair consensus baseline;
+calling metaClustering\_consensus() per k repeats that work 21
 times.](benchmark-inflect-vs-consensus_files/figure-html/runtime-bar-1.png)
 
-Wall-clock to scan k = 5:25. fastINFLECT evaluates every distinct
-SOM-node subtree once and reuses it across all k. Original INFLECT is
-projected from sampled original dip.test cells. A single
-ConsensusClusterPlus run is the fair consensus baseline; calling
-metaClustering\_consensus() per k repeats that work 21 times.
+Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every
+distinct SOM-node subtree once and reuses it across all k. Original
+INFLECT is estimated from sampled original dip.test cells. A single
+ConsensusClusterPlus run plus QC scoring is the fair consensus baseline;
+calling metaClustering\_consensus() per k repeats that work 21 times.
 
 fastINFLECT scans the whole range in **1.4 s**. The original INFLECT
-loop is projected at **226.7 s** (**162×** slower). The fair consensus
-baseline — one ConsensusClusterPlus run — takes **56.7 s** (**41×**
-slower), and the common per-k convenience pattern takes **500.4 s**
-(**358×** slower). fastINFLECT is the cheapest and is the only one that
-also returns a recommended k.
+loop is estimated at **340.2 s** (SE **25.3 s**) (**252×** slower). The
+fair consensus baseline — one ConsensusClusterPlus run — takes **62.9
+s** (**47×** slower), and the common per-k convenience pattern takes
+**677.9 s** (**502×** slower). fastINFLECT is the cheapest and is the
+only one that also returns a recommended k.
 
 -----
 
@@ -350,8 +354,8 @@ score.
 ## Conclusion
 
 For the practical task of scanning k to choose a metaclustering,
-fastINFLECT is both **much faster** — about 162× faster than the
-original INFLECT loop in this cache, and 358× faster than the common
+fastINFLECT is both **much faster** — about 252× faster than the
+original INFLECT loop in this cache, and 502× faster than the common
 per-k consensus pattern — and **more decisive**, returning an objective
 recommended k on the same unimodality metric used to judge every method.
 Consensus metaclustering remains a reasonable way to *build* a partition
@@ -364,9 +368,10 @@ to *choose* that k.
 knitr::kable(vignette_reproducibility(), align = c("l", "l"))
 ```
 
-| Component   | Version |
-| :---------- | :------ |
-| R           | 4.5.1   |
-| fastINFLECT | 1.0.0   |
-| FlowSOM     | 2.18.0  |
-| diptest     | 0.77.2  |
+| Component            | Version                      |
+| :------------------- | :--------------------------- |
+| R                    | R version 4.5.1 (2025-06-13) |
+| fastINFLECT          | 1.0.0                        |
+| FlowSOM              | 2.18.0                       |
+| diptest              | 0.77.2                       |
+| ConsensusClusterPlus | 1.74.0                       |

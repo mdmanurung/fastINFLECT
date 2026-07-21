@@ -1,9 +1,9 @@
 # Determine kneepoint based on minimizing fitting errors
 
 Evaluates the errors for two fitted lines on both parts of a collection
-of points. Function calculates the errors for a split on each element
-and selects the one with least amount of error. Internal function of
-`Lfunction`
+of points. The helper calculates the error for each possible split and
+selects the split with the smallest combined error. This is the split
+criterion used by `Lfunction`.
 
 ## Usage
 

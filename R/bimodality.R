@@ -7,7 +7,7 @@
 #' BC lies in \code{(0, 1]}; the benchmark \code{5/9} (about 0.555) is the value for a
 #' uniform distribution, and larger values indicate a more bimodal shape.
 #'
-#' BC is offered as a lightweight, size-robust diagnostic that complements the dip
+#' BC is a size-robust diagnostic that complements the dip
 #' test used for the fastINFLECT unimodality score inherited from the original
 #' INFLECT method. It is deliberately \emph{not} the
 #' default QC statistic: because it is driven by skewness and kurtosis it can

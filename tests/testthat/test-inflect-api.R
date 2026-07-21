@@ -62,9 +62,9 @@ test_that("INFLECT forwards QC arguments and returns an inflect.results object",
 
   fake <- make_fake_flowsom(
     matrix(rep(1:10, 2), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
-    cols_used = 1
+    cols_used = 1,
+    n_nodes = 40L
   )
-  fake$map$nNodes <- 40L
   expected_set_i <- as.integer(c(5:7, 12, 17, 27))
   result <- suppressWarnings(env$INFLECT(
     fake,

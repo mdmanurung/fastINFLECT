@@ -80,6 +80,34 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"kohonen"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h3>
+<p>fastINFLECT ships a downsampled Levine32 FlowSOM object. Load it, scan a range of metacluster counts, and read off the recommended k.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/fastINFLECT">fastINFLECT</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Bundled FlowSOM object: 375 SOM nodes, 32,288 events, 32 markers</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Levine32sample.Rdata"</span>, package <span class="op">=</span> <span class="st">"fastINFLECT"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
+<span>  FlowSOM.results <span class="op">=</span> <span class="va">dataset</span>,</span>
+<span>  set.i           <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">20</span>,</span>
+<span>  multicore       <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  zeroes.in       <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/INFLECT.html">INFLECT()</a></code> scans every k in <code>set.i</code> in a few seconds and returns an <code>inflect.results</code> object. Its <code>selection</code> table reports three recommended cluster counts: the LL.4 inflection point, the kneedle knee, and the smallest k that reaches the target unimodality.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results</span><span class="op">$</span><span class="va">selection</span></span>
+<span><span class="co">#&gt;       method  k unimodality_at_k target</span></span>
+<span><span class="co">#&gt; 1 inflection 11         96.02273     NA</span></span>
+<span><span class="co">#&gt; 2    kneedle  8         95.31250     NA</span></span>
+<span><span class="co">#&gt; 3  threshold  8         95.31250     95</span></span></code></pre></div>
+<p>The diagnostic curve and its inflection point are stored as a ggplot object:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results</span><span class="op">$</span><span class="va">ggplot</span></span></code></pre></div>
+<p>To see which markers still carry residual bimodal expression across the tested metaclusterings, use <code>marker.performance(results)</code>.</p>
+</div>
+<div class="section level3">
 <h3 id="relationship-to-original-inflect">Relationship to original INFLECT<a class="anchor" aria-label="anchor" href="#relationship-to-original-inflect"></a>
 </h3>
 <p>fastINFLECT is derived from the original INFLECT implementation developed by Jan Verhoeff in the lab of JJ. Garcia-Vallejo at the <a href="https://github.com/jnverhoeff/GarciaVallejoLab" class="external-link">GarciaVallejoLab</a>. The package keeps the original marker-unimodality idea and its public <code><a href="reference/INFLECT.html">INFLECT()</a></code> workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original algorithm fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.</p>

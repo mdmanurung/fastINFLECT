@@ -53,6 +53,9 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
@@ -68,7 +71,12 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>FlowSOM reduces a high-dimensional cytometry dataset to a Self-Organising Map (SOM) of a few hundred nodes, then <em>metaclusters</em> those nodes into a biologically interpretable number of clusters <em>k</em>. The central challenge is choosing k: too few clusters merge distinct populations; too many split them arbitrarily.</p>
+<p>FlowSOM reduces a high-dimensional cytometry dataset to a
+Self-Organising Map (SOM) of a few hundred nodes, then
+<em>metaclusters</em> those nodes into a biologically interpretable
+number of clusters <em>k</em>. The central challenge is choosing k: too
+few clusters merge distinct populations; too many split them
+arbitrarily.</p>
 <p>Three common strategies exist:</p>
 <table class="table">
 <colgroup>
@@ -82,31 +90,44 @@
 <tbody>
 <tr class="odd">
 <td><strong>FlowSOM consensus</strong></td>
-<td>User picks k; consensus clustering (ConsensusClusterPlus) cuts the SOM</td>
+<td>User picks k; consensus clustering (ConsensusClusterPlus) cuts the
+SOM</td>
 </tr>
 <tr class="even">
 <td><strong>FlowSOM auto-k</strong></td>
 <td>
-<code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> tests k = 2…max and picks the most stable k</td>
+<code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> tests k = 2…max and picks the most
+stable k</td>
 </tr>
 <tr class="odd">
 <td><strong>Hierarchical (ward.D2)</strong></td>
-<td>User picks k; <code>hclust</code> + <code>cutree</code> cuts the SOM</td>
+<td>User picks k; <code>hclust</code> + <code>cutree</code> cuts the
+SOM</td>
 </tr>
 <tr class="even">
 <td><strong>fastINFLECT</strong></td>
-<td>Sweeps k; fits a unimodality curve; picks the inflection point automatically</td>
+<td>Sweeps k; fits a unimodality curve; picks the inflection point
+automatically</td>
 </tr>
 </tbody>
 </table>
-<p>fastINFLECT provides an <strong>objective, marker-level quality score</strong>: for each metaclustering it measures what fraction of (cluster, marker) combinations follow a unimodal distribution – the assumption underlying cluster identity. As k increases, unimodality rises then plateaus; the inflection point of that curve is fastINFLECT’s recommendation.</p>
-<p>This vignette applies all four strategies to the same SOM and compares their results using this common metric.</p>
+<p>fastINFLECT provides an <strong>objective, marker-level quality
+score</strong>: for each metaclustering it measures what fraction of
+(cluster, marker) combinations follow a unimodal distribution, the
+assumption underlying cluster identity. As k increases, unimodality
+rises then plateaus; the inflection point of that curve is fastINFLECT’s
+recommendation.</p>
+<p>This vignette applies all four strategies to the same SOM and
+compares their results using this common metric.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
 </h2>
-<p>The package ships a downsampled version of the Levine <em>et al.</em> 2015 CyTOF dataset (Levine32). It contains 32,288 bone-marrow cells measured across 32 surface markers and pre-processed into a FlowSOM object with <strong>375 SOM nodes</strong>.</p>
+<p>The package ships a downsampled version of the Levine <em>et al.</em>
+2015 CyTOF dataset (Levine32). It contains 32,288 bone-marrow cells
+measured across 32 surface markers and pre-processed into a FlowSOM
+object with <strong>375 SOM nodes</strong>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/fastINFLECT">fastINFLECT</a></span><span class="op">)</span></span>
 <span></span>
@@ -123,11 +144,15 @@
 <div class="section level2">
 <h2 id="four-ways-to-cut-the-som">Four ways to cut the SOM<a class="anchor" aria-label="anchor" href="#four-ways-to-cut-the-som"></a>
 </h2>
-<p>All four approaches operate on <code>dataset$map$codes</code>, the 375 × 32 matrix of SOM node prototypes. They each return an integer vector of length 375 assigning every node to a metacluster.</p>
+<p>All four approaches operate on <code>dataset$map$codes</code>, the
+375 × 32 matrix of SOM node prototypes. They each return an integer
+vector of length 375 assigning every node to a metacluster.</p>
 <div class="section level3">
 <h3 id="flowsom-consensus-metaclustering-fixed-k">1. FlowSOM consensus metaclustering (fixed k)<a class="anchor" aria-label="anchor" href="#flowsom-consensus-metaclustering-fixed-k"></a>
 </h3>
-<p>FlowSOM’s default metaclustering uses ConsensusClusterPlus to build a stable partitioning at a user-supplied k. Here we use k = 10 as a representative choice:</p>
+<p>FlowSOM’s default metaclustering uses ConsensusClusterPlus to build a
+stable partitioning at a user-supplied k. Here we use k = 10 as a
+representative choice:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.r-project.org" class="external-link">FlowSOM</a></span><span class="op">)</span></span>
 <span></span>
@@ -140,7 +165,8 @@
 <div class="section level3">
 <h3 id="flowsom-auto-k-metaclustering">2. FlowSOM auto-k metaclustering<a class="anchor" aria-label="anchor" href="#flowsom-auto-k-metaclustering"></a>
 </h3>
-<p><code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> sweeps k from 2 to a maximum and selects the most internally stable solution:</p>
+<p><code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> sweeps k from 2 to a maximum and
+selects the most internally stable solution:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mc_autok</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering</a></span><span class="op">(</span></span>
 <span>  data   <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">codes</span>,</span>
@@ -151,9 +177,12 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Auto-k chose: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">mc_autok</span><span class="op">)</span><span class="op">)</span>, <span class="st">" metaclusters"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="hierarchical-clustering-ward-d2-fixed-k">3. Hierarchical clustering — ward.D2 (fixed k)<a class="anchor" aria-label="anchor" href="#hierarchical-clustering-ward-d2-fixed-k"></a>
+<h3 id="hierarchical-clustering-ward-d2-fixed-k">3. Hierarchical clustering, ward.D2 (fixed k)<a class="anchor" aria-label="anchor" href="#hierarchical-clustering-ward-d2-fixed-k"></a>
 </h3>
-<p>fastINFLECT’s exported <code><a href="../reference/metaClusteringhclust.html">metaClusteringhclust()</a></code> wraps <code>hclust(dist(..., "minkowski"), "ward.D2")</code> and <code>cutree</code> at k. This is also the engine that fastINFLECT uses internally at each sweep point:</p>
+<p>fastINFLECT’s exported <code><a href="../reference/metaClusteringhclust.html">metaClusteringhclust()</a></code> wraps
+<code>hclust(dist(..., "minkowski"), "ward.D2")</code> and
+<code>cutree</code> at k. This is also the engine that fastINFLECT uses
+internally at each sweep point:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mc_hclust</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/metaClusteringhclust.html">metaClusteringhclust</a></span><span class="op">(</span></span>
 <span>  data  <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">codes</span>,</span>
@@ -161,9 +190,11 @@
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="fastinflect-automatic-inflection-point-selection">4. fastINFLECT – automatic inflection-point selection<a class="anchor" aria-label="anchor" href="#fastinflect-automatic-inflection-point-selection"></a>
+<h3 id="fastinflect-automatic-inflection-point-selection">4. fastINFLECT: automatic inflection-point selection<a class="anchor" aria-label="anchor" href="#fastinflect-automatic-inflection-point-selection"></a>
 </h3>
-<p><code><a href="../reference/INFLECT.html">INFLECT()</a></code> sweeps <code>set.i</code>, scores unimodality at each k via <code>FlowSOMQC</code>, fits a four-parameter log-logistic curve, and returns the knee of that curve as its recommended k:</p>
+<p><code><a href="../reference/INFLECT.html">INFLECT()</a></code> sweeps <code>set.i</code>, scores unimodality
+at each k via <code>FlowSOMQC</code>, fits a four-parameter log-logistic
+curve, and returns the knee of that curve as its recommended k:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">inflect_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
 <span>  FlowSOM.results <span class="op">=</span> <span class="va">dataset</span>,</span>
@@ -178,12 +209,16 @@
 <div class="section level2">
 <h2 id="fastinflect-diagnostic-curve">fastINFLECT diagnostic curve<a class="anchor" aria-label="anchor" href="#fastinflect-diagnostic-curve"></a>
 </h2>
-<p>The diagnostic curve shows how unimodality improves as k increases. The vertical dashed line marks the inflection point – where the curve stops rising – and gives fastINFLECT’s recommended k.</p>
+<p>The diagnostic curve shows how unimodality improves as k increases.
+The vertical dashed line marks the inflection point, where the curve
+stops rising, and gives fastINFLECT’s recommended k.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">ggplot</span></span></code></pre></div>
 <div class="figure">
 <img src="comparing-metaclustering_files/figure-html/inflect-plot-1.png" class="r-plt" alt="fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the red curve is the fitted LL.4 model; the dashed vertical line is the inflection point (knee)." width="100%"><p class="caption">
-fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the red curve is the fitted LL.4 model; the dashed vertical line is the inflection point (knee).
+fastINFLECT diagnostic curve. Each point is the unimodality score at
+that k; the red curve is the fitted LL.4 model; the dashed vertical line
+is the inflection point (knee).
 </p>
 </div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -194,13 +229,18 @@ fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the
 <span><span class="co">#&gt; 1        32         both      0.05      2     FALSE    Curve           1.0.0</span></span>
 <span><span class="co">#&gt;   k_inflection k_kneedle k_threshold</span></span>
 <span><span class="co">#&gt; 1           12         8           8</span></span></code></pre></div>
-<p>The <code>knee</code> column is fastINFLECT’s recommended number of metaclusters. <code>range</code> is the fitted plateau level (maximum expected unimodality); <code>angle</code> is the sharpness of the curve bend.</p>
+<p>The <code>knee</code> column is fastINFLECT’s recommended number of
+metaclusters. <code>range</code> is the fitted plateau level (maximum
+expected unimodality); <code>angle</code> is the sharpness of the curve
+bend.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="head-to-head-comparison">Head-to-head comparison<a class="anchor" aria-label="anchor" href="#head-to-head-comparison"></a>
 </h2>
-<p>We score every method on the same unimodality metric: the percentage of (cluster, marker) pairs that pass fastINFLECT’s QC test (dip test + IQR spread). Higher is better.</p>
+<p>We score every method on the same unimodality metric: the percentage
+of (cluster, marker) pairs that pass fastINFLECT’s QC test (dip test +
+IQR spread). Higher is better.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">knee</span>    <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">lfunction</span><span class="op">$</span><span class="va">knee</span></span>
 <span><span class="va">autok</span>   <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">autok_point</span></span>
@@ -241,7 +281,9 @@ fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the
 <span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span></code></pre></div>
 <div class="figure">
 <img src="comparing-metaclustering_files/figure-html/comparison-plot-1.png" class="r-plt" alt="Unimodality score across k for each fixed-k strategy. The dashed vertical line marks fastINFLECT's chosen knee; the triangle shows FlowSOM auto-k's chosen k and its unimodality score." width="100%"><p class="caption">
-Unimodality score across k for each fixed-k strategy. The dashed vertical line marks fastINFLECT’s chosen knee; the triangle shows FlowSOM auto-k’s chosen k and its unimodality score.
+Unimodality score across k for each fixed-k strategy. The dashed
+vertical line marks fastINFLECT’s chosen knee; the triangle shows
+FlowSOM auto-k’s chosen k and its unimodality score.
 </p>
 </div>
 <div class="section level3">
@@ -295,6 +337,12 @@ Unimodality score across k for each fixed-k strategy. The dashed vertical line m
 <span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">tbl</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
+<colgroup>
+<col width="27%">
+<col width="34%">
+<col width="19%">
+<col width="19%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">Method</th>
 <th align="left">k selection</th>
@@ -328,14 +376,26 @@ Unimodality score across k for each fixed-k strategy. The dashed vertical line m
 </tr>
 </tbody>
 </table>
-<p>For fixed-k methods the table reports their <strong>best</strong> unimodality across the entire sweep — the score they would achieve if a user happened to choose the optimal k. Automatic methods are shown at their own selected k. This highlights that even under the best-case assumption for manual selection, the automatic methods (especially fastINFLECT) reach competitive or superior scores without requiring the user to know the right k in advance.</p>
+<p>For fixed-k methods the table reports their <strong>best</strong>
+unimodality across the entire sweep, the score they would achieve if a
+user happened to choose the optimal k. Automatic methods are shown at
+their own selected k. Even under the best-case assumption for manual
+selection, the automatic methods (especially fastINFLECT) reach
+competitive or superior scores without requiring the user to know the
+right k in advance.</p>
 <hr>
 </div>
 </div>
 <div class="section level2">
 <h2 id="all-cluster-quality-histograms">All-cluster quality histograms<a class="anchor" aria-label="anchor" href="#all-cluster-quality-histograms"></a>
 </h2>
-<p>A global score can hide whether a method leaves a few poor metaclusters behind. The plot below treats each generated metacluster as one observation and asks: what percentage of evaluated markers pass the unimodality/IQR QC inside that cluster? The FlowSOM consensus and hierarchical examples use the representative fixed <code>k = 10</code> shown above; FlowSOM auto-k uses its selected k; fastINFLECT is shown at both the original inflection criterion and the threshold criterion.</p>
+<p>A global score can hide whether a method leaves a few poor
+metaclusters behind. The plot below treats each generated metacluster as
+one observation and asks: what percentage of evaluated markers pass the
+unimodality/IQR QC inside that cluster? The FlowSOM consensus and
+hierarchical examples use the representative fixed <code>k = 10</code>
+shown above; FlowSOM auto-k uses its selected k; fastINFLECT is shown at
+both the original inflection criterion and the threshold criterion.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cq_bins</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">cluster_quality_bins</span></span>
 <span><span class="va">cq</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">cluster_quality_df</span></span>
@@ -364,7 +424,10 @@ Unimodality score across k for each fixed-k strategy. The dashed vertical line m
 <span>  <span class="fu">theme</span><span class="op">(</span>panel.grid.minor <span class="op">=</span> <span class="fu">element_blank</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="comparing-metaclustering_files/figure-html/cluster-quality-hist-1.png" class="r-plt" alt="Distribution of per-metacluster unimodality on the Levine32 dataset. Each bar is the fraction of metaclusters whose marker-level QC pass rate falls in that 10-point bin. Dashed lines mark the median cluster-level score for each method." width="100%"><p class="caption">
-Distribution of per-metacluster unimodality on the Levine32 dataset. Each bar is the fraction of metaclusters whose marker-level QC pass rate falls in that 10-point bin. Dashed lines mark the median cluster-level score for each method.
+Distribution of per-metacluster unimodality on the Levine32 dataset.
+Each bar is the fraction of metaclusters whose marker-level QC pass rate
+falls in that 10-point bin. Dashed lines mark the median cluster-level
+score for each method.
 </p>
 </div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -446,13 +509,20 @@ Distribution of per-metacluster unimodality on the Levine32 dataset. Each bar is
 </tr>
 </tbody>
 </table>
-<p>This simple view is the direct cluster-quality audit: methods whose histograms shift toward 100% produce metaclusters where marker expression is more often unimodal across the full marker panel. The threshold readout is included because it is the fastINFLECT criterion that most directly encodes “avoid residual bimodal marker expression without over-clustering.”</p>
+<p>This simple view is the direct cluster-quality audit: methods whose
+histograms shift toward 100% produce metaclusters where marker
+expression is more often unimodal across the full marker panel. The
+threshold readout is included because it is the fastINFLECT criterion
+that most directly encodes “avoid residual bimodal marker expression
+without over-clustering.”</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="per-marker-performance">Per-marker performance<a class="anchor" aria-label="anchor" href="#per-marker-performance"></a>
 </h2>
-<p>Which markers are hardest to resolve? <code><a href="../reference/marker.performance.html">marker.performance()</a></code> shows, for each marker, the fraction of metaclusters where that marker passes QC across the full sweep.</p>
+<p>Which markers are hardest to resolve?
+<code><a href="../reference/marker.performance.html">marker.performance()</a></code> shows, for each marker, the fraction
+of metaclusters where that marker passes QC across the full sweep.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cache</span><span class="op">$</span><span class="va">mp_plot</span></span>
 <span><span class="co">#&gt; Warning: The following aesthetics were dropped during statistical transformation:</span></span>
@@ -463,25 +533,41 @@ Distribution of per-metacluster unimodality on the Levine32 dataset. Each bar is
 <span><span class="co">#&gt;   variable into a factor?</span></span></code></pre></div>
 <div class="figure">
 <img src="comparing-metaclustering_files/figure-html/marker-performance-1.png" class="r-plt" alt="Per-marker unimodality pass rate (%) across all tested metaclusterings. Points are individual metaclusterings coloured by k; boxes summarise the distribution. Markers with low pass rates are systematically multimodal and may warrant panel or gating review." width="100%"><p class="caption">
-Per-marker unimodality pass rate (%) across all tested metaclusterings. Points are individual metaclusterings coloured by k; boxes summarise the distribution. Markers with low pass rates are systematically multimodal and may warrant panel or gating review.
+Per-marker unimodality pass rate (%) across all tested metaclusterings.
+Points are individual metaclusterings coloured by k; boxes summarise the
+distribution. Markers with low pass rates are systematically multimodal
+and may warrant panel or gating review.
 </p>
 </div>
-<p>Markers that consistently score low across all k values are intrinsically multimodal in this dataset — they may reflect biphasic biology (e.g. dim vs. bright populations) that the SOM has not fully resolved, or technical artefacts worth revisiting.</p>
+<p>Markers that consistently score low across all k values are
+intrinsically multimodal in this dataset; they may reflect biphasic
+biology (e.g. dim vs. bright populations) that the SOM has not fully
+resolved, or technical artefacts worth revisiting.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>fastINFLECT automates the most subjective step in a FlowSOM workflow – choosing k – by fitting an objective quality curve to a unimodality score computed from the data itself. Compared with manual selection or rule-based auto-k approaches, the inflection-point criterion is:</p>
+<p>fastINFLECT automates the most subjective step in a FlowSOM workflow,
+choosing k, by fitting an objective quality curve to a unimodality score
+computed from the data itself. Compared with manual selection or
+rule-based auto-k approaches, the inflection-point criterion is:</p>
 <ul>
 <li>
-<strong>Interpretable</strong>: the diagnostic curve directly shows where cluster quality stops improving.</li>
+<strong>Interpretable</strong>: the diagnostic curve directly shows
+where cluster quality stops improving.</li>
 <li>
-<strong>Objective</strong>: no heuristics or stability measures; it quantifies the actual distributional quality of each marker within each metacluster.</li>
+<strong>Objective</strong>: no heuristics or stability measures; it
+quantifies the actual distributional quality of each marker within each
+metacluster.</li>
 <li>
-<strong>Reproducible</strong>: the same input SOM always produces the same recommended k.</li>
+<strong>Reproducible</strong>: the same input SOM always produces
+the same recommended k.</li>
 </ul>
-<p>For downstream analysis, call <code>plot(inflect_res)</code> for the diagnostic curve, <code>summary(inflect_res)</code> for a one-row results table, and <code>marker.performance(inflect_res)</code> to identify markers that may require targeted gating.</p>
+<p>For downstream analysis, call <code>plot(inflect_res)</code> for the
+diagnostic curve, <code>summary(inflect_res)</code> for a one-row
+results table, and <code>marker.performance(inflect_res)</code> to
+identify markers that may require targeted gating.</p>
 <hr>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu">vignette_reproducibility</span><span class="op">(</span><span class="op">)</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>

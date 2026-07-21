@@ -53,6 +53,9 @@
   </div>
 </nav><div class="container template-article">
 
+
+
+
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
@@ -68,7 +71,10 @@
 <div class="section level2">
 <h2 id="the-task-being-benchmarked">The task being benchmarked<a class="anchor" aria-label="anchor" href="#the-task-being-benchmarked"></a>
 </h2>
-<p>Choosing the number of metaclusters <em>k</em> for a FlowSOM/SOM requires <strong>scanning a range of k and judging cluster quality at each</strong>. This vignette benchmarks three ways of doing that on the same SOM:</p>
+<p>Choosing the number of metaclusters <em>k</em> for a FlowSOM/SOM
+requires <strong>scanning a range of k and judging cluster quality at
+each</strong>. This vignette benchmarks three ways of doing that on the
+same SOM:</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -83,24 +89,35 @@
 <tbody>
 <tr class="odd">
 <td><strong>Original INFLECT</strong></td>
-<td>scores each k independently with the original <code><a href="../reference/FlowSOMQC.html">FlowSOMQC()</a></code> / <code>dip.test()</code> loop</td>
+<td>scores each k independently with the original
+<code><a href="../reference/FlowSOMQC.html">FlowSOMQC()</a></code> / <code>dip.test()</code> loop</td>
 <td>automatic inflection</td>
 </tr>
 <tr class="even">
 <td><strong>FlowSOM consensus</strong></td>
-<td>run <code><a href="https://rdrr.io/pkg/FlowSOM/man/metaClustering_consensus.html" class="external-link">metaClustering_consensus()</a></code> (ConsensusClusterPlus) once per k</td>
+<td>run <code><a href="https://rdrr.io/pkg/FlowSOM/man/metaClustering_consensus.html" class="external-link">metaClustering_consensus()</a></code> (ConsensusClusterPlus)
+once per k</td>
 <td>left to the user</td>
 </tr>
 <tr class="odd">
 <td><strong>fastINFLECT</strong></td>
-<td>one memoised sweep that cuts the SOM’s hierarchy and scores marker unimodality</td>
+<td>one memoised sweep that cuts the SOM’s hierarchy and scores marker
+unimodality</td>
 <td>automatic (inflection / kneedle / unimodality threshold)</td>
 </tr>
 </tbody>
 </table>
-<p>The data is the bundled downsampled Levine <em>et al.</em> (2015) CyTOF dataset: a FlowSOM object with <strong>48-core</strong> timings on Linux, R version 4.5.1 (2025-06-13), fastINFLECT 1.0.0. Absolute times are machine-specific; the <em>ratios</em> are the point.</p>
+<p>The data is the bundled downsampled Levine <em>et al.</em> (2015)
+CyTOF dataset: a FlowSOM object with <strong>48-core</strong> timings on
+Linux, R version 4.5.1 (2025-06-13), fastINFLECT 1.0.0. Absolute times
+are machine-specific; the <em>ratios</em> are the point.</p>
 <blockquote>
-<p>The methods are not doing the same statistics — consensus clustering builds a stability-based partition, while fastINFLECT cuts a Ward hierarchy and scores marker unimodality. The benchmark compares the <strong>end-to-end cost of scanning k to build a quality curve</strong>, which is the practical bottleneck, and highlights that fastINFLECT additionally returns a recommended k.</p>
+<p>The methods do not perform the same statistics: consensus clustering
+builds a stability-based partition, while fastINFLECT cuts a Ward
+hierarchy and scores marker unimodality. The benchmark compares the
+<strong>end-to-end cost of scanning k to build a quality curve</strong>,
+which is the practical bottleneck, and notes that fastINFLECT
+additionally returns a recommended k.</p>
 </blockquote>
 <hr>
 </div>
@@ -142,7 +159,12 @@
 <div class="section level2">
 <h2 id="runtime">Runtime<a class="anchor" aria-label="anchor" href="#runtime"></a>
 </h2>
-<p>Time to scan <code>k = 5:25</code> (21 values) and obtain a quality score at every k. Both consensus variants produce identical partitions; only their cost differs. The original-INFLECT bar is an estimate from 168 sampled original <code>dip.test()</code> cluster-marker cells; the cache records its sampling standard error, and the estimate excludes small metaclustering and curve-fit overhead.</p>
+<p>Time to scan <code>k = 5:25</code> (21 values) and obtain a quality
+score at every k. Both consensus variants produce identical partitions;
+only their cost differs. The original-INFLECT bar is an estimate from
+168 sampled original <code>dip.test()</code> cluster-marker cells; the
+cache records its sampling standard error, and the estimate excludes
+small metaclustering and curve-fit overhead.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fastINFLECT 1.0"</span>,</span>
@@ -171,16 +193,30 @@
 <span>  <span class="fu">theme_minimal</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="benchmark-inflect-vs-consensus_files/figure-html/runtime-bar-1.png" class="r-plt" alt="Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is estimated from sampled original dip.test cells. A single ConsensusClusterPlus run plus QC scoring is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times." width="100%"><p class="caption">
-Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-node subtree once and reuses it across all k. Original INFLECT is estimated from sampled original dip.test cells. A single ConsensusClusterPlus run plus QC scoring is the fair consensus baseline; calling metaClustering_consensus() per k repeats that work 21 times.
+Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every
+distinct SOM-node subtree once and reuses it across all k. Original
+INFLECT is estimated from sampled original dip.test cells. A single
+ConsensusClusterPlus run plus QC scoring is the fair consensus baseline;
+calling metaClustering_consensus() per k repeats that work 21 times.
 </p>
 </div>
-<p>fastINFLECT scans the whole range in <strong>1.4 s</strong>. The original INFLECT loop is estimated at <strong>340.2 s</strong> (SE <strong>25.3 s</strong>) (<strong>252×</strong> slower). The fair consensus baseline — one ConsensusClusterPlus run — takes <strong>62.9 s</strong> (<strong>47×</strong> slower), and the common per-k convenience pattern takes <strong>677.9 s</strong> (<strong>502×</strong> slower). fastINFLECT is the cheapest and is the only one that also returns a recommended k.</p>
+<p>fastINFLECT scans the whole range in <strong>1.4 s</strong>. The
+original INFLECT loop is estimated at <strong>340.2 s</strong> (SE
+<strong>25.3 s</strong>) (<strong>252×</strong> slower). The fair
+consensus baseline, one ConsensusClusterPlus run, takes <strong>62.9
+s</strong> (<strong>47×</strong> slower), and the common per-k
+convenience pattern takes <strong>677.9 s</strong>
+(<strong>502×</strong> slower). fastINFLECT is the cheapest and is the
+only one that also returns a recommended k.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="why-the-new-engine-is-faster">Why the new engine is faster<a class="anchor" aria-label="anchor" href="#why-the-new-engine-is-faster"></a>
 </h2>
-<p>The old scan repeats work whenever the same SOM-node subtree appears in different cuts of the hierarchy. fastINFLECT 1.0 evaluates each distinct subtree once, and then reassembles the per-k QC matrices from that cache.</p>
+<p>The old scan repeats work whenever the same SOM-node subtree appears
+in different cuts of the hierarchy. fastINFLECT 1.0 evaluates each
+distinct subtree once, and then reassembles the per-k QC matrices from
+that cache.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">eff</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">efficiency</span></span>
 <span><span class="va">eff_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -229,13 +265,23 @@ Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-
 </tr>
 </tbody>
 </table>
-<p>This work reduction is separate from the faster cell kernel: the original path uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">diptest::dip.test()</a></code> in every cluster-marker cell, while the new path uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> plus legacy-matched p-value interpolation and small Rcpp accelerators. The default score remains matched to the legacy score; the speed gain comes from avoiding repeated cells and cheaper equivalent cell evaluation.</p>
+<p>This work reduction is separate from the faster cell kernel: the
+original path uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">diptest::dip.test()</a></code> in every
+cluster-marker cell, while the new path uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code>
+plus legacy-matched p-value interpolation and small Rcpp accelerators.
+The default score remains matched to the legacy score; the speed gain
+comes from avoiding repeated cells and cheaper equivalent cell
+evaluation.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="scaling-with-sweep-density">Scaling with sweep density<a class="anchor" aria-label="anchor" href="#scaling-with-sweep-density"></a>
 </h2>
-<p>fastINFLECT memoises QC per distinct SOM-node subtree – and a nested (hierarchical) sweep has at most <code>2·nNodes</code> distinct subtrees regardless of how many k you test – so its cost is nearly flat as the sweep gets denser. The per-k consensus pattern, by contrast, pays for another ConsensusClusterPlus run at every added k.</p>
+<p>fastINFLECT memoises QC per distinct SOM-node subtree. A nested
+(hierarchical) sweep has at most <code>2·nNodes</code> distinct subtrees
+regardless of how many k values are tested, so its cost is nearly flat
+as the sweep gets denser. The per-k consensus pattern, by contrast, pays
+for another ConsensusClusterPlus run at every added k.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>n_k <span class="op">=</span> <span class="va">cache</span><span class="op">$</span><span class="va">scaling_df</span><span class="op">$</span><span class="va">n_k</span>, seconds <span class="op">=</span> <span class="va">cache</span><span class="op">$</span><span class="va">scaling_df</span><span class="op">$</span><span class="va">inflect_seconds</span>,</span>
@@ -256,16 +302,27 @@ Wall-clock to scan and score k = 5:25. fastINFLECT evaluates every distinct SOM-
 <span>  <span class="fu">theme</span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="benchmark-inflect-vs-consensus_files/figure-html/scaling-1.png" class="r-plt" alt="Total scan time versus the number of tested k. fastINFLECT is measured; the per-k consensus line is an optimistic lower bound (n_k times the median per-run cost measured on 5:25 -- real cost is higher because each run's cost grows with k)." width="100%"><p class="caption">
-Total scan time versus the number of tested k. fastINFLECT is measured; the per-k consensus line is an optimistic lower bound (n_k times the median per-run cost measured on 5:25 – real cost is higher because each run’s cost grows with k).
+Total scan time versus the number of tested k. fastINFLECT is measured;
+the per-k consensus line is an optimistic lower bound (n_k times the
+median per-run cost measured on 5:25 – real cost is higher because each
+run’s cost grows with k).
 </p>
 </div>
-<p>Because dense sweeps are essentially free for fastINFLECT, the unimodality curve – and the knee/threshold read off it – can be resolved at every integer k rather than a sparse subset. (A single ConsensusClusterPlus run is also density-independent, but each such run costs far more than an entire fastINFLECT sweep.)</p>
+<p>Because dense sweeps are essentially free for fastINFLECT, the
+unimodality curve can be resolved at every integer k rather than a
+sparse subset, and the knee/threshold read off the curve carries
+correspondingly finer resolution. (A single ConsensusClusterPlus run is
+also density-independent, but each such run costs far more than an
+entire fastINFLECT sweep.)</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="cluster-quality-and-the-recommended-k">Cluster quality and the recommended k<a class="anchor" aria-label="anchor" href="#cluster-quality-and-the-recommended-k"></a>
 </h2>
-<p>Both methods can be scored on the same objective metric: the percentage of (cluster, marker) pairs that are unimodal (fastINFLECT’s QC). The vertical guides mark fastINFLECT’s three automatic recommendations.</p>
+<p>Both methods can be scored on the same objective metric: the
+percentage of (cluster, marker) pairs that are unimodal (fastINFLECT’s
+QC). The vertical guides mark fastINFLECT’s three automatic
+recommendations.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sel</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">selection</span></span>
 <span><span class="va">guides</span> <span class="op">&lt;-</span> <span class="va">sel</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">sel</span><span class="op">$</span><span class="va">k</span><span class="op">)</span>, <span class="op">]</span></span>
@@ -290,7 +347,9 @@ Total scan time versus the number of tested k. fastINFLECT is measured; the per-
 <span>  <span class="fu">theme</span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"right"</span>, panel.grid.minor <span class="op">=</span> <span class="fu">element_blank</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="benchmark-inflect-vs-consensus_files/figure-html/quality-1.png" class="r-plt" alt="Unimodality (%) across k for each method. Dashed guides mark fastINFLECT's inflection, kneedle, and unimodality-threshold recommendations." width="100%"><p class="caption">
-Unimodality (%) across k for each method. Dashed guides mark fastINFLECT’s inflection, kneedle, and unimodality-threshold recommendations.
+Unimodality (%) across k for each method. Dashed guides mark
+fastINFLECT’s inflection, kneedle, and unimodality-threshold
+recommendations.
 </p>
 </div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
@@ -332,13 +391,24 @@ Unimodality (%) across k for each method. Dashed guides mark fastINFLECT’s inf
 </tr>
 </tbody>
 </table>
-<p>The <strong>threshold</strong> criterion is the most directly interpretable for the goal of “admit no cluster with residual bimodal marker expression, without over-clustering”: it is the smallest k at which the target fraction (here 95%) of (cluster, marker) pairs are unimodal, and it is stable across the width of the sweep. The LL.4 <strong>inflection</strong> point, by contrast, depends on the fitted range.</p>
+<p>The <strong>threshold</strong> criterion is the most directly
+interpretable for the goal of “admit no cluster with residual bimodal
+marker expression, without over-clustering”: it is the smallest k at
+which the target fraction (here 95%) of (cluster, marker) pairs are
+unimodal, and it is stable across the width of the sweep. The LL.4
+<strong>inflection</strong> point, by contrast, depends on the fitted
+range.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="marker-expression-histograms">Marker-expression histograms<a class="anchor" aria-label="anchor" href="#marker-expression-histograms"></a>
 </h2>
-<p>The aggregate unimodality score is useful, but the package promise is local: clusters should not retain residual bimodal marker expression. The cache therefore selects a concrete example at the threshold k. It finds a FlowSOM consensus cluster-marker pair that fails the QC and shows overlapping fastINFLECT clusters for the same marker that pass.</p>
+<p>The aggregate unimodality score is useful, but the package promise is
+local: clusters should not retain residual bimodal marker expression.
+The cache therefore selects a concrete example at the threshold k. The
+cache finds a FlowSOM consensus cluster-marker pair that fails the QC
+and shows overlapping fastINFLECT clusters for the same marker that
+pass.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hist_df</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">marker_histogram</span></span>
 <span><span class="va">hist_df</span><span class="op">$</span><span class="va">qc_label</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">hist_df</span><span class="op">$</span><span class="va">qc_pass</span>, <span class="st">"passes QC"</span>, <span class="st">"fails QC"</span><span class="op">)</span></span>
@@ -356,7 +426,10 @@ Unimodality (%) across k for each method. Dashed guides mark fastINFLECT’s inf
 <span>        panel.grid.minor <span class="op">=</span> <span class="fu">element_blank</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="benchmark-inflect-vs-consensus_files/figure-html/marker-histogram-1.png" class="r-plt" alt="Marker-expression histograms at fastINFLECT's threshold k. The selected FlowSOM consensus cluster retains residual bimodality for the marker shown; overlapping fastINFLECT clusters pass the same unimodality/spread QC." width="100%"><p class="caption">
-Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSOM consensus cluster retains residual bimodality for the marker shown; overlapping fastINFLECT clusters pass the same unimodality/spread QC.
+Marker-expression histograms at fastINFLECT’s threshold k. The selected
+FlowSOM consensus cluster retains residual bimodality for the marker
+shown; overlapping fastINFLECT clusters pass the same unimodality/spread
+QC.
 </p>
 </div>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -373,6 +446,15 @@ Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSO
 <span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">mh_tbl</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"l"</span>, <span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
+<colgroup>
+<col width="25%">
+<col width="9%">
+<col width="15%">
+<col width="11%">
+<col width="14%">
+<col width="5%">
+<col width="17%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">Method</th>
 <th align="right">Cluster</th>
@@ -412,13 +494,25 @@ Marker-expression histograms at fastINFLECT’s threshold k. The selected FlowSO
 </tr>
 </tbody>
 </table>
-<p>In this selected example, the standard consensus cluster fails the marker unimodality check, while the overlapping fastINFLECT clusters pass with high dip-test p-values and narrower marker spread. This is the visual counterpart of the quality curve: fastINFLECT’s chosen k improves the actual marker distributions inside clusters, not only the summary score.</p>
+<p>In this selected example, the standard consensus cluster fails the
+marker unimodality check, while the overlapping fastINFLECT clusters
+pass with high dip-test p-values and narrower marker spread. This
+example is the visual counterpart of the quality curve: fastINFLECT’s
+chosen k improves the actual marker distributions inside clusters, not
+only the summary score.</p>
 <hr>
 </div>
 <div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
-<p>For the practical task of scanning k to choose a metaclustering, fastINFLECT is both <strong>much faster</strong> — about 252× faster than the original INFLECT loop in this cache, and 502× faster than the common per-k consensus pattern — and <strong>more decisive</strong>, returning an objective recommended k on the same unimodality metric used to judge every method. Consensus metaclustering remains a reasonable way to <em>build</em> a partition at a chosen k, but fastINFLECT is the cheaper and more informative way to <em>choose</em> that k.</p>
+<p>For the practical task of scanning k to choose a metaclustering,
+fastINFLECT is both <strong>much faster</strong> (about 252× faster than
+the original INFLECT loop in this cache, and 502× faster than the common
+per-k consensus pattern) and <strong>more decisive</strong>, returning
+an objective recommended k on the same unimodality metric used to judge
+every method. Consensus metaclustering remains a reasonable way to
+<em>build</em> a partition at a chosen k, but fastINFLECT is the cheaper
+and more informative way to <em>choose</em> that k.</p>
 <hr>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu">vignette_reproducibility</span><span class="op">(</span><span class="op">)</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>

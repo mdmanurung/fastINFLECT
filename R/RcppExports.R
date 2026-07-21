@@ -8,3 +8,4 @@
 .inflect_dip_pvalue_cpp <- function(D, n, qd, nn, Ps) {
     .Call(`_fastINFLECT_inflect_dip_pvalue_cpp`, D, n, qd, nn, Ps)
 }
+

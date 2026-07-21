@@ -61,7 +61,7 @@ Three common strategies exist:
 | **fastINFLECT** | Sweeps k; fits a unimodality curve; picks the inflection point automatically |
 
 fastINFLECT provides an **objective, marker-level quality score**: for each metaclustering it measures
-what fraction of (cluster, marker) combinations follow a unimodal distribution -- the assumption
+what fraction of (cluster, marker) combinations follow a unimodal distribution, the assumption
 underlying cluster identity. As k increases, unimodality rises then plateaus; the inflection point
 of that curve is fastINFLECT's recommendation.
 
@@ -125,7 +125,7 @@ mc_autok <- MetaClustering(
 message("Auto-k chose: ", length(unique(mc_autok)), " metaclusters")
 ```
 
-### 3. Hierarchical clustering — ward.D2 (fixed k)
+### 3. Hierarchical clustering, ward.D2 (fixed k)
 
 fastINFLECT's exported `metaClusteringhclust()` wraps `hclust(dist(..., "minkowski"), "ward.D2")` and
 `cutree` at k. This is also the engine that fastINFLECT uses internally at each sweep point:
@@ -137,7 +137,7 @@ mc_hclust <- metaClusteringhclust(
 )
 ```
 
-### 4. fastINFLECT -- automatic inflection-point selection
+### 4. fastINFLECT: automatic inflection-point selection
 
 `INFLECT()` sweeps `set.i`, scores unimodality at each k via `FlowSOMQC`, fits a four-parameter
 log-logistic curve, and returns the knee of that curve as its recommended k:
@@ -158,7 +158,7 @@ The results below come from this pre-computed run.
 ## fastINFLECT diagnostic curve
 
 The diagnostic curve shows how unimodality improves as k increases. The vertical dashed line marks
-the inflection point -- where the curve stops rising -- and gives fastINFLECT's recommended k.
+the inflection point, where the curve stops rising, and gives fastINFLECT's recommended k.
 
 ```{r inflect-plot, fig.cap = "fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the red curve is the fitted LL.4 model; the dashed vertical line is the inflection point (knee)."}
 cache$inflect$ggplot
@@ -264,11 +264,11 @@ tbl <- rbind(
 knitr::kable(tbl, align = c("l", "l", "r", "r"))
 ```
 
-For fixed-k methods the table reports their **best** unimodality across the entire sweep — the
+For fixed-k methods the table reports their **best** unimodality across the entire sweep, the
 score they would achieve if a user happened to choose the optimal k. Automatic methods are shown
-at their own selected k. This highlights that even under the best-case assumption for manual
-selection, the automatic methods (especially fastINFLECT) reach competitive or superior scores without
-requiring the user to know the right k in advance.
+at their own selected k. Even under the best-case assumption for manual selection, the automatic
+methods (especially fastINFLECT) reach competitive or superior scores without requiring the user to
+know the right k in advance.
 
 ---
 
@@ -341,14 +341,14 @@ cache$mp_plot
 ```
 
 Markers that consistently score low across all k values are intrinsically multimodal in this
-dataset — they may reflect biphasic biology (e.g. dim vs. bright populations) that the SOM has not
+dataset; they may reflect biphasic biology (e.g. dim vs. bright populations) that the SOM has not
 fully resolved, or technical artefacts worth revisiting.
 
 ---
 
 ## Conclusion
 
-fastINFLECT automates the most subjective step in a FlowSOM workflow -- choosing k -- by fitting an
+fastINFLECT automates the most subjective step in a FlowSOM workflow, choosing k, by fitting an
 objective quality curve to a unimodality score computed from the data itself. Compared with manual
 selection or rule-based auto-k approaches, the inflection-point criterion is:
 

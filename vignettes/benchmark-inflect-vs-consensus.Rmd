@@ -67,10 +67,10 @@ FlowSOM object with **`r cache$machine$cores`-core** timings on
 `r cache$machine$inflect_version`. Absolute times are machine-specific; the
 *ratios* are the point.
 
-> The methods are not doing the same statistics — consensus clustering builds
+> The methods do not perform the same statistics: consensus clustering builds
 > a stability-based partition, while fastINFLECT cuts a Ward hierarchy and scores marker
 > unimodality. The benchmark compares the **end-to-end cost of scanning k to build a
-> quality curve**, which is the practical bottleneck, and highlights that fastINFLECT
+> quality curve**, which is the practical bottleneck, and notes that fastINFLECT
 > additionally returns a recommended k.
 
 ---
@@ -157,7 +157,7 @@ The original INFLECT loop is estimated at
 **`r fmt_secs(cache$totals$legacy_inflect_scan_seconds)`** (SE
 **`r fmt_secs(cache$totals$legacy_inflect_scan_seconds_se)`**)
 (**`r fmt_x(cache$totals$speedup_legacy_inflect)`** slower).
-The fair consensus baseline — one ConsensusClusterPlus run — takes
+The fair consensus baseline, one ConsensusClusterPlus run, takes
 **`r fmt_secs(cache$totals$amortized_seconds)`**
 (**`r fmt_x(cache$totals$speedup_amortized)`** slower), and the common
 per-k convenience pattern takes **`r fmt_secs(cache$totals$consensus_scan_seconds)`**
@@ -200,8 +200,8 @@ gain comes from avoiding repeated cells and cheaper equivalent cell evaluation.
 
 ## Scaling with sweep density
 
-fastINFLECT memoises QC per distinct SOM-node subtree -- and a nested (hierarchical)
-sweep has at most `2·nNodes` distinct subtrees regardless of how many k you test --
+fastINFLECT memoises QC per distinct SOM-node subtree. A nested (hierarchical)
+sweep has at most `2·nNodes` distinct subtrees regardless of how many k values are tested,
 so its cost is nearly flat as the sweep gets denser. The per-k consensus pattern,
 by contrast, pays for another ConsensusClusterPlus run at every added k.
 
@@ -225,10 +225,7 @@ ggplot(sc, aes(x = n_k, y = seconds, colour = method)) +
   theme(legend.position = "bottom")
 ```
 
-Because dense sweeps are essentially free for fastINFLECT, the unimodality curve -- and
-the knee/threshold read off it -- can be resolved at every integer k rather than a
-sparse subset. (A single ConsensusClusterPlus run is also density-independent, but
-each such run costs far more than an entire fastINFLECT sweep.)
+Because dense sweeps are essentially free for fastINFLECT, the unimodality curve can be resolved at every integer k rather than a sparse subset, and the knee/threshold read off the curve carries correspondingly finer resolution. (A single ConsensusClusterPlus run is also density-independent, but each such run costs far more than an entire fastINFLECT sweep.)
 
 ---
 
@@ -292,7 +289,7 @@ sweep. The LL.4 **inflection** point, by contrast, depends on the fitted range.
 
 The aggregate unimodality score is useful, but the package promise is local:
 clusters should not retain residual bimodal marker expression. The cache therefore
-selects a concrete example at the threshold k. It finds a FlowSOM consensus
+selects a concrete example at the threshold k. The cache finds a FlowSOM consensus
 cluster-marker pair that fails the QC and shows overlapping fastINFLECT clusters for
 the same marker that pass.
 
@@ -330,7 +327,7 @@ knitr::kable(mh_tbl, align = c("l", "r", "l", "l", "r", "r", "r"))
 
 In this selected example, the standard consensus cluster fails the marker
 unimodality check, while the overlapping fastINFLECT clusters pass with high dip-test
-p-values and narrower marker spread. This is the visual counterpart of the
+p-values and narrower marker spread. This example is the visual counterpart of the
 quality curve: fastINFLECT's chosen k improves the actual marker distributions inside
 clusters, not only the summary score.
 
@@ -339,9 +336,9 @@ clusters, not only the summary score.
 ## Conclusion
 
 For the practical task of scanning k to choose a metaclustering, fastINFLECT is both
-**much faster** — about `r fmt_x(cache$totals$speedup_legacy_inflect)` faster than
+**much faster** (about `r fmt_x(cache$totals$speedup_legacy_inflect)` faster than
 the original INFLECT loop in this cache, and `r fmt_x(cache$totals$speedup)` faster
-than the common per-k consensus pattern — and **more decisive**, returning an
+than the common per-k consensus pattern) and **more decisive**, returning an
 objective recommended k on the same unimodality metric used to judge every method.
 Consensus metaclustering remains a reasonable way to *build* a partition at a
 chosen k, but fastINFLECT is the cheaper and more informative way to *choose* that k.

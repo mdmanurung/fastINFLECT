@@ -39,6 +39,47 @@ kohonen SOM objects:
 install.packages("kohonen")
 ```
 
+### Quick start
+
+fastINFLECT ships a downsampled Levine32 FlowSOM object. Load it, scan a range
+of metacluster counts, and read off the recommended k.
+
+``` r
+library(fastINFLECT)
+
+# Bundled FlowSOM object: 375 SOM nodes, 32,288 events, 32 markers
+load(system.file("extdata", "Levine32sample.Rdata", package = "fastINFLECT"))
+
+results <- INFLECT(
+  FlowSOM.results = dataset,
+  set.i           = 5:20,
+  multicore       = FALSE,
+  zeroes.in       = FALSE
+)
+```
+
+`INFLECT()` scans every k in `set.i` in a few seconds and returns an
+`inflect.results` object. Its `selection` table reports three recommended
+cluster counts: the LL.4 inflection point, the kneedle knee, and the smallest k
+that reaches the target unimodality.
+
+``` r
+results$selection
+#>       method  k unimodality_at_k target
+#> 1 inflection 11         96.02273     NA
+#> 2    kneedle  8         95.31250     NA
+#> 3  threshold  8         95.31250     95
+```
+
+The diagnostic curve and its inflection point are stored as a ggplot object:
+
+``` r
+results$ggplot
+```
+
+To see which markers still carry residual bimodal expression across the tested
+metaclusterings, use `marker.performance(results)`.
+
 ### Relationship to original INFLECT
 
 fastINFLECT is derived from the original INFLECT implementation developed by

@@ -63,6 +63,23 @@
 <p>Fast quality control and determination of optimal k for FlowSOM and kohonen high-dimensional SOM clustering data.</p>
 <p>fastINFLECT reimplements the original INFLECT package for speed. It scans metaclusterings for marker unimodality, locates the inflection point on the fitted unimodality curve, and replaces the expensive repeated per-k QC loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. On the fitted curve of this unimodality score, fastINFLECT determines the point where unimodality stops increasing for greater numbers of clusters.</p>
 <div class="section level3">
+<h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h3>
+<p>fastINFLECT is not on CRAN; install it from GitHub. It depends on FlowSOM, which is distributed through Bioconductor.</p>
+<p>The simplest path uses <code>pak</code>, which resolves the Bioconductor dependency for you:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"mdmanurung/fastINFLECT"</span><span class="op">)</span></span></code></pre></div>
+<p>To use <code>remotes</code> instead, install FlowSOM first:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages(c("BiocManager", "remotes"))</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"FlowSOM"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"mdmanurung/fastINFLECT"</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>kohonen</code> package is optional and only needed to run fastINFLECT on kohonen SOM objects:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"kohonen"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="relationship-to-original-inflect">Relationship to original INFLECT<a class="anchor" aria-label="anchor" href="#relationship-to-original-inflect"></a>
 </h3>
 <p>fastINFLECT is derived from the original INFLECT implementation developed by Jan Verhoeff in the lab of JJ. Garcia-Vallejo at the <a href="https://github.com/jnverhoeff/GarciaVallejoLab" class="external-link">GarciaVallejoLab</a>. The package keeps the original marker-unimodality idea and its public <code><a href="reference/INFLECT.html">INFLECT()</a></code> workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original algorithm fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.</p>

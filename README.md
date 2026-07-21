@@ -11,6 +11,34 @@ compiled accelerators. On the fitted curve of this unimodality score,
 fastINFLECT determines the point where unimodality stops increasing for greater
 numbers of clusters.
 
+### Installation
+
+fastINFLECT is not on CRAN; install it from GitHub. It depends on FlowSOM,
+which is distributed through Bioconductor.
+
+The simplest path uses `pak`, which resolves the Bioconductor dependency for
+you:
+
+``` r
+# install.packages("pak")
+pak::pak("mdmanurung/fastINFLECT")
+```
+
+To use `remotes` instead, install FlowSOM first:
+
+``` r
+# install.packages(c("BiocManager", "remotes"))
+BiocManager::install("FlowSOM")
+remotes::install_github("mdmanurung/fastINFLECT")
+```
+
+The `kohonen` package is optional and only needed to run fastINFLECT on
+kohonen SOM objects:
+
+``` r
+install.packages("kohonen")
+```
+
 ### Relationship to original INFLECT
 
 fastINFLECT is derived from the original INFLECT implementation developed by

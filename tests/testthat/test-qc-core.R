@@ -28,6 +28,68 @@ make_multinode_flowsom <- function(seed = 1L) {
   obj
 }
 
+legacy_accuracy_row <- function(expr,
+                                zeroes.in,
+                                uniform.test,
+                                th.pvalue,
+                                th.IQR,
+                                p_of) {
+  markers <- colnames(expr)
+  out <- stats::setNames(rep(NA, length(markers)), markers)
+  if (nrow(expr) <= 1L) {
+    return(out)
+  }
+  for (j in seq_along(markers)) {
+    me <- .inflect_marker_expression(expr[, j], zeroes.in)
+    uniform <- TRUE
+    if (uniform.test != "spread") {
+      uniform <- p_of(me) >= th.pvalue
+    }
+    if (uniform && uniform.test != "unimodality") {
+      uniform <- .inflect_iqr(me) < th.IQR
+    }
+    out[[j]] <- uniform
+  }
+  out
+}
+
+test_that("indexed scoring exactly matches the former full-matrix row path", {
+  source_pkg_file("inflect-qc-core.R")
+
+  fs <- make_multinode_flowsom(11L)
+  p_of <- .inflect_make_p_of()
+  rows_to_test <- list(1L, 1:40, c(1:17, 101:160), seq_len(nrow(fs$data)))
+  for (rows in rows_to_test) {
+    expr <- fs$data[rows, , drop = FALSE]
+    for (uniform.test in c("both", "spread", "unimodality")) {
+      for (zeroes.in in c(FALSE, TRUE)) {
+        expected <- legacy_accuracy_row(
+          expr = expr,
+          zeroes.in = zeroes.in,
+          uniform.test = uniform.test,
+          th.pvalue = 0.05,
+          th.IQR = 2,
+          p_of = p_of
+        )
+        actual <- .inflect_accuracy_row_indexed(
+          data = fs$data,
+          rows = rows,
+          zeroes.in = zeroes.in,
+          uniform.test = uniform.test,
+          th.pvalue = 0.05,
+          th.IQR = 2,
+          p_of = p_of
+        )
+        expect_identical(
+          actual,
+          expected,
+          info = paste(uniform.test, zeroes.in, length(rows))
+        )
+      }
+    }
+  }
+})
+
 test_that("memoised iteration.QC reproduces per-k FlowSOMQC exactly", {
   source_pkg_file("som-adapter.R")
   source_pkg_file("inflect-qc-core.R")
@@ -41,15 +103,28 @@ test_that("memoised iteration.QC reproduces per-k FlowSOMQC exactly", {
   ml <- iteration.metacluster(fs, set.i = set.i, multicore = FALSE)
 
   reference <- lapply(set.i, function(k) {
-    FlowSOMQC(fs, ml[[as.character(k)]], zeroes.in = FALSE, verbose = FALSE)
+    suppressWarnings(
+      FlowSOMQC(fs, ml[[as.character(k)]], zeroes.in = FALSE, verbose = FALSE)
+    )
   })
   ref_scores <- vapply(reference, function(m) sum(m, na.rm = TRUE) * 100 / prod(dim(m)), numeric(1))
 
-  qc <- iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE, verbose = FALSE)
+  qc <- suppressWarnings(
+    iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE, verbose = FALSE)
+  )
 
   expect_equal(qc$U.set$Unimodality, ref_scores)
+  expect_equal(qc$scores$qc_pass_rate, ref_scores)
   for (idx in seq_along(set.i)) {
-    expect_identical(unname(qc$Accuracy.matrixes[[idx]]), unname(reference[[idx]]))
+    expect_identical(
+      unname(qc$Accuracy.matrixes[[idx]]),
+      unname(qc$qc.details[[idx]]$criterion_pass)
+    )
+    expect_equal(
+      unname(qc$Accuracy.matrixes[[idx]]),
+      unname(reference[[idx]]),
+      ignore_attr = TRUE
+    )
   }
 })
 
@@ -68,15 +143,101 @@ test_that("memoisation holds across uniform.test modes and zeroes.in", {
   for (ut in c("both", "spread", "unimodality")) {
     for (zi in c(TRUE, FALSE)) {
       ref <- lapply(set.i, function(k) {
-        FlowSOMQC(fs, ml[[as.character(k)]], zeroes.in = zi, uniform.test = ut, verbose = FALSE)
+        suppressWarnings(
+          FlowSOMQC(fs, ml[[as.character(k)]], zeroes.in = zi, uniform.test = ut, verbose = FALSE)
+        )
       })
-      qc <- iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = zi,
-                         uniform.test = ut, verbose = FALSE)
-      ok <- all(mapply(function(a, b) identical(unname(a), unname(b)),
+      qc <- suppressWarnings(iteration.QC(
+        fs, ml, set.i, multicore = FALSE, zeroes.in = zi,
+        uniform.test = ut, verbose = FALSE
+      ))
+      ok <- all(mapply(function(a, b) isTRUE(all.equal(
+        unname(a),
+        unname(b),
+        check.attributes = FALSE
+      )),
                        qc$Accuracy.matrixes, ref))
       expect_true(ok, info = paste(ut, zi))
     }
   }
+})
+
+test_that("serial and two-core QC results are identical", {
+  skip_if(.Platform$OS.type != "unix")
+  skip_if(parallel::detectCores() < 2L)
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("metaClustering-hclust.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(13L)
+  set.i <- 3:8
+  ml <- iteration.metacluster(fs, set.i = set.i, multicore = FALSE)
+  serial <- suppressWarnings(iteration.QC(
+    fs, ml, set.i,
+    multicore = FALSE,
+    zeroes.in = FALSE,
+    uniform.test = "both"
+  ))
+  parallel <- suppressWarnings(iteration.QC(
+    fs, ml, set.i,
+    multicore = TRUE,
+    cores = 2L,
+    zeroes.in = FALSE,
+    uniform.test = "both"
+  ))
+
+  expect_identical(parallel$U.set, serial$U.set)
+  expect_identical(parallel$Accuracy.matrixes, serial$Accuracy.matrixes)
+})
+
+test_that("invalid worker results report task and subtree identifiers", {
+  source_pkg_file("inflect-qc-core.R")
+
+  markers <- c("CD3", "CD4")
+  good <- stats::setNames(c(TRUE, FALSE), markers)
+  expect_error(
+    .inflect_validate_worker_results(
+      list(good, NULL),
+      keys = c("1,2", "3,4"),
+      marker_names = markers,
+      parallel = TRUE
+    ),
+    "Parallel QC worker failure.*task 2 \\(subtree 3,4\\).*NULL"
+  )
+
+  failed <- structure("injected worker error", class = "try-error")
+  expect_error(
+    .inflect_validate_worker_results(
+      list(failed),
+      keys = "5,6",
+      marker_names = markers,
+      parallel = TRUE
+    ),
+    "task 1 \\(subtree 5,6\\).*try-error.*injected worker error"
+  )
+  expect_error(
+    .inflect_validate_worker_results(
+      list(good),
+      keys = c("7,8", "9,10"),
+      marker_names = markers,
+      parallel = TRUE
+    ),
+    "task 2 \\(subtree 9,10\\): missing result"
+  )
+
+  details <- .inflect_empty_qc_row(markers)
+  details$dip_p_value <- NULL
+  expect_error(
+    .inflect_validate_worker_results(
+      list(details),
+      keys = "11,12",
+      marker_names = markers,
+      parallel = FALSE
+    ),
+    "missing field\\(s\\): dip_p_value"
+  )
 })
 
 test_that("fast dip p-value matches diptest::dip.test p-values", {
@@ -107,7 +268,25 @@ test_that("fast dip p-value matches diptest::dip.test p-values", {
                "same length")
 })
 
-test_that("unimodality dip path preserves dip.test incomplete-case handling", {
+test_that("small-sample dip interpolation is warning-free and exact", {
+  skip_if_not_installed("diptest")
+  source_pkg_file("inflect-qc-core.R")
+
+  set.seed(142)
+  for (n in 4:8) {
+    x <- rnorm(n)
+    expect_no_warning(
+      p_fast <- .inflect_dip_pvalue(diptest::dip(x), n)
+    )
+    expect_equal(
+      p_fast,
+      suppressWarnings(diptest::dip.test(x)$p.value),
+      tolerance = 1e-12
+    )
+  }
+})
+
+test_that("non-finite values are excluded and recorded without masking criteria", {
   source_pkg_file("som-adapter.R")
   source_pkg_file("inflect-qc-core.R")
   source_pkg_file("FlowSOM-QC.R")
@@ -119,9 +298,10 @@ test_that("unimodality dip path preserves dip.test incomplete-case handling", {
   fs$data[c(3, 40, 81), "CD3"] <- NA_real_
   mc <- as.integer(rep(1:3, length.out = fs$map$nNodes))
 
-  expect_no_error(FlowSOMQC(fs, mc, uniform.test = "unimodality", verbose = FALSE))
-  expect_error(FlowSOMQC(fs, mc, uniform.test = "spread", verbose = FALSE),
-               "missing values")
+  dip <- FlowSOMQC(fs, mc, uniform.test = "unimodality", verbose = FALSE)
+  spread <- FlowSOMQC(fs, mc, uniform.test = "spread", verbose = FALSE)
+  expect_true(any(attr(dip, "qc.details")$excluded_nonfinite[, "CD3"] > 0))
+  expect_true(any(attr(spread, "qc.details")$excluded_nonfinite[, "CD3"] > 0))
 })
 
 test_that("spread scoring uses full marker expression when dip subsampling is enabled", {
@@ -234,20 +414,313 @@ test_that("size-robust subsampling is deterministic and bounded", {
   set.i <- 3:8
   ml <- iteration.metacluster(fs, set.i = set.i, multicore = FALSE)
 
-  a <- iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
-                    max.n.diptest = 30L, seed = 7L, verbose = FALSE)
-  b <- iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
-                    max.n.diptest = 30L, seed = 7L, verbose = FALSE)
+  a <- suppressWarnings(iteration.QC(
+    fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
+    max.n.diptest = 30L, seed = 7L, verbose = FALSE
+  ))
+  b <- suppressWarnings(iteration.QC(
+    fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
+    max.n.diptest = 30L, seed = 7L, verbose = FALSE
+  ))
   expect_equal(a$U.set, b$U.set)
 
   ## the RNG state must be restored: an outer sequence is unaffected
   set.seed(99)
   before <- runif(1)
   set.seed(99)
-  invisible(iteration.QC(fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
-                         max.n.diptest = 30L, seed = 1L, verbose = FALSE))
+  suppressWarnings(invisible(iteration.QC(
+    fs, ml, set.i, multicore = FALSE, zeroes.in = FALSE,
+    max.n.diptest = 30L, seed = 1L, verbose = FALSE
+  )))
   after <- runif(1)
   expect_equal(before, after)
+})
+
+test_that("node-capped sampling is deterministic, bounded, and worker invariant", {
+  skip_if(.Platform$OS.type != "unix")
+  skip_if(parallel::detectCores() < 2L)
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("metaClustering-hclust.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(17L)
+  set.i <- 3:8
+  ml <- iteration.metacluster(fs, set.i = set.i, multicore = FALSE)
+  serial_a <- iteration.QC(
+    fs, ml, set.i,
+    multicore = FALSE,
+    uniform.test = "both",
+    max.events.per.node = 15L,
+    seed = 42L
+  )
+  serial_b <- iteration.QC(
+    fs, ml, set.i,
+    multicore = FALSE,
+    uniform.test = "both",
+    max.events.per.node = 15L,
+    seed = 42L
+  )
+  two_core <- iteration.QC(
+    fs, ml, set.i,
+    multicore = TRUE,
+    cores = 2L,
+    uniform.test = "both",
+    max.events.per.node = 15L,
+    seed = 42L
+  )
+
+  expect_identical(serial_a$U.set, serial_b$U.set)
+  expect_identical(serial_a$Accuracy.matrixes, serial_b$Accuracy.matrixes)
+  expect_identical(serial_a$U.set, two_core$U.set)
+  expect_identical(serial_a$Accuracy.matrixes, two_core$Accuracy.matrixes)
+
+  sampling <- serial_a$provenance$event_sampling
+  expect_equal(sampling$mode, "capped_per_node")
+  expect_equal(sampling$original_events, nrow(fs$data))
+  expect_equal(sampling$retained_events, fs$map$nNodes * 15L)
+  expect_true(all(sampling$per_node$retained_events <= 15L))
+  expect_equal(
+    sampling$per_node$original_events,
+    tabulate(fs$map$mapping[, 1], nbins = fs$map$nNodes)
+  )
+
+  set.seed(99)
+  before <- runif(1)
+  set.seed(99)
+  invisible(iteration.QC(
+    fs, ml, set.i,
+    multicore = FALSE,
+    uniform.test = "spread",
+    max.events.per.node = 15L,
+    seed = 42L
+  ))
+  after <- runif(1)
+  expect_equal(before, after)
+})
+
+test_that("node caps and parallel cores are validated at the QC boundary", {
+  source_pkg_file("inflect-qc-core.R")
+
+  for (cap in list(0L, NA_integer_, -1L, c(5L, 10L), 2.5)) {
+    expect_error(
+      .inflect_validate_max_events_per_node(cap),
+      "`max.events.per.node`"
+    )
+  }
+  expect_identical(.inflect_validate_max_events_per_node(1000L), 1000L)
+  expect_error(.inflect_resolve_cores(TRUE, 1L), "`cores`.*>= 2")
+  expect_identical(.inflect_resolve_cores(TRUE, 2L), 2L)
+  windows <- .inflect_parallel_plan(
+    multicore = TRUE,
+    cores = 2L,
+    n_tasks = 10L,
+    os_type = "windows"
+  )
+  expect_false(windows$use_parallel)
+  expect_identical(windows$effective_workers, 1L)
+  expect_identical(windows$backend, "serial_platform_fallback")
+})
+
+test_that("QC exposes neutral criterion-specific evidence and deprecated aliases", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(31L)
+  set.i <- 3:6
+  ml <- iteration.metacluster(fs, set.i)
+  qc <- iteration.QC(
+    fs,
+    ml,
+    set.i,
+    uniform.test = "spread",
+    zeroes.in = TRUE
+  )
+
+  expect_named(
+    qc,
+    c(
+      "scores",
+      "dip_pass",
+      "iqr_pass",
+      "combined_pass",
+      "criterion_pass",
+      "qc.details",
+      "provenance",
+      "U.set",
+      "Accuracy.matrixes"
+    )
+  )
+  expect_named(qc$scores, c("k", "qc_pass_rate", "criterion"))
+  expect_true(all(qc$scores$criterion == "iqr"))
+  expect_identical(qc$criterion_pass, qc$iqr_pass)
+  expect_identical(qc$Accuracy.matrixes, qc$criterion_pass)
+  expect_equal(qc$U.set$Unimodality, qc$scores$qc_pass_rate)
+
+  expected_fields <- c(
+    "dip_pass",
+    "iqr_pass",
+    "combined_pass",
+    "criterion_pass",
+    "dip_p_value",
+    "iqr",
+    "event_count",
+    "test_event_count",
+    "excluded_nonpositive",
+    "excluded_nonfinite",
+    "failure_reason"
+  )
+  expect_named(qc$qc.details[[1]], expected_fields)
+  expect_equal(dim(qc$qc.details[[1]]$dip_pass), c(set.i[[1]], 4L))
+  expect_equal(
+    qc$qc.details[[1]]$combined_pass,
+    qc$qc.details[[1]]$dip_pass & qc$qc.details[[1]]$iqr_pass
+  )
+  expect_identical(qc$provenance$criterion, "iqr")
+  expect_match(qc$provenance$criterion_label, "IQR")
+  expect_equal(
+    qc$provenance$criterion_summary$qc_pass_rate[
+      qc$provenance$criterion_summary$selected
+    ],
+    qc$scores$qc_pass_rate
+  )
+})
+
+test_that("complete transformed distributions are default and exclusions are auditable", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("FlowSOM-QC.R")
+
+  fs <- make_multinode_flowsom(32L)
+  fs$data[1:20, "CD3"] <- seq(-5, 0, length.out = 20L)
+  mc <- as.integer(rep(1:3, length.out = fs$map$nNodes))
+
+  expect_no_warning(
+    complete <- FlowSOMQC(fs, mc, uniform.test = "both", verbose = FALSE)
+  )
+  expect_warning(
+    positive_only <- FlowSOMQC(
+      fs,
+      mc,
+      zeroes.in = FALSE,
+      uniform.test = "both",
+      verbose = FALSE
+    ),
+    "excludes every non-positive value"
+  )
+  complete_details <- attr(complete, "qc.details")
+  positive_details <- attr(positive_only, "qc.details")
+  expect_true(all(complete_details$excluded_nonpositive == 0L))
+  expect_gt(sum(positive_details$excluded_nonpositive[, "CD3"]), 0L)
+  zero_provenance <- attr(positive_only, "provenance")$zero_handling
+  expect_gt(
+    zero_provenance$per_marker$excluded_nonpositive[
+      zero_provenance$per_marker$marker == "CD3"
+    ],
+    0
+  )
+})
+
+test_that("iteration.QC validates requested names and exact cluster counts", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(33L)
+  two <- as.integer(rep(1:2, length.out = fs$map$nNodes))
+  three <- as.integer(rep(1:3, length.out = fs$map$nNodes))
+
+  expect_error(
+    iteration.QC(fs, list(two), set.i = 2L),
+    "unique names"
+  )
+  expect_error(
+    iteration.QC(
+      fs,
+      list("2" = two, "3" = three),
+      set.i = 2L
+    ),
+    "unexpected: 3"
+  )
+  expect_error(
+    iteration.QC(fs, list("2" = rep(1L, fs$map$nNodes)), set.i = 2L),
+    "exactly 2 unique cluster labels"
+  )
+})
+
+test_that("simulated dip p-values are RNG-safe, overflow-safe, and worker invariant", {
+  skip_if(.Platform$OS.type != "unix")
+  skip_if(parallel::detectCores() < 2L)
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(34L)
+  set.i <- 3:6
+  ml <- iteration.metacluster(fs, set.i)
+  args <- list(
+    FlowSOM.results = fs,
+    metaclustering.list = ml,
+    set.i = set.i,
+    zeroes.in = TRUE,
+    simulate.p.value = TRUE,
+    B = 31L,
+    seed = .Machine$integer.max
+  )
+
+  set.seed(91)
+  expected_next <- runif(1)
+  set.seed(91)
+  serial_a <- do.call(iteration.QC, c(args, list(multicore = FALSE)))
+  actual_next <- runif(1)
+  serial_b <- do.call(iteration.QC, c(args, list(multicore = FALSE)))
+  two_core <- do.call(
+    iteration.QC,
+    c(args, list(multicore = TRUE, cores = 2L))
+  )
+
+  expect_equal(actual_next, expected_next)
+  expect_identical(serial_a$scores, serial_b$scores)
+  expect_identical(serial_a$qc.details, serial_b$qc.details)
+  expect_identical(serial_a$scores, two_core$scores)
+  expect_identical(serial_a$qc.details, two_core$qc.details)
+  expect_true(all(vapply(
+    serial_a$qc.details,
+    function(x) all(x$dip_p_value >= 0 & x$dip_p_value <= 1, na.rm = TRUE),
+    logical(1)
+  )))
+})
+
+test_that("subtree-marker simulation streams are invariant to schedule extension", {
+  source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
+  source_pkg_file("iteration-metacluster.R")
+  source_pkg_file("iteration-QC.R")
+
+  fs <- make_multinode_flowsom(35L)
+  short_k <- 3:5
+  long_k <- 3:6
+  short <- iteration.QC(
+    fs,
+    iteration.metacluster(fs, short_k),
+    short_k,
+    simulate.p.value = TRUE,
+    B = 31L,
+    seed = 2026L
+  )
+  long <- iteration.QC(
+    fs,
+    iteration.metacluster(fs, long_k),
+    long_k,
+    simulate.p.value = TRUE,
+    B = 31L,
+    seed = 2026L
+  )
+  expect_identical(short$qc.details, long$qc.details[names(short$qc.details)])
 })
 
 test_that("compiled IQR and p-value match the pure-R paths when available", {

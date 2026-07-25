@@ -1,6 +1,7 @@
-# Metaclustering function based on hierarchical clustering
+# Hierarchical (Ward) metaclustering of SOM codes
 
-Orphaned function from FlowSOM, imported here.
+Performs hierarchical metaclustering of SOM cluster codes using Ward's
+D2 linkage, adapted from FlowSOM.
 
 ## Usage
 

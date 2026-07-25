@@ -1,21 +1,28 @@
 #' @title Plot marker performance across metaclustering results
 #'
-#' @description Plots the marker performance across metaclusterings in a boxplot. Performance score is the percentage of clusters
-#' where a marker passed the \link[diptest]{dip.test} and IQR test per metaclustering. The color gradient denotes \code{set.i}.
+#' @description Plots criterion-specific marker QC across metaclusterings. The
+#' score is the percentage of clusters where a marker passed the aggregate
+#' criterion selected in [INFLECT()]. It is a screening pass rate, not proof of
+#' unimodality. The colour gradient denotes the tested cluster count.
 #'
 #' @param inflect.results A inflect.results object resulting from \code{\link{INFLECT}}.
 #' @param ggtitle Optional. Character string to plot as title.
 #' @param markers Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.
 #'
-#' @return \code{list} with 2 items. First is the melted dataframe with the marker performance percentage per marker per metaclustering. Second is a ggplot object, a boxplot with marker
-#' performance on the y-axis, markers on the x-axis and the color scale denoting the amount of metaclusters evaluated.
+#' @return A list with `marker.dataframe` and `plot`. The data frame contains
+#' canonical `k`, `marker`, and `qc_pass_rate` columns. Deprecated `i`, `Marker`,
+#' and `Performance` aliases are retained for migration.
 #'
 #' @examples
 #' # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
 #' # SOM-clustered to 375 clusters.
 #' flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
 #' load(flowsom)
-#' inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= 5:12, multicore=FALSE, zeroes.in=FALSE)
+#' inflect.results <- INFLECT(
+#'   FlowSOM.results = dataset,
+#'   set.i = 5:12,
+#'   multicore = FALSE
+#' )
 #'
 #' # Display diagnostic graph
 #' inflect.results$ggplot
@@ -55,23 +62,43 @@ marker.performance <- function(inflect.results, ggtitle = NULL, markers = NULL) 
     markers <- colnames(accuracy.sets[[1]])
   }
 
-  success.rate<- lapply(accuracy.sets, function(x){
-    x<- x[, markers, drop = FALSE]
-    apply(x, 2, sum, na.rm=TRUE)*100 / apply(x, 2, length)
+  success.rate <- lapply(accuracy.sets, function(x) {
+    x <- x[, markers, drop = FALSE]
+    colSums(x, na.rm = TRUE) * 100 / nrow(x)
   })
-  success.rate<- as.data.frame(do.call(rbind, success.rate))
-  success.rate$i <- as.numeric(rownames(success.rate))
-  success.rate <- reshape2::melt(success.rate,variable.name="Marker", value.name= "Performance", id.vars="i")
+  success.rate <- as.data.frame(do.call(rbind, success.rate))
+  success.rate$k <- as.numeric(rownames(success.rate))
+  success.rate <- reshape2::melt(
+    success.rate,
+    variable.name = "marker",
+    value.name = "qc_pass_rate",
+    id.vars = "k"
+  )
+  success.rate$i <- success.rate$k
+  success.rate$Marker <- success.rate$marker
+  success.rate$Performance <- success.rate$qc_pass_rate
 
 
   # Dataframe is prepared, continue on to figure generation
-  figure <- ggplot2::ggplot(success.rate, ggplot2::aes(y = Performance, x = Marker, color = i)) +
-    ggplot2::geom_boxplot(outlier.alpha = 0) +
-    ggplot2::geom_jitter(shape = 1, alpha = 0.5) +
+  criterion_label <- if (!is.null(inflect.results$provenance$criterion)) {
+    .inflect_criterion_label(inflect.results$provenance$criterion)
+  } else {
+    "criterion-specific QC pass rate"
+  }
+  figure <- ggplot2::ggplot(
+    success.rate,
+    ggplot2::aes(y = qc_pass_rate, x = marker)
+  ) +
+    ggplot2::geom_boxplot(outlier.alpha = 0, color = "grey40") +
+    ggplot2::geom_jitter(
+      ggplot2::aes(color = k),
+      shape = 1,
+      alpha = 0.5
+    ) +
     ggplot2::theme_bw() +
     ggplot2::scale_color_gradient(low = "#66C2A5", high = "#E41A1C") +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-    ggplot2::ylab("Marker performance (% passed within metaclusterings)")
+    ggplot2::ylab(paste0(criterion_label, " within metaclusterings (%)"))
   if(!is.null(ggtitle)){figure <- figure + ggplot2::ggtitle(label = ggtitle)}
   return(list("marker.dataframe"= success.rate, "plot" = figure))
 }

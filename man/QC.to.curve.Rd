@@ -2,26 +2,29 @@
 % Please edit documentation in R/QC-to-curve.R
 \name{QC.to.curve}
 \alias{QC.to.curve}
-\title{Plot diagnostic fastINFLECT curve and find inflection point}
+\title{Plot a criterion-specific fastINFLECT QC curve}
 \usage{
 QC.to.curve(collection.U, basedata, ggtitle = NULL)
 }
 \arguments{
-\item{collection.U}{List returned by \code{\link{iteration.QC}}. The first element must be a dataframe with set.i and corresponding unimodality scores.}
+\item{collection.U}{Result from \code{\link{iteration.QC}}, a canonical score
+data frame with \code{k} and \code{qc_pass_rate}, or the deprecated score aliases.}
 
-\item{basedata}{Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}}
+\item{basedata}{\code{"Curve"} or \code{"Points"}.}
 
-\item{ggtitle}{Optional title for resulting diagnostic graph. Default \code{NULL}}
+\item{ggtitle}{Optional plot title.}
 }
 \value{
-A \code{list} with 4 items. First is a data.frame with the unimodality scores for each metaclustering. Second is a dataframe with the fitted curve. Third is the result of \code{\link{Lfunction}}, lastly the diagnostic plot created from the other three items.
+A list containing canonical \code{scores}, \code{fittedcurve}, \code{lfunction},
+and \code{ggplot}. Deprecated \code{collection.U} is retained as a migration alias.
 }
 \description{
-Plots the \code{collection.U} score against \code{set.i} and uses
-\code{\link{Lfunction}} to locate the inflection point for the optimal k.
-The score curve may come from \code{\link{iteration.QC}} or any compatible
-source; the curve-fitting procedure follows the original INFLECT method.
+Fits the original four-parameter log-logistic diagnostic curve to
+criterion-specific \code{qc_pass_rate} values and locates its geometric
+inflection estimate. The estimate can fall outside the literal schedule; it
+does not create a corresponding metaclustering partition.
 }
 \seealso{
-\code{\link{INFLECT}} , \code{\link{iteration.QC}},\code{\link{Lfunction}}
+\code{\link{INFLECT}}, \code{\link{iteration.QC}},
+\code{\link{Lfunction}}
 }

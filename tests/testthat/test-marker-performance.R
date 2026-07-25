@@ -19,6 +19,18 @@ test_that("marker.performance works with omitted and single marker selections", 
   single_marker <- marker.performance(result, markers = "CD3")
 
   expect_s3_class(all_markers$plot, "ggplot")
+  expect_true(all(c(
+    "k",
+    "marker",
+    "qc_pass_rate",
+    "i",
+    "Marker",
+    "Performance"
+  ) %in% names(all_markers$marker.dataframe)))
+  expect_equal(
+    all_markers$marker.dataframe$qc_pass_rate,
+    all_markers$marker.dataframe$Performance
+  )
   expect_equal(sort(unique(as.character(all_markers$marker.dataframe$Marker))), c("CD3", "CD4"))
   expect_equal(unique(as.character(single_marker$marker.dataframe$Marker)), "CD3")
 })

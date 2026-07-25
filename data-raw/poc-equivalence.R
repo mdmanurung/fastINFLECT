@@ -1,5 +1,5 @@
 ## POC: prove that memoizing QC per distinct dendrogram subtree (keyed by its
-## sorted SOM-node set) reproduces FlowSOMQC's per-k unimodality score EXACTLY,
+## sorted SOM-node set) reproduces the historical FlowSOMQC per-k score EXACTLY,
 ## and measure the speedup vs the current per-k recomputation.
 ##
 ## Run with the R4_51 conda env.
@@ -27,7 +27,8 @@ node_events <- split(seq_len(nrow(data)), mapping)         # names are node ids
 th.pvalue <- 0.05; th.IQR <- 2
 
 ## accuracy row for one metacluster = union of member nodes' events.
-## Mirrors FlowSOMQC inner loop (uniform.test = "both", zeroes.in = FALSE).
+## Historical 1.0 equivalence only: uniform.test = "both", zeroes.in = FALSE.
+## This is not modality evidence under the 2.0 interpretation contract.
 acc_row <- function(member_nodes) {
   rows <- unlist(node_events[as.character(member_nodes)], use.names = FALSE)
   out <- rep(NA, nMarkers); names(out) <- ordered.markers

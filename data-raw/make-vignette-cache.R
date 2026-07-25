@@ -57,7 +57,10 @@ load(data_path)   # creates object 'dataset' (class FlowSOM)
 codes <- dataset$map$codes          # 375 x 32 SOM node prototypes
 n_nodes <- dataset$map$nNodes       # 375
 
-# ── 2. Unimodality scoring helper ─────────────────────────────────────────────
+# Historical 1.0 cache generator. Its zeroes.in=FALSE aggregate output is
+# retained for provenance only and is invalid as modality evidence in 2.0.
+#
+# ── 2. Legacy aggregate scoring helper ────────────────────────────────────────
 # Mirrors the exact aggregation in iteration.QC (R/iteration-QC.R line 55):
 #   sum(accuracy.matrix, na.rm = TRUE) * 100 / prod(dim(accuracy.matrix))
 uni_score <- function(mc) {

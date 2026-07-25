@@ -16,6 +16,9 @@ navbar:
     right: [search, github]
 
 articles:
+- title: Migration
+  contents:
+  - migrating-to-fastINFLECT-2
 - title: Benchmarks and method comparisons
   navbar: Benchmarks
   contents:
@@ -39,6 +42,7 @@ reference:
 - title: Selection helpers and diagnostics
   contents:
   - computemode
+  - inflect_adaptive_set_i
   - inflect_kneedle
   - inflect_threshold_k
   - bimodality.coefficient

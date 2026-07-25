@@ -16,7 +16,7 @@
 \item{...}{Additional arguments passed to \code{as.data.frame}.}
 }
 \value{
-\code{x$collection.U} as a \code{data.frame}.
+Canonical \code{x$scores} as a \code{data.frame}.
 }
 \description{
 Coerce a fastINFLECT result to a data frame

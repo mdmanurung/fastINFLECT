@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Comparing metaclustering strategies with fastINFLECT • fastINFLECT</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Comparing metaclustering strategies with fastINFLECT">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">fastINFLECT</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,8 @@
     <li><h6 class="dropdown-header" data-toc-skip>Benchmarks</h6></li>
     <li><a class="dropdown-item" href="../articles/benchmark-inflect-vs-consensus.html">Benchmarking fastINFLECT against consensus metaclustering</a></li>
     <li><a class="dropdown-item" href="../articles/comparing-metaclustering.html">Comparing metaclustering strategies with fastINFLECT</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -53,9 +55,6 @@
   </div>
 </nav><div class="container template-article">
 
-
-
-
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
@@ -68,537 +67,132 @@
 
     
     
+<p>FlowSOM reduces events to SOM nodes; metaclustering assigns those nodes to a smaller number of clusters. Different partition engines and code-space weights can produce different node assignments even when they use the same value of <code>k</code>. A fair comparison therefore separates three questions:</p>
+<ol style="list-style-type: decimal">
+<li>Which code matrix and weights were used?</li>
+<li>Which partition was actually materialised?</li>
+<li>What marker-level evidence remains inside that partition?</li>
+</ol>
+<p>An aggregate fastINFLECT pass-rate curve answers none of these questions by itself.</p>
 <div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+<h2 id="materialise-each-partition">Materialise each partition<a class="anchor" aria-label="anchor" href="#materialise-each-partition"></a>
 </h2>
-<p>FlowSOM reduces a high-dimensional cytometry dataset to a
-Self-Organising Map (SOM) of a few hundred nodes, then
-<em>metaclusters</em> those nodes into a biologically interpretable
-number of clusters <em>k</em>. The central challenge is choosing k: too
-few clusters merge distinct populations; too many split them
-arbitrarily.</p>
-<p>Three common strategies exist:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr class="header">
-<th>Strategy</th>
-<th>How k is chosen</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><strong>FlowSOM consensus</strong></td>
-<td>User picks k; consensus clustering (ConsensusClusterPlus) cuts the
-SOM</td>
-</tr>
-<tr class="even">
-<td><strong>FlowSOM auto-k</strong></td>
-<td>
-<code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> tests k = 2…max and picks the most
-stable k</td>
-</tr>
-<tr class="odd">
-<td><strong>Hierarchical (ward.D2)</strong></td>
-<td>User picks k; <code>hclust</code> + <code>cutree</code> cuts the
-SOM</td>
-</tr>
-<tr class="even">
-<td><strong>fastINFLECT</strong></td>
-<td>Sweeps k; fits a unimodality curve; picks the inflection point
-automatically</td>
-</tr>
-</tbody>
-</table>
-<p>fastINFLECT provides an <strong>objective, marker-level quality
-score</strong>: for each metaclustering it measures what fraction of
-(cluster, marker) combinations follow a unimodal distribution, the
-assumption underlying cluster identity. As k increases, unimodality
-rises then plateaus; the inflection point of that curve is fastINFLECT’s
-recommendation.</p>
-<p>This vignette applies all four strategies to the same SOM and
-compares their results using this common metric.</p>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
-</h2>
-<p>The package ships a downsampled version of the Levine <em>et al.</em>
-2015 CyTOF dataset (Levine32). It contains 32,288 bone-marrow cells
-measured across 32 surface markers and pre-processed into a FlowSOM
-object with <strong>375 SOM nodes</strong>.</p>
+<p>The examples below are deliberately not executed while building the vignette. They show the required contract for a user-supplied FlowSOM object named <code>model</code>.</p>
+<div class="section level3">
+<h3 id="ward-d2-hierarchy">Ward.D2 hierarchy<a class="anchor" aria-label="anchor" href="#ward-d2-hierarchy"></a>
+</h3>
+<p>fastINFLECT uses a Ward.D2 hierarchy over the adapter’s effective code matrix. The literal schedule is retained as named node-label vectors:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/fastINFLECT">fastINFLECT</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25L</span>, <span class="fl">30L</span>, <span class="fl">35L</span>, <span class="fl">40L</span>, <span class="fl">45L</span>, <span class="fl">50L</span>, <span class="fl">55L</span>, <span class="fl">60L</span>, <span class="fl">62L</span>, <span class="fl">65L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Load the bundled FlowSOM object</span></span>
-<span><span class="va">data_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Levine32sample.Rdata"</span>, package <span class="op">=</span> <span class="st">"fastINFLECT"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="va">data_path</span><span class="op">)</span>   <span class="co"># creates object 'dataset' (class FlowSOM)</span></span>
+<span><span class="va">ward_partitions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/iteration.metacluster.html">iteration.metacluster</a></span><span class="op">(</span></span>
+<span>  FlowSOM.results <span class="op">=</span> <span class="va">model</span>,</span>
+<span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
+<span>  multicore <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 32,288 cells × 39 columns; 375 SOM nodes; 32 clustering markers</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">data</span><span class="op">)</span></span>
-<span><span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">nNodes</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">colsUsed</span><span class="op">)</span></span></code></pre></div>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="four-ways-to-cut-the-som">Four ways to cut the SOM<a class="anchor" aria-label="anchor" href="#four-ways-to-cut-the-som"></a>
-</h2>
-<p>All four approaches operate on <code>dataset$map$codes</code>, the
-375 × 32 matrix of SOM node prototypes. They each return an integer
-vector of length 375 assigning every node to a metacluster.</p>
-<div class="section level3">
-<h3 id="flowsom-consensus-metaclustering-fixed-k">1. FlowSOM consensus metaclustering (fixed k)<a class="anchor" aria-label="anchor" href="#flowsom-consensus-metaclustering-fixed-k"></a>
-</h3>
-<p>FlowSOM’s default metaclustering uses ConsensusClusterPlus to build a
-stable partitioning at a user-supplied k. Here we use k = 10 as a
-representative choice:</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">ward_partitions</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">schedule</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">schedule</span><span class="op">)</span>,</span>
+<span>    <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">ward_partitions</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="va">schedule</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/logical.html" class="external-link">logical</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For a kohonen multi-layer SOM, the adapter multiplies each code layer by the square root of its user weight and distance weight before concatenating the layers. The recorded values are available in:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://www.r-project.org" class="external-link">FlowSOM</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">mc_consensus</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/FlowSOM/man/metaClustering_consensus.html" class="external-link">metaClustering_consensus</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">codes</span>,</span>
-<span>  k    <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">42</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">provenance</span><span class="op">$</span><span class="va">model</span></span></code></pre></div>
+<p>These weights are part of the partition definition. Equal fitted model weights and an historical 80/20 construction are different analyses, not interchangeable implementations.</p>
 </div>
 <div class="section level3">
-<h3 id="flowsom-auto-k-metaclustering">2. FlowSOM auto-k metaclustering<a class="anchor" aria-label="anchor" href="#flowsom-auto-k-metaclustering"></a>
+<h3 id="flowsom-consensus-control">FlowSOM consensus control<a class="anchor" aria-label="anchor" href="#flowsom-consensus-control"></a>
 </h3>
-<p><code><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering()</a></code> sweeps k from 2 to a maximum and
-selects the most internally stable solution:</p>
+<p>FlowSOM consensus metaclustering is a separate partition engine:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mc_autok</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/FlowSOM/man/MetaClustering.html" class="external-link">MetaClustering</a></span><span class="op">(</span></span>
-<span>  data   <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">codes</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"metaClustering_consensus"</span>,</span>
-<span>  max    <span class="op">=</span> <span class="fl">25</span>,</span>
-<span>  seed   <span class="op">=</span> <span class="fl">42</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Auto-k chose: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">mc_autok</span><span class="op">)</span><span class="op">)</span>, <span class="st">" metaclusters"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">consensus_seeds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">42L</span>, <span class="fl">2026L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">consensus_partitions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">consensus_seeds</span>, <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu">FlowSOM</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/FlowSOM/man/metaClustering_consensus.html" class="external-link">metaClustering_consensus</a></span><span class="op">(</span></span>
+<span>      data <span class="op">=</span> <span class="va">effective_codes</span>,</span>
+<span>      k <span class="op">=</span> <span class="fl">62L</span>,</span>
+<span>      seed <span class="op">=</span> <span class="va">seed</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"seed_"</span>, <span class="va">consensus_seeds</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Compare all three node-label vectors. If every pairwise adjusted Rand index is at least 0.95, seed 42 can be used as a displayed control while retaining all three partitions in provenance. Otherwise, the controls are seed-unstable and all three should be shown.</p>
 </div>
-<div class="section level3">
-<h3 id="hierarchical-clustering-ward-d2-fixed-k">3. Hierarchical clustering, ward.D2 (fixed k)<a class="anchor" aria-label="anchor" href="#hierarchical-clustering-ward-d2-fixed-k"></a>
-</h3>
-<p>fastINFLECT’s exported <code><a href="../reference/metaClusteringhclust.html">metaClusteringhclust()</a></code> wraps
-<code>hclust(dist(..., "minkowski"), "ward.D2")</code> and
-<code>cutree</code> at k. This is also the engine that fastINFLECT uses
-internally at each sweep point:</p>
+</div>
+<div class="section level2">
+<h2 id="score-a-common-marker-panel">Score a common marker panel<a class="anchor" aria-label="anchor" href="#score-a-common-marker-panel"></a>
+</h2>
+<p><code><a href="../reference/iteration.QC.html">iteration.QC()</a></code> accepts a named list containing exactly one partition for every requested k. It returns separate dip, IQR, and combined evidence:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mc_hclust</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/metaClusteringhclust.html">metaClusteringhclust</a></span><span class="op">(</span></span>
-<span>  data  <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">codes</span>,</span>
-<span>  nClus <span class="op">=</span> <span class="fl">10</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="fastinflect-automatic-inflection-point-selection">4. fastINFLECT: automatic inflection-point selection<a class="anchor" aria-label="anchor" href="#fastinflect-automatic-inflection-point-selection"></a>
-</h3>
-<p><code><a href="../reference/INFLECT.html">INFLECT()</a></code> sweeps <code>set.i</code>, scores unimodality
-at each k via <code>FlowSOMQC</code>, fits a four-parameter log-logistic
-curve, and returns the knee of that curve as its recommended k:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">inflect_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
-<span>  FlowSOM.results <span class="op">=</span> <span class="va">dataset</span>,</span>
-<span>  set.i           <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">25</span>,       <span class="co"># explicit vector, not length-2; see ?INFLECT</span></span>
-<span>  multicore       <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  zeroes.in       <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The results below come from this pre-computed run.</p>
-<hr>
-</div>
-</div>
-<div class="section level2">
-<h2 id="fastinflect-diagnostic-curve">fastINFLECT diagnostic curve<a class="anchor" aria-label="anchor" href="#fastinflect-diagnostic-curve"></a>
-</h2>
-<p>The diagnostic curve shows how unimodality improves as k increases.
-The vertical dashed line marks the inflection point, where the curve
-stops rising, and gives fastINFLECT’s recommended k.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">ggplot</span></span></code></pre></div>
-<div class="figure">
-<img src="comparing-metaclustering_files/figure-html/inflect-plot-1.png" class="r-plt" alt="fastINFLECT diagnostic curve. Each point is the unimodality score at that k; the red curve is the fitted LL.4 model; the dashed vertical line is the inflection point (knee)." width="100%"><p class="caption">
-fastINFLECT diagnostic curve. Each point is the unimodality score at
-that k; the red curve is the fitted LL.4 model; the dashed vertical line
-is the inflection point (knee).
-</p>
-</div>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   knee range    angle n_points min_i max_i min_unimodality max_unimodality</span></span>
-<span><span class="co">#&gt; 1   12    25 14.11648       21     5    25            92.5        98.50543</span></span>
-<span><span class="co">#&gt;   n_markers uniform.test th.pvalue th.IQR zeroes.in basedata package_version</span></span>
-<span><span class="co">#&gt; 1        32         both      0.05      2     FALSE    Curve           1.0.0</span></span>
-<span><span class="co">#&gt;   k_inflection k_kneedle k_threshold</span></span>
-<span><span class="co">#&gt; 1           12         8           8</span></span></code></pre></div>
-<p>The <code>knee</code> column is fastINFLECT’s recommended number of
-metaclusters. <code>range</code> is the fitted plateau level (maximum
-expected unimodality); <code>angle</code> is the sharpness of the curve
-bend.</p>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="head-to-head-comparison">Head-to-head comparison<a class="anchor" aria-label="anchor" href="#head-to-head-comparison"></a>
-</h2>
-<p>We score every method on the same unimodality metric: the percentage
-of (cluster, marker) pairs that pass fastINFLECT’s QC test (dip test +
-IQR spread). Higher is better.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">knee</span>    <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">lfunction</span><span class="op">$</span><span class="va">knee</span></span>
-<span><span class="va">autok</span>   <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">autok_point</span></span>
-<span></span>
-<span><span class="fu">ggplot</span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">comparison_df</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">k</span>, y <span class="op">=</span> <span class="va">unimodality</span>, colour <span class="op">=</span> <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_line</span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_point</span><span class="op">(</span>size <span class="op">=</span> <span class="fl">1.8</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_vline</span><span class="op">(</span>xintercept <span class="op">=</span> <span class="va">knee</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"black"</span>, linewidth <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">annotate</span><span class="op">(</span><span class="st">"text"</span>, x <span class="op">=</span> <span class="va">knee</span> <span class="op">+</span> <span class="fl">0.3</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">comparison_df</span><span class="op">$</span><span class="va">unimodality</span><span class="op">)</span>,</span>
-<span>           label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"fastINFLECT\nknee = "</span>, <span class="va">knee</span><span class="op">)</span>,</span>
-<span>           hjust <span class="op">=</span> <span class="fl">0</span>, vjust <span class="op">=</span> <span class="fl">0</span>, size <span class="op">=</span> <span class="fl">3.2</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_point</span><span class="op">(</span>data <span class="op">=</span> <span class="va">autok</span>,</span>
-<span>             <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">k</span>, y <span class="op">=</span> <span class="va">unimodality</span><span class="op">)</span>,</span>
-<span>             shape <span class="op">=</span> <span class="fl">17</span>, size <span class="op">=</span> <span class="fl">4</span>, colour <span class="op">=</span> <span class="st">"#7B2D8B"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_label</span><span class="op">(</span>data <span class="op">=</span> <span class="va">autok</span>,</span>
-<span>             <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">k</span>, y <span class="op">=</span> <span class="va">unimodality</span>,</span>
-<span>                 label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Auto-k\nk = "</span>, <span class="va">k</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>             hjust <span class="op">=</span> <span class="op">-</span><span class="fl">0.15</span>, vjust <span class="op">=</span> <span class="fl">0.5</span>, size <span class="op">=</span> <span class="fl">3</span>, colour <span class="op">=</span> <span class="st">"#7B2D8B"</span>,</span>
-<span>             label.size <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">scale_colour_manual</span><span class="op">(</span></span>
-<span>    values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"FlowSOM consensus"</span>     <span class="op">=</span> <span class="st">"#E07B39"</span>,</span>
-<span>               <span class="st">"Hierarchical (ward.D2)"</span> <span class="op">=</span> <span class="st">"#3D7AB5"</span><span class="op">)</span>,</span>
-<span>    name <span class="op">=</span> <span class="cn">NULL</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">scale_x_continuous</span><span class="op">(</span>breaks <span class="op">=</span> <span class="va">cache</span><span class="op">$</span><span class="va">k_range</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">labs</span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Number of metaclusters (k)"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Unimodality score (%)"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Unimodality by metaclustering strategy"</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">theme_bw</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">theme</span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"bottom"</span>,</span>
-<span>        panel.grid.minor <span class="op">=</span> <span class="fu">element_blank</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The `label.size` argument of `geom_label()` is deprecated as of ggplot2 3.5.0.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use the `linewidth` argument instead.</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span></code></pre></div>
-<div class="figure">
-<img src="comparing-metaclustering_files/figure-html/comparison-plot-1.png" class="r-plt" alt="Unimodality score across k for each fixed-k strategy. The dashed vertical line marks fastINFLECT's chosen knee; the triangle shows FlowSOM auto-k's chosen k and its unimodality score." width="100%"><p class="caption">
-Unimodality score across k for each fixed-k strategy. The dashed
-vertical line marks fastINFLECT’s chosen knee; the triangle shows
-FlowSOM auto-k’s chosen k and its unimodality score.
-</p>
-</div>
-<div class="section level3">
-<h3 id="summary-table">Summary table<a class="anchor" aria-label="anchor" href="#summary-table"></a>
-</h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">knee</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">lfunction</span><span class="op">$</span><span class="va">knee</span></span>
-<span></span>
-<span><span class="co"># For fixed-k methods, report their best unimodality across the sweep</span></span>
-<span><span class="co"># (the k that maximises unimodality — their theoretical optimum if the user chose perfectly)</span></span>
-<span><span class="va">best_k</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">method_name</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">comparison_df</span>, <span class="va">method</span> <span class="op">==</span> <span class="va">method_name</span><span class="op">)</span></span>
-<span>  <span class="va">d</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">unimodality</span><span class="op">)</span>, <span class="op">]</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">best_consensus</span> <span class="op">&lt;-</span> <span class="fu">best_k</span><span class="op">(</span><span class="st">"FlowSOM consensus"</span><span class="op">)</span></span>
-<span><span class="va">best_hclust</span>    <span class="op">&lt;-</span> <span class="fu">best_k</span><span class="op">(</span><span class="st">"Hierarchical (ward.D2)"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># fastINFLECT score at its knee</span></span>
-<span><span class="va">inflect_at_knee</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">inflect</span><span class="op">$</span><span class="va">collection.U</span>, <span class="va">i</span> <span class="op">==</span> <span class="va">knee</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    Method            <span class="op">=</span> <span class="st">"FlowSOM consensus"</span>,</span>
-<span>    `k selection`     <span class="op">=</span> <span class="st">"manual"</span>,</span>
-<span>    `Best k in sweep` <span class="op">=</span> <span class="va">best_consensus</span><span class="op">$</span><span class="va">k</span>,</span>
-<span>    `Unimodality (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">best_consensus</span><span class="op">$</span><span class="va">unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>    stringsAsFactors  <span class="op">=</span> <span class="cn">FALSE</span>, check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    Method            <span class="op">=</span> <span class="st">"Hierarchical (ward.D2)"</span>,</span>
-<span>    `k selection`     <span class="op">=</span> <span class="st">"manual"</span>,</span>
-<span>    `Best k in sweep` <span class="op">=</span> <span class="va">best_hclust</span><span class="op">$</span><span class="va">k</span>,</span>
-<span>    `Unimodality (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">best_hclust</span><span class="op">$</span><span class="va">unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>    stringsAsFactors  <span class="op">=</span> <span class="cn">FALSE</span>, check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    Method            <span class="op">=</span> <span class="st">"FlowSOM auto-k"</span>,</span>
-<span>    `k selection`     <span class="op">=</span> <span class="st">"automatic"</span>,</span>
-<span>    `Best k in sweep` <span class="op">=</span> <span class="va">cache</span><span class="op">$</span><span class="va">autok_point</span><span class="op">$</span><span class="va">k</span>,</span>
-<span>    `Unimodality (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cache</span><span class="op">$</span><span class="va">autok_point</span><span class="op">$</span><span class="va">unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>    stringsAsFactors  <span class="op">=</span> <span class="cn">FALSE</span>, check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    Method            <span class="op">=</span> <span class="st">"fastINFLECT"</span>,</span>
-<span>    `k selection`     <span class="op">=</span> <span class="st">"automatic (inflection point)"</span>,</span>
-<span>    `Best k in sweep` <span class="op">=</span> <span class="va">knee</span>,</span>
-<span>    `Unimodality (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">inflect_at_knee</span><span class="op">$</span><span class="va">Unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>    stringsAsFactors  <span class="op">=</span> <span class="cn">FALSE</span>, check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/iteration.QC.html">iteration.QC</a></span><span class="op">(</span></span>
+<span>  FlowSOM.results <span class="op">=</span> <span class="va">model</span>,</span>
+<span>  metaclustering.list <span class="op">=</span> <span class="va">ward_partitions</span>,</span>
+<span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
+<span>  zeroes.in <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  uniform.test <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  multicore <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cores <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">tbl</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<colgroup>
-<col width="27%">
-<col width="34%">
-<col width="19%">
-<col width="19%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Method</th>
-<th align="left">k selection</th>
-<th align="right">Best k in sweep</th>
-<th align="right">Unimodality (%)</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">FlowSOM consensus</td>
-<td align="left">manual</td>
-<td align="right">25</td>
-<td align="right">97.6</td>
-</tr>
-<tr class="even">
-<td align="left">Hierarchical (ward.D2)</td>
-<td align="left">manual</td>
-<td align="right">23</td>
-<td align="right">98.5</td>
-</tr>
-<tr class="odd">
-<td align="left">FlowSOM auto-k</td>
-<td align="left">automatic</td>
-<td align="right">9</td>
-<td align="right">94.1</td>
-</tr>
-<tr class="even">
-<td align="left">fastINFLECT</td>
-<td align="left">automatic (inflection point)</td>
-<td align="right">12</td>
-<td align="right">96.1</td>
-</tr>
-</tbody>
-</table>
-<p>For fixed-k methods the table reports their <strong>best</strong>
-unimodality across the entire sweep, the score they would achieve if a
-user happened to choose the optimal k. Automatic methods are shown at
-their own selected k. Even under the best-case assumption for manual
-selection, the automatic methods (especially fastINFLECT) reach
-competitive or superior scores without requiring the user to know the
-right k in advance.</p>
-<hr>
-</div>
+<span><span class="va">qc</span><span class="op">$</span><span class="va">scores</span></span>
+<span><span class="va">qc</span><span class="op">$</span><span class="va">dip_pass</span><span class="op">[[</span><span class="st">"62"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">qc</span><span class="op">$</span><span class="va">iqr_pass</span><span class="op">[[</span><span class="st">"62"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">qc</span><span class="op">$</span><span class="va">combined_pass</span><span class="op">[[</span><span class="st">"62"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">qc</span><span class="op">$</span><span class="va">qc.details</span><span class="op">[[</span><span class="st">"62"</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">failure_reason</span></span></code></pre></div>
+<p><code>uniform.test = "spread"</code> selects only the IQR pass rate for the aggregate curve. It does not perform a dip-based modality assessment. Conversely, <code>uniform.test = "unimodality"</code> selects the dip result but still cannot prove a unimodal distribution.</p>
+<p>The default <code>zeroes.in = TRUE</code> retains the complete finite transformed distribution. Setting it to <code>FALSE</code> excludes every non-positive value and can substantially change a centred marker distribution.</p>
 </div>
 <div class="section level2">
-<h2 id="all-cluster-quality-histograms">All-cluster quality histograms<a class="anchor" aria-label="anchor" href="#all-cluster-quality-histograms"></a>
+<h2 id="compare-solutions-without-hiding-cluster-size">Compare solutions without hiding cluster size<a class="anchor" aria-label="anchor" href="#compare-solutions-without-hiding-cluster-size"></a>
 </h2>
-<p>A global score can hide whether a method leaves a few poor
-metaclusters behind. The plot below treats each generated metacluster as
-one observation and asks: what percentage of evaluated markers pass the
-unimodality/IQR QC inside that cluster? The FlowSOM consensus and
-hierarchical examples use the representative fixed <code>k = 10</code>
-shown above; FlowSOM auto-k uses its selected k; fastINFLECT is shown at
-both the original inflection criterion and the threshold criterion.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cq_bins</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">cluster_quality_bins</span></span>
-<span><span class="va">cq</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">cluster_quality_df</span></span>
-<span><span class="va">cq_summary</span> <span class="op">&lt;-</span> <span class="va">cache</span><span class="op">$</span><span class="va">cluster_quality_summary</span></span>
-<span><span class="va">method_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">cq</span><span class="op">$</span><span class="va">method</span><span class="op">)</span></span>
-<span><span class="va">cq_bins</span><span class="op">$</span><span class="va">method</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">cq_bins</span><span class="op">$</span><span class="va">method</span>, levels <span class="op">=</span> <span class="va">method_levels</span><span class="op">)</span></span>
-<span><span class="va">cq_summary</span><span class="op">$</span><span class="va">method</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">cq_summary</span><span class="op">$</span><span class="va">method</span>, levels <span class="op">=</span> <span class="va">method_levels</span><span class="op">)</span></span>
-<span><span class="va">cq_summary</span> <span class="op">&lt;-</span> <span class="va">cq_summary</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">method_levels</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">cq_summary</span><span class="op">$</span><span class="va">method</span><span class="op">)</span><span class="op">)</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
-<span></span>
-<span><span class="fu">ggplot</span><span class="op">(</span><span class="va">cq_bins</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">quality_midpoint</span>, y <span class="op">=</span> <span class="va">cluster_fraction</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_col</span><span class="op">(</span>width <span class="op">=</span> <span class="fl">9</span>, fill <span class="op">=</span> <span class="st">"#3D7AB5"</span>, colour <span class="op">=</span> <span class="st">"white"</span>, linewidth <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">geom_vline</span><span class="op">(</span>data <span class="op">=</span> <span class="va">cq_summary</span>,</span>
-<span>             <span class="fu">aes</span><span class="op">(</span>xintercept <span class="op">=</span> <span class="va">median_cluster_unimodality</span><span class="op">)</span>,</span>
-<span>             linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"#2E2E2E"</span>, linewidth <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span> <span class="va">method</span>, ncol <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">scale_x_continuous</span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">100</span><span class="op">)</span>, breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">100</span>, by <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
-<span>                     expand <span class="op">=</span> <span class="fu">expansion</span><span class="op">(</span>mult <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.01</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">scale_y_continuous</span><span class="op">(</span>labels <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span>, <span class="st">"%"</span><span class="op">)</span>,</span>
-<span>                     expand <span class="op">=</span> <span class="fu">expansion</span><span class="op">(</span>mult <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.08</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">labs</span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"markers passing QC within a metacluster (%)"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"metaclusters within method (%)"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Cluster-level unimodality distributions"</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">theme_bw</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu">theme</span><span class="op">(</span>panel.grid.minor <span class="op">=</span> <span class="fu">element_blank</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="figure">
-<img src="comparing-metaclustering_files/figure-html/cluster-quality-hist-1.png" class="r-plt" alt="Distribution of per-metacluster unimodality on the Levine32 dataset. Each bar is the fraction of metaclusters whose marker-level QC pass rate falls in that 10-point bin. Dashed lines mark the median cluster-level score for each method." width="100%"><p class="caption">
-Distribution of per-metacluster unimodality on the Levine32 dataset.
-Each bar is the fraction of metaclusters whose marker-level QC pass rate
-falls in that 10-point bin. Dashed lines mark the median cluster-level
-score for each method.
-</p>
-</div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cq_tbl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  Method <span class="op">=</span> <span class="va">cq_summary</span><span class="op">$</span><span class="va">method</span>,</span>
-<span>  `k used` <span class="op">=</span> <span class="va">cq_summary</span><span class="op">$</span><span class="va">k</span>,</span>
-<span>  `metaclusters` <span class="op">=</span> <span class="va">cq_summary</span><span class="op">$</span><span class="va">clusters</span>,</span>
-<span>  `median cluster QC (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cq_summary</span><span class="op">$</span><span class="va">median_cluster_unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  `minimum cluster QC (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">cq_summary</span><span class="op">$</span><span class="va">min_cluster_unimodality</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  `clusters below 95%` <span class="op">=</span> <span class="va">cq_summary</span><span class="op">$</span><span class="va">clusters_below_95</span>,</span>
-<span>  `clusters below 100%` <span class="op">=</span> <span class="va">cq_summary</span><span class="op">$</span><span class="va">clusters_below_100</span>,</span>
-<span>  check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">cq_tbl</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span>, <span class="st">"r"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<colgroup>
-<col width="18%">
-<col width="5%">
-<col width="10%">
-<col width="17%">
-<col width="18%">
-<col width="14%">
-<col width="15%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Method</th>
-<th align="right">k used</th>
-<th align="right">metaclusters</th>
-<th align="right">median cluster QC (%)</th>
-<th align="right">minimum cluster QC (%)</th>
-<th align="right">clusters below 95%</th>
-<th align="right">clusters below 100%</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">FlowSOM consensus</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">95.3</td>
-<td align="right">87.5</td>
-<td align="right">5</td>
-<td align="right">8</td>
-</tr>
-<tr class="even">
-<td align="left">FlowSOM auto-k</td>
-<td align="right">9</td>
-<td align="right">9</td>
-<td align="right">93.8</td>
-<td align="right">81.2</td>
-<td align="right">5</td>
-<td align="right">7</td>
-</tr>
-<tr class="odd">
-<td align="left">Hierarchical (ward.D2)</td>
-<td align="right">10</td>
-<td align="right">10</td>
-<td align="right">95.3</td>
-<td align="right">90.6</td>
-<td align="right">5</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="left">fastINFLECT inflection</td>
-<td align="right">12</td>
-<td align="right">12</td>
-<td align="right">96.9</td>
-<td align="right">90.6</td>
-<td align="right">5</td>
-<td align="right">8</td>
-</tr>
-<tr class="odd">
-<td align="left">fastINFLECT threshold</td>
-<td align="right">8</td>
-<td align="right">8</td>
-<td align="right">95.3</td>
-<td align="right">90.6</td>
-<td align="right">4</td>
-<td align="right">6</td>
-</tr>
-</tbody>
-</table>
-<p>This simple view is the direct cluster-quality audit: methods whose
-histograms shift toward 100% produce metaclusters where marker
-expression is more often unimodal across the full marker panel. The
-threshold readout is included because it is the fastINFLECT criterion
-that most directly encodes “avoid residual bimodal marker expression
-without over-clustering.”</p>
-<hr>
+<p>For each fully materialised solution, report at least:</p>
+<ul>
+<li>unweighted fractions of cluster-marker statuses;</li>
+<li>event-weighted fractions of the same statuses;</li>
+<li>the fraction of clusters with no detected or unresolved marker;</li>
+<li>pairwise node-level adjusted Rand index;</li>
+<li>a cluster-by-marker status heatmap.</li>
+</ul>
+<p>Event-weighted and unweighted summaries answer different questions. A small problematic cluster counts equally in the unweighted summary but contributes few events to the weighted summary. Both are needed.</p>
 </div>
 <div class="section level2">
-<h2 id="per-marker-performance">Per-marker performance<a class="anchor" aria-label="anchor" href="#per-marker-performance"></a>
+<h2 id="validate-modality-independently">Validate modality independently<a class="anchor" aria-label="anchor" href="#validate-modality-independently"></a>
 </h2>
-<p>Which markers are hardest to resolve?
-<code><a href="../reference/marker.performance.html">marker.performance()</a></code> shows, for each marker, the fraction
-of metaclusters where that marker passes QC across the full sweep.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cache</span><span class="op">$</span><span class="va">mp_plot</span></span>
-<span><span class="co">#&gt; Warning: The following aesthetics were dropped during statistical transformation:</span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">colour</span>.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> This can happen when ggplot fails to infer the correct grouping structure in</span></span>
-<span><span class="co">#&gt;   the data.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Did you forget to specify a `group` aesthetic or to convert a numerical</span></span>
-<span><span class="co">#&gt;   variable into a factor?</span></span></code></pre></div>
-<div class="figure">
-<img src="comparing-metaclustering_files/figure-html/marker-performance-1.png" class="r-plt" alt="Per-marker unimodality pass rate (%) across all tested metaclusterings. Points are individual metaclusterings coloured by k; boxes summarise the distribution. Markers with low pass rates are systematically multimodal and may warrant panel or gating review." width="100%"><p class="caption">
-Per-marker unimodality pass rate (%) across all tested metaclusterings.
-Points are individual metaclusterings coloured by k; boxes summarise the
-distribution. Markers with low pass rates are systematically multimodal
-and may warrant panel or gating review.
-</p>
-</div>
-<p>Markers that consistently score low across all k values are
-intrinsically multimodal in this dataset; they may reflect biphasic
-biology (e.g. dim vs. bright populations) that the SOM has not fully
-resolved, or technical artefacts worth revisiting.</p>
-<hr>
-</div>
-<div class="section level2">
-<h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
-</h2>
-<p>fastINFLECT automates the most subjective step in a FlowSOM workflow,
-choosing k, by fitting an objective quality curve to a unimodality score
-computed from the data itself. Compared with manual selection or
-rule-based auto-k approaches, the inflection-point criterion is:</p>
+<p>For consequential claims, fastINFLECT’s aggregate screen should be followed by independent tests on deterministic samples from complete transformed distributions. The repository workflow uses:</p>
 <ul>
 <li>
-<strong>Interpretable</strong>: the diagnostic curve directly shows
-where cluster quality stops improving.</li>
+<code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">diptest::dip.test()</a></code>;</li>
 <li>
-<strong>Objective</strong>: no heuristics or stability measures; it
-quantifies the actual distributional quality of each marker within each
-metacluster.</li>
-<li>
-<strong>Reproducible</strong>: the same input SOM always produces
-the same recommended k.</li>
+<code>multimode::modetest(mod0 = 1, method = "ACR", B = 1999)</code>;</li>
+<li>seeds 1, 42, and 2026;</li>
+<li>Benjamini-Hochberg correction across the marker family within each cluster, method, seed, and sample size;</li>
+<li>repeats at 1,000 and 5,000 events for detected or ambiguous pairs and for a deterministic 5% audit of apparent passes.</li>
 </ul>
-<p>For downstream analysis, call <code>plot(inflect_res)</code> for the
-diagnostic curve, <code>summary(inflect_res)</code> for a one-row
-results table, and <code>marker.performance(inflect_res)</code> to
-identify markers that may require targeted gating.</p>
-<hr>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu">vignette_reproducibility</span><span class="op">(</span><span class="op">)</span>, align <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="st">"l"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<thead><tr class="header">
-<th align="left">Component</th>
-<th align="left">Version</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">R</td>
-<td align="left">R version 4.5.1 (2025-06-13)</td>
-</tr>
-<tr class="even">
-<td align="left">fastINFLECT</td>
-<td align="left">1.0.0</td>
-</tr>
-<tr class="odd">
-<td align="left">FlowSOM</td>
-<td align="left">2.18.0</td>
-</tr>
-<tr class="even">
-<td align="left">diptest</td>
-<td align="left">0.77.2</td>
-</tr>
-<tr class="odd">
-<td align="left">ConsensusClusterPlus</td>
-<td align="left">1.74.0</td>
-</tr>
-</tbody>
-</table>
+<p>The correction controls the marker family within a cluster. It is not global control across all clusters.</p>
+<p>Tied or saturated cytometry measurements are not silently jittered. Pairs with insufficient unique values, excessive ties, boundary saturation, or test failure are labelled <code>unresolved_discrete</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="interpret-conservatively">Interpret conservatively<a class="anchor" aria-label="anchor" href="#interpret-conservatively"></a>
+</h2>
+<p>Use four outcome labels:</p>
+<ul>
+<li>
+<code>detected_multimodality</code>: both independent tests reject after correction in at least two seeds and required sample-size checks agree;</li>
+<li>
+<code>no_detected_multimodality</code>: neither test rejects in any valid seed and required checks remain stable;</li>
+<li>
+<code>ambiguous</code>: test disagreement, seed instability, borderline evidence, or sample-size sensitivity;</li>
+<li>
+<code>unresolved_discrete</code>: the measurement grid or a test failure prevents a valid assessment.</li>
+</ul>
+<p>Do not call a cluster “truly unimodal.” Failure to reject a unimodal null is not proof of that null, and univariate marker marginals do not establish multivariate cluster homogeneity or biological validity.</p>
+<p>The pre-2.0 <code>vignette_cache.rds</code> is retained only as historical package performance material. Because it used <code>zeroes.in = FALSE</code> and an aggregate pass-rate interpretation, it is not scientific evidence for cluster modality.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

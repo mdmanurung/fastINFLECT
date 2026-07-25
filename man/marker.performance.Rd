@@ -14,19 +14,26 @@ marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 \item{markers}{Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.}
 }
 \value{
-\code{list} with 2 items. First is the melted dataframe with the marker performance percentage per marker per metaclustering. Second is a ggplot object, a boxplot with marker
-performance on the y-axis, markers on the x-axis and the color scale denoting the amount of metaclusters evaluated.
+A list with \code{marker.dataframe} and \code{plot}. The data frame contains
+canonical \code{k}, \code{marker}, and \code{qc_pass_rate} columns. Deprecated \code{i}, \code{Marker},
+and \code{Performance} aliases are retained for migration.
 }
 \description{
-Plots the marker performance across metaclusterings in a boxplot. Performance score is the percentage of clusters
-where a marker passed the \link[diptest]{dip.test} and IQR test per metaclustering. The color gradient denotes \code{set.i}.
+Plots criterion-specific marker QC across metaclusterings. The
+score is the percentage of clusters where a marker passed the aggregate
+criterion selected in \code{\link[=INFLECT]{INFLECT()}}. It is a screening pass rate, not proof of
+unimodality. The colour gradient denotes the tested cluster count.
 }
 \examples{
 # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
 # SOM-clustered to 375 clusters.
 flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
 load(flowsom)
-inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= 5:12, multicore=FALSE, zeroes.in=FALSE)
+inflect.results <- INFLECT(
+  FlowSOM.results = dataset,
+  set.i = 5:12,
+  multicore = FALSE
+)
 
 # Display diagnostic graph
 inflect.results$ggplot

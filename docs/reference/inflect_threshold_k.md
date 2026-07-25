@@ -1,10 +1,9 @@
-# Smallest k that reaches a target unimodality
+# Smallest k that reaches a target QC pass rate
 
-Returns the smallest number of metaclusters whose unimodality score
-meets or exceeds `target`. This fastINFLECT addition operationalises the
-goal of admitting no cluster with residual bimodal marker expression
-while avoiding over-clustering: it is the first k at which (nearly)
-every (cluster, marker) pair is unimodal.
+Returns the smallest tested number of metaclusters whose
+criterion-specific QC pass rate meets or exceeds `target`. This
+aggregate is a screening metric; it does not establish that clusters are
+truly unimodal.
 
 ## Usage
 
@@ -16,13 +15,12 @@ inflect_threshold_k(collection.U, target = 0.95)
 
   - collection.U:
     
-    Data frame with columns `i` and `Unimodality` (the percentage of
-    unimodal (cluster, marker) pairs), as returned in
-    `inflect.results$collection.U`.
+    Canonical score data frame with `k` and `qc_pass_rate`, or the
+    deprecated `i` and `Unimodality` aliases.
 
   - target:
     
-    Desired unimodality. Values in `(0, 1]` are read as a fraction and
+    Desired pass rate. Values in `(0, 1]` are read as a fraction and
     values in `(1, 100]` as a percentage. Default `0.95`.
 
 ## Value

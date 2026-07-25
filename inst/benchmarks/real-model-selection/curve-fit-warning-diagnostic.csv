@@ -1,0 +1,4 @@
+"criterion","stored_inflection_k","rerun_inflection_k","warning_count","warning_messages","warning_calls","all_fitted_values_finite","observed_range_fitted_values_finite","inflection_matches"
+"dip",28,28,6,"NaNs produced","log(dose/parmMat[, 4])",TRUE,TRUE,TRUE
+"iqr",38,38,1,"NaNs produced","log(dose/parmMat[, 4])",TRUE,TRUE,TRUE
+"combined",27,27,8,"NaNs produced","log(dose/parmMat[, 4])",TRUE,TRUE,TRUE

@@ -2,16 +2,15 @@
 % Please edit documentation in R/select-k.R
 \name{inflect_threshold_k}
 \alias{inflect_threshold_k}
-\title{Smallest k that reaches a target unimodality}
+\title{Smallest k that reaches a target QC pass rate}
 \usage{
 inflect_threshold_k(collection.U, target = 0.95)
 }
 \arguments{
-\item{collection.U}{Data frame with columns \code{i} and \code{Unimodality}
-(the percentage of unimodal (cluster, marker) pairs), as returned in
-\code{inflect.results$collection.U}.}
+\item{collection.U}{Canonical score data frame with \code{k} and \code{qc_pass_rate},
+or the deprecated \code{i} and \code{Unimodality} aliases.}
 
-\item{target}{Desired unimodality. Values in \code{(0, 1]} are read as a
+\item{target}{Desired pass rate. Values in \code{(0, 1]} are read as a
 fraction and values in \code{(1, 100]} as a percentage. Default \code{0.95}.}
 }
 \value{
@@ -19,10 +18,9 @@ The smallest \code{i} meeting the target, or \code{NA_integer_} if no
 tested k reaches it.
 }
 \description{
-Returns the smallest number of metaclusters whose unimodality score
-meets or exceeds \code{target}. This fastINFLECT addition operationalises the goal of admitting no
-cluster with residual bimodal marker expression while avoiding over-clustering:
-it is the first k at which (nearly) every (cluster, marker) pair is unimodal.
+Returns the smallest tested number of metaclusters whose
+criterion-specific QC pass rate meets or exceeds \code{target}. This aggregate is
+a screening metric; it does not establish that clusters are truly unimodal.
 }
 \seealso{
 \code{\link{inflect_kneedle}}, \code{\link{INFLECT}}

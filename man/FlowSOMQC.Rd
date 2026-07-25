@@ -2,52 +2,65 @@
 % Please edit documentation in R/FlowSOM-QC.R
 \name{FlowSOMQC}
 \alias{FlowSOMQC}
-\title{Cluster quality control using diptest and IQR check}
+\title{Score one SOM metaclustering with dip and IQR criteria}
 \usage{
 FlowSOMQC(
   FlowSOM.results,
   metaclustering,
-  zeroes.in = FALSE,
+  zeroes.in = TRUE,
   only.clustering.markers = TRUE,
   acquired_markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
+  max.n.diptest = NULL,
+  seed = 1L,
   verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{FlowSOM.results}{A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.}
+\item{FlowSOM.results}{A supported \pkg{FlowSOM} or \pkg{kohonen} SOM object.}
 
-\item{metaclustering}{Vector with metacluster codes for all SOM-clusters.}
+\item{metaclustering}{Integer vector with one metacluster label per SOM node.}
 
-\item{zeroes.in}{Should be values at and below \code{0} be included. Recommended default for mass cytometry data is \code{FALSE}}
+\item{zeroes.in}{If \code{TRUE} (default), retain all finite transformed values.
+If \code{FALSE}, exclude every non-positive value and warn when negative values
+are present.}
 
-\item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.}
+\item{only.clustering.markers}{Evaluate only clustering markers.}
 
-\item{acquired_markers}{Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}}
+\item{acquired_markers}{Marker names used when
+\code{only.clustering.markers = FALSE}.}
 
-\item{uniform.test}{What tests are performed per marker per cluster. Options are "both", "spread" , or "unimodality" as a string.}
+\item{uniform.test}{Aggregate criterion: \code{"both"} (dip and IQR), \code{"spread"}
+(IQR), or \code{"unimodality"} (dip).}
 
-\item{th.pvalue}{Threshold for rejecting Unimodality dip.test result. Default is \code{0.05}. For more information see \link[diptest]{dip.test}}
+\item{th.pvalue}{Dip-test pass threshold.}
 
-\item{th.IQR}{Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.}
+\item{th.IQR}{IQR pass threshold.}
 
-\item{verbose}{\code{logical} , default is \code{TRUE}}
+\item{max.n.diptest}{Optional dip-test sample cap of at least four.}
 
-\item{...}{Additional arguments to pass to \code{\link[diptest]{dip.test}}.}
+\item{seed}{Non-negative seed. Simulated dip p-values and optional
+subsampling use deterministic subtree-marker streams and preserve the
+caller's RNG state.}
+
+\item{verbose}{Logical.}
+
+\item{...}{Additional arguments passed to \code{\link[diptest]{dip.test}}.}
 }
 \value{
-A \code{matrix} with evaluated markers in columns and clusters in rows. Each position in the matrix is \code{logical} indicating a pass or a fail.
+Invisibly, the selected-criterion logical matrix. Attributes
+\code{qc.details} and \code{provenance} retain the separated evidence.
 }
 \description{
-Computes the unimodality score for cluster results. Per marker
-per cluster, \link[diptest]{dip.test} is applied and inter-quartile range is
-assessed. This function implements the original INFLECT marker-level QC
-criterion. The package-level sweep in \code{\link{iteration.QC}} reuses the
-same criterion through memoised helper code.
+Computes separate Hartigan dip-test and IQR-spread evidence for every
+cluster-marker pair. The returned matrix contains the pass decision selected
+by \code{uniform.test}; its \code{qc.details} attribute contains \code{dip_pass},
+\code{iqr_pass}, \code{combined_pass}, p-values, IQRs, counts, exclusions, and failure
+reasons. A pass is criterion-specific and does not prove true unimodality.
 }
 \seealso{
-\code{\link{INFLECT}} , \code{\link{iteration.QC}}
+\code{\link{INFLECT}}, \code{\link{iteration.QC}}
 }

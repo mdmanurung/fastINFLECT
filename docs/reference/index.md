@@ -5,7 +5,8 @@
 <!-- end list -->
 
   - `INFLECT()` : Run the fastINFLECT computation
-  - `FlowSOMQC()` : Cluster quality control using diptest and IQR check
+  - `FlowSOMQC()` : Score one SOM metaclustering with dip and IQR
+    criteria
   - `marker.performance()` : Plot marker performance across
     metaclustering results
 
@@ -15,25 +16,25 @@
 
   - `iteration.metacluster()` : Run iterative metaclustering on
     SOM-clustered objects
-  - `iteration.QC()` : Run unimodality quality control on
-    metaclusterings in parallel
-  - `metaClusteringhclust()` : Metaclustering function based on
-    hierarchical clustering
-  - `QC.to.curve()` : Plot diagnostic fastINFLECT curve and find
-    inflection point
-  - `Lfunction()` : Lfunction for determing Inflection Point
-  - `leastError()` : Determine kneepoint based on minimizing fitting
-    errors
+  - `iteration.QC()` : Score marker-level QC criteria across
+    metaclustering schedules
+  - `metaClusteringhclust()` : Hierarchical (Ward) metaclustering of SOM
+    codes
+  - `QC.to.curve()` : Plot a criterion-specific fastINFLECT QC curve
+  - `Lfunction()` : Lfunction for determining Inflection Point
+  - `leastError()` : Determine kneepoint by minimizing fitting errors
 
 ## Selection helpers and diagnostics
 
 <!-- end list -->
 
   - `computemode()` : Estimate the mode of a numeric vector
+  - `inflect_adaptive_set_i()` : Build an explicitly bounded adaptive k
+    schedule
   - `inflect_kneedle()` : Locate the knee of a diminishing-returns curve
     (Kneedle)
-  - `inflect_threshold_k()` : Smallest k that reaches a target
-    unimodality
+  - `inflect_threshold_k()` : Smallest k that reaches a target QC pass
+    rate
   - `bimodality.coefficient()` : Sarle's bimodality coefficient
 
 ## Result methods

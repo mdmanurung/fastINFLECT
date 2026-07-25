@@ -1,0 +1,11 @@
+"code_space","method","k"
+"model_effective_codes","silhouette_max",29
+"model_effective_codes","calinski_harabasz_max",25
+"model_effective_codes","davies_bouldin_min",100
+"model_effective_codes","explained_unweighted_kneedle",54
+"model_effective_codes","explained_event_weighted_kneedle",55
+"historical_80_20_codes","silhouette_max",26
+"historical_80_20_codes","calinski_harabasz_max",25
+"historical_80_20_codes","davies_bouldin_min",92
+"historical_80_20_codes","explained_unweighted_kneedle",54
+"historical_80_20_codes","explained_event_weighted_kneedle",61

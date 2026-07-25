@@ -100,7 +100,10 @@ as_inflect_flowsom <- function(object) {
       type = "FlowSOM",
       class = class(object),
       data_layer = NA_character_,
-      code_layers = NA_character_
+      code_layers = NA_character_,
+      user_weights = NA_real_,
+      distance_weights = NA_real_,
+      effective_layer_weights = NA_real_
     )
   )
 }
@@ -127,6 +130,18 @@ as_inflect_kohonen <- function(object) {
   }
 
   code_indices <- inflect_kohonen_code_indices(object, code_layers)
+  user_weights <- vapply(
+    code_indices,
+    function(i) inflect_layer_weight(object$user.weights, i),
+    numeric(1)
+  )
+  distance_weights <- vapply(
+    code_indices,
+    function(i) inflect_layer_weight(object$distance.weights, i),
+    numeric(1)
+  )
+  names(user_weights) <- code_layer_names[code_indices]
+  names(distance_weights) <- code_layer_names[code_indices]
   codes <- inflect_bind_kohonen_codes(
     code_layers = code_layers,
     code_indices = code_indices,
@@ -167,7 +182,10 @@ as_inflect_kohonen <- function(object) {
       type = "kohonen",
       class = class(object),
       data_layer = data_layer_names[[data_index]],
-      code_layers = code_layer_names[code_indices]
+      code_layers = code_layer_names[code_indices],
+      user_weights = user_weights,
+      distance_weights = distance_weights,
+      effective_layer_weights = user_weights * distance_weights
     )
   )
 }

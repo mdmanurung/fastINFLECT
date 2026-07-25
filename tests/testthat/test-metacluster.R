@@ -1,6 +1,7 @@
 test_that("iteration.metacluster matches repeated hclust metaclustering calls", {
   source_pkg_file("metaClustering-hclust.R")
   source_pkg_file("som-adapter.R")
+  source_pkg_file("inflect-qc-core.R")
   source_pkg_file("iteration-metacluster.R")
 
   codes <- matrix(

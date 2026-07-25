@@ -1,0 +1,21 @@
+field	value
+reason	n=5000 tasks occupied all 32 odd shards after n=1000 even shards completed; checkpoint-safe reshard reduced the long tail
+last_verified_checkpoints_before_cancel	2257
+expected_checkpoints	3162
+initial_array_job	25330055
+initial_array_state	cancelled after checkpoint preservation
+resume_array_job_logical_shards_1_127	25330559
+resume_array_job_logical_shards_129_255	25330623
+resume_array_count	256
+resume_physical_array_indices_per_job	0:63
+resume_logical_mapping_a	2 * physical_index + 1
+resume_logical_mapping_b	2 * physical_index + 129
+reshard_wrapper_md5	0acfbd75e3890e6e8c1034d3563f597f
+reshard_wrapper_sha256	8e787a741b57e357de2edfb8fa4d03736c92148f0c21ff543fdf257d4d6722cd
+primary_sbatch_md5	ba7d057bb51e5bb0fbee08a7bcd64806
+primary_sbatch_sha256	182503f76e08e44e042fe75ec1f5fbecd1320df0e94410de28ebcaff19a2e74c
+workflow_r_md5	c35877699ee8d763604cb4f77570916b
+workflow_r_sha256	598451551d281a233e5208870605c3f0614e6c46eef06b9e5e8a113b2ce2efdc
+final_checkpoint_count	3162
+resume_array_failure_count	0
+summary_job	25330056

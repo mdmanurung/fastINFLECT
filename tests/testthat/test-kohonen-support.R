@@ -242,7 +242,7 @@ test_that("as_inflect_som accepts real kohonen SOM and XYF objects", {
   expect_length(xyf.view$inflect_source$code_layers, 2L)
 })
 
-test_that("INFLECT accepts real kohonen SOM and XYF objects with default set.i", {
+test_that("INFLECT accepts real kohonen SOM and XYF objects with literal set.i", {
   testthat::skip_if_not_installed("kohonen")
   testthat::skip_if_not_installed("LearnGeom")
   source_pkg_file("som-adapter.R")
@@ -281,6 +281,7 @@ test_that("INFLECT accepts real kohonen SOM and XYF objects with default set.i",
 
   som.result <- INFLECT(
     som,
+    set.i = 5:9,
     multicore = FALSE,
     zeroes.in = TRUE,
     uniform.test = "spread",
@@ -288,6 +289,7 @@ test_that("INFLECT accepts real kohonen SOM and XYF objects with default set.i",
   )
   xyf.result <- INFLECT(
     xyf,
+    set.i = 5:9,
     multicore = FALSE,
     zeroes.in = TRUE,
     uniform.test = "spread",

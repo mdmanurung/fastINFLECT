@@ -1,49 +1,58 @@
-#' @title Cluster quality control using diptest and IQR check
+#' Score one SOM metaclustering with dip and IQR criteria
 #'
-#' @description Computes the unimodality score for cluster results. Per marker
-#' per cluster, \link[diptest]{dip.test} is applied and inter-quartile range is
-#' assessed. This function implements the original INFLECT marker-level QC
-#' criterion. The package-level sweep in \code{\link{iteration.QC}} reuses the
-#' same criterion through memoised helper code.
+#' @description
+#' Computes separate Hartigan dip-test and IQR-spread evidence for every
+#' cluster-marker pair. The returned matrix contains the pass decision selected
+#' by `uniform.test`; its `qc.details` attribute contains `dip_pass`,
+#' `iqr_pass`, `combined_pass`, p-values, IQRs, counts, exclusions, and failure
+#' reasons. A pass is criterion-specific and does not prove true unimodality.
 #'
-#' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
-#' @param metaclustering Vector with metacluster codes for all SOM-clusters.
-#' @param zeroes.in Should be values at and below \code{0} be included. Recommended default for mass cytometry data is \code{FALSE}
-#' @param only.clustering.markers If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.
-#' @param acquired_markers Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}
-#' @param uniform.test What tests are performed per marker per cluster. Options are "both", "spread" , or "unimodality" as a string.
-#' @param th.pvalue Threshold for rejecting Unimodality dip.test result. Default is \code{0.05}. For more information see \link[diptest]{dip.test}
-#' @param th.IQR Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.
-#' @param verbose \code{logical} , default is \code{TRUE}
-#' @param ... Additional arguments to pass to \code{\link[diptest]{dip.test}}.
+#' @param FlowSOM.results A supported \pkg{FlowSOM} or \pkg{kohonen} SOM object.
+#' @param metaclustering Integer vector with one metacluster label per SOM node.
+#' @param zeroes.in If `TRUE` (default), retain all finite transformed values.
+#'   If `FALSE`, exclude every non-positive value and warn when negative values
+#'   are present.
+#' @param only.clustering.markers Evaluate only clustering markers.
+#' @param acquired_markers Marker names used when
+#'   `only.clustering.markers = FALSE`.
+#' @param uniform.test Aggregate criterion: `"both"` (dip and IQR), `"spread"`
+#'   (IQR), or `"unimodality"` (dip).
+#' @param th.pvalue Dip-test pass threshold.
+#' @param th.IQR IQR pass threshold.
+#' @param max.n.diptest Optional dip-test sample cap of at least four.
+#' @param seed Non-negative seed. Simulated dip p-values and optional
+#'   subsampling use deterministic subtree-marker streams and preserve the
+#'   caller's RNG state.
+#' @param verbose Logical.
+#' @param ... Additional arguments passed to \code{\link[diptest]{dip.test}}.
 #'
-#' @return A \code{matrix} with evaluated markers in columns and clusters in rows. Each position in the matrix is \code{logical} indicating a pass or a fail.
-#' @seealso \code{\link{INFLECT}} , \code{\link{iteration.QC}}
-#'
+#' @return Invisibly, the selected-criterion logical matrix. Attributes
+#'   `qc.details` and `provenance` retain the separated evidence.
+#' @seealso \code{\link{INFLECT}}, \code{\link{iteration.QC}}
 #' @export
 FlowSOMQC <- function(FlowSOM.results,
                       metaclustering,
-                      zeroes.in = FALSE,
+                      zeroes.in = TRUE,
                       only.clustering.markers = TRUE,
                       acquired_markers = NULL,
                       uniform.test = c("both", "spread", "unimodality"),
                       th.pvalue = 0.05,
                       th.IQR = 2,
+                      max.n.diptest = NULL,
+                      seed = 1L,
                       verbose = TRUE,
-                      ...)
-{
+                      ...) {
   uniform.test <- match.arg(uniform.test)
+  .inflect_validate_qc_arguments(zeroes.in, th.pvalue, th.IQR)
+  max.n.diptest <- .inflect_validate_max_n_diptest(max.n.diptest)
+  seed <- .inflect_validate_seed(seed)
 
   if (is.null(FlowSOM.results)) {
-    stop("Error in FlowSOM.QC: The 'FlowSOM.results' parameter can not be NULL")
+    stop("`FlowSOM.results` cannot be NULL.", call. = FALSE)
   }
-  if (!inherits(FlowSOM.results, "inflect_som_view")) {
-    FlowSOM.results <- as_inflect_som(FlowSOM.results)
-  }
+  FlowSOM.results <- as_inflect_som(FlowSOM.results)
   if (is.null(metaclustering)) {
-    stop("Error in FlowSOM.QC: The 'metaclustering' parameter can not be NULL")
-  } else if (!is.integer(metaclustering)) {
-    stop("Error in FlowSOM.QC: The 'metaclustering' parameter required a 'integer' of metaclustering results")
+    stop("`metaclustering` cannot be NULL.", call. = FALSE)
   }
   metaclustering <- .inflect_normalize_metaclustering(
     metaclustering = metaclustering,
@@ -56,21 +65,59 @@ FlowSOMQC <- function(FlowSOM.results,
     only.clustering.markers = only.clustering.markers,
     acquired_markers = acquired_markers
   )
-  p_of <- .inflect_make_p_of(list(...))
-  accuracy.matrix <- .inflect_accuracy_matrix(
-    prep = prep,
-    metaclustering = metaclustering,
-    zeroes.in = zeroes.in,
+  zero_handling <- .inflect_zero_handling(prep, zeroes.in, warn = TRUE)
+  diptest_args <- list(...)
+  p_of <- .inflect_make_p_of(diptest_args)
+  event_cluster <- metaclustering[prep$mapping]
+  cluster_rows <- split(
+    seq_len(nrow(prep$data)),
+    factor(event_cluster, levels = seq_len(max(metaclustering)))
+  )
+
+  rows <- lapply(seq_along(cluster_rows), function(cluster) {
+    if (verbose) {
+      message("Cluster: ", cluster, " on ", length(cluster_rows))
+    }
+    nodes <- which(metaclustering == cluster)
+    subtree_key <- paste0(nodes, collapse = ",")
+    .inflect_qc_row_indexed(
+      data = prep$data,
+      rows = cluster_rows[[cluster]],
+      zeroes.in = zeroes.in,
+      uniform.test = uniform.test,
+      th.pvalue = th.pvalue,
+      th.IQR = th.IQR,
+      p_of = p_of,
+      subsample = max.n.diptest,
+      seed = seed,
+      subtree_key = subtree_key,
+      marker_indices = prep$marker_indices,
+      marker_names = prep$ordered.markers
+    )
+  })
+  details <- .inflect_qc_rows_to_detail(
+    rows,
+    prep$ordered.markers,
+    as.character(seq_along(cluster_rows))
+  )
+  criterion <- .inflect_criterion(uniform.test)
+  result <- details$criterion_pass
+  attr(result, "qc.details") <- details
+  attr(result, "provenance") <- list(
+    criterion = criterion,
+    criterion_label = .inflect_criterion_label(criterion),
     uniform.test = uniform.test,
-    th.pvalue = th.pvalue,
-    th.IQR = th.IQR,
-    p_of = p_of,
-    cache = NULL,
-    verbose = verbose
+    thresholds = list(dip_p_value = th.pvalue, iqr = th.IQR),
+    markers = prep$ordered.markers,
+    zero_handling = zero_handling,
+    zeroes.in = zeroes.in,
+    seed = seed,
+    max.n.diptest = if (is.null(max.n.diptest)) NA_integer_ else max.n.diptest,
+    diptest_args = diptest_args
   )
 
   if (verbose) {
-    message("[END] - generating Uniform Phenotypes QC")
+    message("[END] - generated criterion-level cluster QC")
   }
-  invisible(accuracy.matrix)
+  invisible(result)
 }

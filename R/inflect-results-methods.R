@@ -93,14 +93,20 @@ print.inflect.results <- function(x, ...) {
   }
 
   if (is.data.frame(x$selection) && nrow(x$selection) > 0) {
-    cat("  recommended k:\n")
+    cat("  k estimates and tested thresholds:\n")
     for (r in seq_len(nrow(x$selection))) {
       k <- x$selection$k[r]
-      uni <- x$selection$unimodality_at_k[r]
+      pass_rate <- x$selection$qc_pass_rate_at_k[r]
+      status <- x$selection$k_status[r]
       cat(
         "    ", format(x$selection$method[r], width = 10), " k=",
         if (is.na(k)) "NA" else round(k),
-        if (is.na(uni)) "" else paste0(" (", round(uni, 1), "% unimodal)"),
+        if (is.na(pass_rate)) {
+          ""
+        } else {
+          paste0(" (", round(pass_rate, 1), "% QC pass)")
+        },
+        if (is.na(status)) "" else paste0(" [", status, "]"),
         "\n",
         sep = ""
       )
@@ -118,7 +124,10 @@ print.inflect.results <- function(x, ...) {
 #' @return A one-row `data.frame`.
 #' @export
 summary.inflect.results <- function(object, ...) {
-  collection <- object$collection.U
+  collection <- object$scores
+  if (is.null(collection)) {
+    collection <- .inflect_score_frame(object$collection.U)
+  }
   n_points <- if (is.data.frame(collection)) {
     nrow(collection)
   } else {
@@ -130,10 +139,10 @@ summary.inflect.results <- function(object, ...) {
     range = .inflect_scalar(object$lfunction, "range"),
     angle = .inflect_scalar(object$lfunction, "angle"),
     n_points = n_points,
-    min_i = .inflect_collection_scalar(collection, "i", min),
-    max_i = .inflect_collection_scalar(collection, "i", max),
-    min_unimodality = .inflect_collection_scalar(collection, "Unimodality", min),
-    max_unimodality = .inflect_collection_scalar(collection, "Unimodality", max),
+    min_i = .inflect_collection_scalar(collection, "k", min),
+    max_i = .inflect_collection_scalar(collection, "k", max),
+    min_qc_pass_rate = .inflect_collection_scalar(collection, "qc_pass_rate", min),
+    max_qc_pass_rate = .inflect_collection_scalar(collection, "qc_pass_rate", max),
     n_markers = .inflect_marker_count(object),
     stringsAsFactors = FALSE
   )
@@ -146,6 +155,7 @@ summary.inflect.results <- function(object, ...) {
     result_summary$zeroes.in <- .inflect_provenance_scalar(provenance, "zeroes.in")
     result_summary$basedata <- .inflect_provenance_scalar(provenance, "basedata")
     result_summary$package_version <- .inflect_provenance_scalar(provenance, "package_version")
+    result_summary$criterion <- .inflect_provenance_scalar(provenance, "criterion")
   }
 
   if (is.data.frame(object$selection)) {
@@ -159,6 +169,8 @@ summary.inflect.results <- function(object, ...) {
     result_summary$k_threshold <- pick("threshold")
   }
 
+  result_summary$min_unimodality <- result_summary$min_qc_pass_rate
+  result_summary$max_unimodality <- result_summary$max_qc_pass_rate
   result_summary
 }
 
@@ -180,14 +192,18 @@ plot.inflect.results <- function(x, ...) {
 #' @param optional `optional` passed to `as.data.frame`.
 #' @param ... Additional arguments passed to `as.data.frame`.
 #'
-#' @return `x$collection.U` as a `data.frame`.
+#' @return Canonical `x$scores` as a `data.frame`.
 #' @export
 as.data.frame.inflect.results <- function(x,
                                           row.names = NULL,
                                           optional = FALSE,
                                           ...) {
+  scores <- x$scores
+  if (is.null(scores)) {
+    scores <- .inflect_score_frame(x$collection.U)
+  }
   as.data.frame(
-    x$collection.U,
+    scores,
     row.names = row.names,
     optional = optional,
     ...

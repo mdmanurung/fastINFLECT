@@ -1,5 +1,9 @@
 ## data-raw/make-benchmark-cache.R
 ##
+## HISTORICAL 1.0 CACHE GENERATOR. The package vignette uses only its
+## engineering timing fields. Its zeroes.in=FALSE aggregate output is invalid as
+## modality evidence under the 2.0 interpretation contract.
+##
 ## Generates inst/extdata/benchmark_cache.rds for the vignette
 ## "Benchmarking fastINFLECT against consensus metaclustering".
 ##

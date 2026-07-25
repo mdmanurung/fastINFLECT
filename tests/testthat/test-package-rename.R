@@ -15,11 +15,14 @@ test_that("package metadata and native registration use fastINFLECT", {
 test_that("release metadata and rendered docs point at fastINFLECT", {
   root <- find_package_root()
   desc <- read.dcf(file.path(root, "DESCRIPTION"))[1, ]
-  pkgdown <- readLines(file.path(root, "_pkgdown.yml"), warn = FALSE)
 
   expect_true(grepl("github.com/mdmanurung/fastINFLECT", desc[["URL"]], fixed = TRUE))
   expect_identical(unname(desc[["BugReports"]]), "https://github.com/mdmanurung/fastINFLECT/issues")
-  expect_true(any(grepl("mdmanurung.github.io/fastINFLECT", pkgdown, fixed = TRUE)))
+  pkgdown_path <- file.path(root, "_pkgdown.yml")
+  if (file.exists(pkgdown_path)) {
+    pkgdown <- readLines(pkgdown_path, warn = FALSE)
+    expect_true(any(grepl("mdmanurung.github.io/fastINFLECT", pkgdown, fixed = TRUE)))
+  }
 
   docs_to_check <- file.path(root, c(
     "vignettes/comparing-metaclustering.html",

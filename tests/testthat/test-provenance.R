@@ -36,9 +36,10 @@ test_that("new_inflect_results validates provenance", {
   )
 })
 
-test_that("normalize_set_i expands length-two inputs using current INFLECT rules", {
+test_that("normalize_set_i treats valid schedules literally", {
   env <- new.env(parent = globalenv())
   source_pkg_file("som-adapter.R", envir = env)
+  source_pkg_file("inflect-qc-core.R", envir = env)
   source_pkg_file("inflect-provenance.R", envir = env)
 
   fake <- make_fake_flowsom(
@@ -46,44 +47,60 @@ test_that("normalize_set_i expands length-two inputs using current INFLECT rules
     n_nodes = 100L
   )
 
-  expect_identical(
-    env$normalize_set_i(c(10, 20), fake),
-    as.integer(c(5:10, 15, 20, seq(30, 90, 10)))
-  )
+  schedule <- seq.int(25L, 100L, by = 5L)
+  expect_identical(env$normalize_set_i(schedule, fake), schedule)
 })
 
-test_that("normalize_set_i keeps default k values within small kohonen maps", {
+test_that("normalize_set_i rejects ambiguous or invalid schedules early", {
   env <- new.env(parent = globalenv())
   source_pkg_file("som-adapter.R", envir = env)
+  source_pkg_file("inflect-qc-core.R", envir = env)
   source_pkg_file("inflect-provenance.R", envir = env)
 
-  fake <- make_fake_kohonen(
-    data = matrix(rep(1:18, length.out = 36), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
-    codes = matrix(rep(1:18, length.out = 18), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
-    unit.classif = rep(1:9, length.out = 18)
+  fake <- make_fake_flowsom(
+    matrix(rep(1, 20), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
+    n_nodes = 100L
   )
 
-  expect_identical(
-    env$normalize_set_i(c(150, 200), fake),
-    as.integer(5:9)
-  )
-})
-
-test_that("normalize_set_i rejects SOMs too small for curve fitting", {
-  env <- new.env(parent = globalenv())
-  source_pkg_file("som-adapter.R", envir = env)
-  source_pkg_file("inflect-provenance.R", envir = env)
-
-  fake <- make_fake_kohonen(
-    data = matrix(rep(1:8, length.out = 16), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
-    codes = matrix(rep(1:8, length.out = 8), ncol = 2, dimnames = list(NULL, c("CD3", "CD4"))),
-    unit.classif = rep(1:4, length.out = 8)
-  )
-
+  expect_error(env$normalize_set_i(c(25, 100), fake), "at least five")
   expect_error(
-    env$normalize_set_i(c(150, 200), fake),
-    "at least five SOM nodes"
+    env$normalize_set_i(c(5, 10, 10, 15, 20), fake),
+    "unique"
   )
+  expect_error(
+    env$normalize_set_i(c(5, 10, 15.5, 20, 25), fake),
+    "integer"
+  )
+  expect_error(
+    env$normalize_set_i(c(5, 15, 10, 20, 25), fake),
+    "strictly increasing"
+  )
+  expect_error(
+    env$normalize_set_i(c(5, 10, 15, 20, 101), fake),
+    "between 1 and the number of SOM nodes"
+  )
+})
+
+test_that("inflect_adaptive_set_i is explicit and bounded", {
+  env <- new.env(parent = globalenv())
+  source_pkg_file("inflect-provenance.R", envir = env)
+
+  expected <- c(seq.int(5L, 25L), seq.int(30L, 100L, by = 5L))
+  expect_identical(
+    env$inflect_adaptive_set_i(n_nodes = 900L, max_k = 100L),
+    expected
+  )
+  expect_equal(max(env$inflect_adaptive_set_i(900L, 103L)), 103L)
+  expect_error(env$inflect_adaptive_set_i(100L, 101L), "`max_k`")
+  expect_no_warning(
+    overflow_safe <- env$inflect_adaptive_set_i(
+      n_nodes = .Machine$integer.max,
+      max_k = 100L,
+      dense_until = .Machine$integer.max,
+      medium_until = .Machine$integer.max
+    )
+  )
+  expect_identical(overflow_safe, 5:100)
 })
 
 test_that("resolve_inflect_markers returns evaluated markers using FlowSOMQC rules", {

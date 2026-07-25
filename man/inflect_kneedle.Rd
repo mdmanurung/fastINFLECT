@@ -9,7 +9,7 @@ inflect_kneedle(x, y, concave = TRUE, increasing = TRUE)
 \arguments{
 \item{x}{Numeric vector of x coordinates (e.g. number of metaclusters).}
 
-\item{y}{Numeric vector of y coordinates (e.g. unimodality score).}
+\item{y}{Numeric vector of y coordinates (for example, a QC pass rate).}
 
 \item{concave}{\code{logical}; \code{TRUE} (default) for a concave curve
 (diminishing returns). Set \code{FALSE} for a convex curve.}
@@ -23,7 +23,7 @@ determined (fewer than three finite points or a degenerate range).
 }
 \description{
 Nonparametric knee/elbow detector following Satopää et al. (2011).
-For a concave, increasing curve (as the fastINFLECT unimodality sweep typically is)
+For a concave, increasing curve (as a fastINFLECT QC sweep typically is)
 the knee is the x at which the normalised curve is farthest above the diagonal
 joining its endpoints. Unlike the four-parameter log-logistic fit used by
 \code{\link{QC.to.curve}}, it assumes no functional form, which makes it a robust

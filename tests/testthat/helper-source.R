@@ -5,6 +5,16 @@ find_package_root <- function(start = getwd()) {
         dir.exists(file.path(start, "R"))) {
       return(start)
     }
+    check_sources <- c(
+      file.path(start, "00_pkg_src"),
+      file.path(start, "00_pkg_src", "fastINFLECT")
+    )
+    for (check_source in check_sources) {
+      if (file.exists(file.path(check_source, "DESCRIPTION")) &&
+          dir.exists(file.path(check_source, "R"))) {
+        return(check_source)
+      }
+    }
     parent <- dirname(start)
     if (identical(parent, start)) {
       stop("Could not find package root")

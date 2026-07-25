@@ -7,7 +7,8 @@
 Lfunction(totaldataframe, cutoff = 1000, plot = FALSE)
 }
 \arguments{
-\item{totaldataframe}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}. This can be the calculated points collection.U or the fitted curve.}
+\item{totaldataframe}{Data frame with cluster counts and corresponding QC
+pass rates, either observed points or a fitted curve.}
 
 \item{cutoff}{Integer. Initial Inflection Point calculated on the entire curve is multiplied by \code{cutoff} to determine the new range of the curve that is used as input for \code{\link{leastError}}}
 

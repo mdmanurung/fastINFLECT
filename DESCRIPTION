@@ -5,8 +5,18 @@ Author: Jan VERHOEFF
 Maintainer: Jan VERHOEFF <j.verhoeff@amsterdamumc.nl>
 URL: https://mdmanurung.github.io/fastINFLECT, https://github.com/mdmanurung/fastINFLECT
 BugReports: https://github.com/mdmanurung/fastINFLECT/issues
-Description: Fast quality control and determination of optimal k for high-dimensional FlowSOM and kohonen SOM clustering data. fastINFLECT is a fast reimplementation of the original INFLECT package and keeps the core marker-unimodality method and the exported INFLECT() workflow while replacing the expensive repeated per-k quality-control loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. It iteratively clusters and evaluates resulting clusters for marker unimodality, translates this into a unimodality score, and plots it into a diagnostic graph. On the fitted curve of this unimodality score fastINFLECT determines the inflection point where unimodality stops increasing for greater numbers of clusters. The original INFLECT implementation, developed in the lab of JJ. Garcia-Vallejo, is available at <https://github.com/jnverhoeff/GarciaVallejoLab>.
-Version: 1.0.0
+Description: Fast quality control and diagnostic selection of metacluster
+    counts for high-dimensional 'FlowSOM' and 'kohonen' self-organising maps.
+    Marker marginals are scored with separate Hartigan dip-test and
+    interquartile-range criteria, with criterion-level evidence retained for
+    inspection. Memoised hierarchy cuts, indexed marker-at-a-time scoring,
+    deterministic sampling, and compiled accelerators reduce the cost of
+    evaluating literal cluster-count schedules. Fitted endpoints are reported
+    as estimates and are distinguished from materialised partitions. These
+    diagnostics can detect evidence against unimodality but do not prove that a
+    cluster is truly unimodal. The original 'INFLECT' implementation is
+    available at <https://github.com/jnverhoeff/GarciaVallejoLab>.
+Version: 2.0.0
 Depends:
     R (>= 3.6)
 Imports:
@@ -28,6 +38,7 @@ Roxygen: list(markdown = TRUE)
 Suggests:
     kohonen,
     knitr,
+    multimode,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr

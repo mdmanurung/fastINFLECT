@@ -7,7 +7,8 @@
 leastError(dataframe)
 }
 \arguments{
-\item{dataframe}{Dataframe with set.i and corresponding unimodality scores, resulting from \code{\link{iteration.QC}}}
+\item{dataframe}{Data frame with cluster counts and corresponding QC pass
+rates, typically from \code{\link{iteration.QC}}.}
 }
 \value{
 Integer denoting the row of dataframe whose coordinate provides the kneepoint

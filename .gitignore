@@ -7,3 +7,9 @@ Rplots.pdf
 *.tar.gz
 src/*.o
 src/*.so
+data-raw/.real-model-lib/
+data-raw/.real-model-modality-work/
+data-raw/.real-model-selection-work/
+data-raw/.real-model-selection-work-v2/
+data-raw/.real-model-notebook-work/
+data-raw/.selected-k-modality-work/

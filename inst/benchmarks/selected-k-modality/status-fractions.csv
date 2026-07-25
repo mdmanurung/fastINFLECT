@@ -1,0 +1,17 @@
+"solution_id","status","unweighted_fraction","event_weighted_fraction","count"
+"inflect_ward_k27","detected_multimodality",0.0631001371742112,0.0601086919364991,46
+"inflect_ward_k27","ambiguous",0.131687242798354,0.107474872256899,96
+"inflect_ward_k27","no_detected_multimodality",0.768175582990398,0.832416435806602,560
+"inflect_ward_k27","unresolved_discrete",0.037037037037037,0,27
+"inflect_ward_k28","detected_multimodality",0.0555555555555556,0.0570268066991386,42
+"inflect_ward_k28","ambiguous",0.117724867724868,0.0989623166886037,89
+"inflect_ward_k28","no_detected_multimodality",0.791005291005291,0.844010876612258,598
+"inflect_ward_k28","unresolved_discrete",0.0357142857142857,0,27
+"inflect_ward_k38","detected_multimodality",0.0487329434697856,0.0545295735757029,50
+"inflect_ward_k38","ambiguous",0.123781676413255,0.11346716590919,127
+"inflect_ward_k38","no_detected_multimodality",0.800194931773879,0.831886621828931,821
+"inflect_ward_k38","unresolved_discrete",0.0272904483430799,0.000116638686176285,28
+"inflect_ward_k44","detected_multimodality",0.0471380471380471,0.0500882640289072,56
+"inflect_ward_k44","ambiguous",0.0993265993265993,0.0734367092521783,118
+"inflect_ward_k44","no_detected_multimodality",0.82996632996633,0.876358388032738,986
+"inflect_ward_k44","unresolved_discrete",0.0235690235690236,0.000116638686176285,28

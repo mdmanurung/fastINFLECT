@@ -7,7 +7,8 @@
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Literal, unique, strictly increasing integer cluster counts
 #'   within the SOM-node range.
-#' @param multicore Retained for backward compatibility. Hierarchical clustering is now computed once and is not parallelized.
+#' @param multicore Retained for backward compatibility. Hierarchical
+#'   clustering is computed once and is not parallelized.
 #' @param cores Retained for backward compatibility.
 #'
 #' @return metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.

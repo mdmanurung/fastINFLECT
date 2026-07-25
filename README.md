@@ -3,8 +3,7 @@
 fastINFLECT performs marker-level quality control across literal metaclustering
 schedules for FlowSOM and kohonen self-organising maps. It retains separate
 Hartigan dip-test and IQR-spread evidence, fits a diagnostic pass-rate curve,
-and reports candidate endpoints without pretending that an unscheduled fitted
-value has a partition.
+and labels unscheduled fitted endpoints as estimates without partitions.
 
 A dip or IQR pass is a criterion-specific screening result. It is not proof
 that a marker distribution, cluster, or biological population is truly
@@ -26,8 +25,8 @@ For kohonen SOM objects, install the optional `kohonen` package:
 install.packages("kohonen")
 ```
 
-The independent real-model modality audit additionally uses the optional
-`multimode` package. It is not required for ordinary fastINFLECT use.
+The real-model modality audit uses the optional `multimode` package. Ordinary
+fastINFLECT use does not require it.
 
 ## Quick start
 
@@ -51,8 +50,8 @@ result <- INFLECT(
 )
 ```
 
-Version 2.0 retains all finite transformed values, including negative values
-and zero, by default. The aggregate score is named for what it is:
+fastINFLECT retains all finite transformed values, including negative values
+and zero, by default. The aggregate score is named for what it measures:
 
 ```r
 result$scores
@@ -91,7 +90,7 @@ unimodal. Inspect the separate criterion matrices and, for consequential
 claims, validate complete transformed marker distributions with independent
 tests and sensitivity analyses.
 
-## Migrating to 2.0.0
+## Package interface
 
 `set.i` is mandatory, literal, unique, and strictly increasing. This call
 evaluates exactly the printed values and never scans above 100:
@@ -102,8 +101,8 @@ print(schedule)
 result <- INFLECT(dataset, set.i = schedule)
 ```
 
-To request the former adaptive spacing, construct it explicitly with a hard
-upper bound:
+For an adaptive schedule with a hard upper bound, construct the values
+explicitly:
 
 ```r
 schedule <- inflect_adaptive_set_i(
@@ -129,20 +128,19 @@ recorded serial fallback is used. Simulated dip p-values and optional
 subsampling are deterministic per subtree and marker, preserve the caller RNG
 state, and are invariant to worker count.
 
-`zeroes.in = FALSE` is now an explicit compatibility mode. It excludes every
-non-positive value, warns when negative values are present, and records
-per-marker exclusion counts:
+Setting `zeroes.in = FALSE` excludes every non-positive value, warns when
+negative values are present, and records per-marker exclusion counts:
 
 ```r
 result$provenance$zero_handling
 ```
 
-Canonical 2.0 names are `scores`, `qc_pass_rate`, `dip_pass`, `iqr_pass`,
+Canonical result names are `scores`, `qc_pass_rate`, `dip_pass`, `iqr_pass`,
 `combined_pass`, and `criterion_pass`. `collection.U`, `U.set`,
 `Unimodality`, `Accuracy.sets`, and `Accuracy.matrixes` are deprecated aliases
-retained for migration.
+retained for compatibility.
 
-See `vignette("migrating-to-fastINFLECT-2")` for the complete contract.
+See `vignette("using-fastINFLECT-1")` for the complete contract.
 
 ## Real-model modality audit
 
@@ -163,21 +161,21 @@ the literal full-event k = 25,...,100 comparison gives a combined INFLECT
 inflection at k = 27 and combined/dip Kneedle at k = 44. The first
 five-k consensus-stability plateau starts at k = 29, while IQR and
 event-weighted dispersion place the upper spread sensitivity at k = 55.
-Accordingly, the fitted-model operational recommendation is nominal k = 44,
-with k = 27–29 as a lower-resolution structural sensitivity and k = 55 as a
-spread sensitivity.
+The fitted-model operational recommendation is nominal k = 44. Values from
+k = 27 to 29 provide a lower-resolution structural sensitivity, and k = 55
+provides a spread sensitivity.
 
 Nominal k = 44 contains 43 event-populated clusters because one SOM-only
 cluster has zero events. Its independent final audit contains 56 detected,
 118 ambiguous, 28 unresolved, and 986 no-detected cluster-marker entries.
-This supports neither a global unimodality claim nor biological optimality.
-Exact comparisons and provenance are in
+These residual statuses preclude claims of global unimodality or biological
+optimality. Exact comparisons and provenance are in
 `inst/benchmarks/real-model-selection/`.
 
 The allowed outcome labels are `detected_multimodality`, `ambiguous`,
-`no_detected_multimodality`, and `unresolved_discrete`. The workflow never
-jitters tied measurements and never converts “no detected multimodality” into
-a claim that a cluster is truly unimodal.
+`no_detected_multimodality`, and `unresolved_discrete`. The workflow leaves
+tied measurements unchanged and reports “no detected multimodality” without
+upgrading it to confirmed unimodality.
 
 ## Relationship to the original INFLECT package
 

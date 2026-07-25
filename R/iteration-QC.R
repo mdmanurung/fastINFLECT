@@ -43,7 +43,7 @@
 #' @return A list containing canonical `scores`, separate named lists of
 #'   `dip_pass`, `iqr_pass`, `combined_pass`, and selected `criterion_pass`
 #'   matrices, full `qc.details`, and `provenance`. Deprecated `U.set` and
-#'   `Accuracy.matrixes` aliases are retained for 2.0 migration.
+#'   `Accuracy.matrixes` aliases are retained for compatibility.
 #' @seealso \code{\link{INFLECT}}, \code{\link{iteration.metacluster}},
 #'   \code{\link{FlowSOMQC}}
 #' @export

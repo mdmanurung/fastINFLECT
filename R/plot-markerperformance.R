@@ -11,7 +11,7 @@
 #'
 #' @return A list with `marker.dataframe` and `plot`. The data frame contains
 #' canonical `k`, `marker`, and `qc_pass_rate` columns. Deprecated `i`, `Marker`,
-#' and `Performance` aliases are retained for migration.
+#' and `Performance` aliases are retained for compatibility.
 #'
 #' @examples
 #' # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.

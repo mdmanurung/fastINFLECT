@@ -1,15 +1,13 @@
 # Run iterative metaclustering on SOM-clustered objects
 
-Metaclustering runs are determined for all cluster numbers in `set.i`.
-In the original INFLECT workflow, each requested k was handled as a
-separate scan point. fastINFLECT computes the Ward.D2 hierarchy once and
-cuts it for all requested cluster numbers, preserving the hierarchical
-strategy while avoiding repeated work.
+Computes metaclusterings for all cluster numbers in `set.i`. The Ward.D2
+hierarchy is built once from the SOM codebook and then cut at each
+requested k, rather than recomputing a separate clustering per k.
 
 ## Usage
 
 ``` r
-iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
+iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
 ```
 
 ## Arguments
@@ -21,7 +19,8 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = TRUE, cores = NULL)
 
   - set.i:
     
-    Vector containing either the desired iterations to be tested
+    Literal, unique, strictly increasing integer cluster counts within
+    the SOM-node range.
 
   - multicore:
     

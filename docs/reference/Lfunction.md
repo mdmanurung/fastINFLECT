@@ -1,8 +1,8 @@
-# Lfunction for determing Inflection Point
+# Lfunction for determining Inflection Point
 
-Wrapper function for `leastError` with an option for refining the
-Inflection Point, by limiting the range of of points to evaluate for
-fitting line errors. Default is to not use the refinement.
+Wrapper around `leastError` with an option to refine the Inflection
+Point by limiting the range of points evaluated for fitting line errors.
+Refinement is disabled by default.
 
 ## Usage
 
@@ -14,9 +14,8 @@ Lfunction(totaldataframe, cutoff = 1000, plot = FALSE)
 
   - totaldataframe:
     
-    Dataframe with set.i and corresponding unimodality scores, resulting
-    from `iteration.QC`. This can be the calculcated points collection.U
-    or the fitted curve.
+    Data frame with cluster counts and corresponding QC pass rates,
+    either observed points or a fitted curve.
 
   - cutoff:
     

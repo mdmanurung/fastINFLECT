@@ -1,11 +1,11 @@
-# Cluster quality control using diptest and IQR check
+# Score one SOM metaclustering with dip and IQR criteria
 
-Unimodality score is calculated for cluster results. Per marker per
-cluster [dip.test](https://rdrr.io/pkg/diptest/man/dip.test.html) is
-applied and inter-quartile range is assessed. This function preserves
-the original INFLECT marker-level QC criterion so users can inspect or
-reproduce the base statistic directly; the faster package-level sweep
-reuses the same criterion through memoised helper code.
+Computes separate Hartigan dip-test and IQR-spread evidence for every
+cluster-marker pair. The returned matrix contains the pass decision
+selected by `uniform.test`; its `qc.details` attribute contains
+`dip_pass`, `iqr_pass`, `combined_pass`, p-values, IQRs, counts,
+exclusions, and failure reasons. A pass is criterion-specific and does
+not prove true unimodality.
 
 ## Usage
 
@@ -13,12 +13,14 @@ reuses the same criterion through memoised helper code.
 FlowSOMQC(
   FlowSOM.results,
   metaclustering,
-  zeroes.in = FALSE,
+  zeroes.in = TRUE,
   only.clustering.markers = TRUE,
   acquired_markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
+  max.n.diptest = NULL,
+  seed = 1L,
   verbose = TRUE,
   ...
 )
@@ -27,58 +29,63 @@ FlowSOMQC(
 ## Arguments
 
   - FlowSOM.results:
-    
-    A supported SOM object with completed SOM clustering. Supports
-    FlowSOM objects and kohonen objects returned by `som` or `xyf`.
+
+    A supported FlowSOM or kohonen SOM object.
 
   - metaclustering:
-    
-    Vector with metacluster codes for all SOM-clusters.
+
+    Integer vector with one metacluster label per SOM node.
 
   - zeroes.in:
-    
-    Should be values at and below `0` be included. Recommended default
-    for mass cytometry data is `FALSE`
+
+    If `TRUE` (default), retain all finite transformed values. If
+    `FALSE`, exclude every non-positive value and warn when negative
+    values are present.
 
   - only.clustering.markers:
-    
-    If `TRUE` only evaluates markers specified as clustering markers.
-    For kohonen objects this is the first data layer.
+
+    Evaluate only clustering markers.
 
   - acquired\_markers:
     
-    Vector of column names with marker data to be evaluated by
-    fastINFLECT. Ignored if `only.clustering.markers == TRUE`
+    Marker names used when `only.clustering.markers = FALSE`.
 
   - uniform.test:
     
-    What tests are performed per marker per cluster. Options are "both",
-    "spread" , or "unimodality" as a string.
+    Aggregate criterion: `"both"` (dip and IQR), `"spread"` (IQR), or
+    `"unimodality"` (dip).
 
   - th.pvalue:
     
-    Threshold for rejecting Unimodality dip.test result. Default is
-    `0.05`. For more information see
-    [dip.test](https://rdrr.io/pkg/diptest/man/dip.test.html)
+    Dip-test pass threshold.
 
   - th.IQR:
     
-    Threshold for rejecting marker distribution based on inter-quartile
-    range. Default is arc-sinh transformed value of `2`.
+    IQR pass threshold.
+
+  - max.n.diptest:
+
+    Optional dip-test sample cap of at least four.
+
+  - seed:
+
+    Non-negative seed. Simulated dip p-values and optional subsampling
+    use deterministic subtree-marker streams and preserve the caller's
+    RNG state.
 
   - verbose:
     
-    `logical` , default is `TRUE`
+    Logical.
 
   - ...:
     
-    Additional arguments to pass to `dip.test`.
+    Additional arguments passed to `dip.test`.
 
 ## Value
 
-A `matrix` with evaluated markers in columns and clusters in rows. Each
-position in the matrix is `logical` indicating a pass or a fail.
+Invisibly, the selected-criterion logical matrix. Attributes
+`qc.details` and `provenance` retain the separated evidence.
 
 ## See also
 
-`INFLECT` , `iteration.QC`
+`INFLECT`, `iteration.QC`

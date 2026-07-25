@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>fastINFLECT • fastINFLECT</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="fastINFLECT">
 <meta name="description" content="A fast reimplementation of the original INFLECT package for selecting FlowSOM and kohonen metaclustering endpoints from marker-unimodality diagnostics.
@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">fastINFLECT</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,8 @@
     <li><h6 class="dropdown-header" data-toc-skip>Benchmarks</h6></li>
     <li><a class="dropdown-item" href="articles/benchmark-inflect-vs-consensus.html">Benchmarking fastINFLECT against consensus metaclustering</a></li>
     <li><a class="dropdown-item" href="articles/comparing-metaclustering.html">Comparing metaclustering strategies with fastINFLECT</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -60,75 +62,109 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="fastinflect">fastINFLECT<a class="anchor" aria-label="anchor" href="#fastinflect"></a>
 </h1></div>
-<p>Fast quality control and determination of optimal k for FlowSOM and kohonen high-dimensional SOM clustering data.</p>
-<p>fastINFLECT reimplements the original INFLECT package for speed. It scans metaclusterings for marker unimodality, locates the inflection point on the fitted unimodality curve, and replaces the expensive repeated per-k QC loop with memoised hierarchy cuts, faster dip-test p-value lookup, and small compiled accelerators. On the fitted curve of this unimodality score, fastINFLECT determines the point where unimodality stops increasing for greater numbers of clusters.</p>
-<div class="section level3">
-<h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h3>
-<p>fastINFLECT is not on CRAN; install it from GitHub. It depends on FlowSOM, which is distributed through Bioconductor.</p>
-<p>The simplest path uses <code>pak</code>, which resolves the Bioconductor dependency for you:</p>
+<p>fastINFLECT performs marker-level quality control across literal metaclustering schedules for FlowSOM and kohonen self-organising maps. It retains separate Hartigan dip-test and IQR-spread evidence, fits a diagnostic pass-rate curve, and reports candidate endpoints without pretending that an unscheduled fitted value has a partition.</p>
+<p>A dip or IQR pass is a criterion-specific screening result. It is not proof that a marker distribution, cluster, or biological population is truly unimodal.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>fastINFLECT is not on CRAN. The simplest installation path uses <code>pak</code>, which also resolves the Bioconductor dependency on FlowSOM:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"mdmanurung/fastINFLECT"</span><span class="op">)</span></span></code></pre></div>
-<p>To use <code>remotes</code> instead, install FlowSOM first:</p>
+<p>For kohonen SOM objects, install the optional <code>kohonen</code> package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages(c("BiocManager", "remotes"))</span></span>
-<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"FlowSOM"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"mdmanurung/fastINFLECT"</span><span class="op">)</span></span></code></pre></div>
-<p>The <code>kohonen</code> package is optional and only needed to run fastINFLECT on kohonen SOM objects:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"kohonen"</span><span class="op">)</span></span></code></pre></div>
+<p>The independent real-model modality audit additionally uses the optional <code>multimode</code> package. It is not required for ordinary fastINFLECT use.</p>
 </div>
-<div class="section level3">
-<h3 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
-</h3>
-<p>fastINFLECT ships a downsampled Levine32 FlowSOM object. Load it, scan a range of metacluster counts, and read off the recommended k.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="section level2">
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<p>The package ships a downsampled Levine32 FlowSOM object:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mdmanurung.github.io/fastINFLECT">fastINFLECT</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Bundled FlowSOM object: 375 SOM nodes, 32,288 events, 32 markers</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Levine32sample.Rdata"</span>, package <span class="op">=</span> <span class="st">"fastINFLECT"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/load.html" class="external-link">load</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata"</span>,</span>
+<span>  <span class="st">"Levine32sample.Rdata"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"fastINFLECT"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
+<span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fl">5</span><span class="op">:</span><span class="fl">20</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
 <span>  FlowSOM.results <span class="op">=</span> <span class="va">dataset</span>,</span>
-<span>  set.i           <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">20</span>,</span>
-<span>  multicore       <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  zeroes.in       <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
+<span>  uniform.test <span class="op">=</span> <span class="st">"both"</span>,</span>
+<span>  multicore <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/INFLECT.html">INFLECT()</a></code> scans every k in <code>set.i</code> in a few seconds and returns an <code>inflect.results</code> object. Its <code>selection</code> table reports three recommended cluster counts: the LL.4 inflection point, the kneedle knee, and the smallest k that reaches the target unimodality.</p>
+<p>Version 2.0 retains all finite transformed values, including negative values and zero, by default. The aggregate score is named for what it is:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">scores</span></span>
+<span><span class="co"># k, qc_pass_rate, criterion</span></span>
+<span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">dip_pass</span><span class="op">[[</span><span class="st">"10"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">iqr_pass</span><span class="op">[[</span><span class="st">"10"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">combined_pass</span><span class="op">[[</span><span class="st">"10"</span><span class="op">]</span><span class="op">]</span></span>
+<span></span>
+<span><span class="va">details</span> <span class="op">&lt;-</span> <span class="va">result</span><span class="op">$</span><span class="va">qc.details</span><span class="op">[[</span><span class="st">"10"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">details</span><span class="op">$</span><span class="va">dip_p_value</span></span>
+<span><span class="va">details</span><span class="op">$</span><span class="va">iqr</span></span>
+<span><span class="va">details</span><span class="op">$</span><span class="va">failure_reason</span></span></code></pre></div>
+<p>The diagnostic curve is available as <code>result$ggplot</code>. Its selection table distinguishes tested partitions from fitted estimates:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results</span><span class="op">$</span><span class="va">selection</span></span>
-<span><span class="co">#&gt;       method  k unimodality_at_k target</span></span>
-<span><span class="co">#&gt; 1 inflection 11         96.02273     NA</span></span>
-<span><span class="co">#&gt; 2    kneedle  8         95.31250     NA</span></span>
-<span><span class="co">#&gt; 3  threshold  8         95.31250     95</span></span></code></pre></div>
-<p>The diagnostic curve and its inflection point are stored as a ggplot object:</p>
+<code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">selection</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"method"</span>,</span>
+<span>  <span class="st">"k"</span>,</span>
+<span>  <span class="st">"qc_pass_rate_at_k"</span>,</span>
+<span>  <span class="st">"partition_available"</span>,</span>
+<span>  <span class="st">"k_status"</span></span>
+<span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<p>Only rows with <code>partition_available = TRUE</code> have a corresponding entry in <code>result$metaclustering.list</code>. A fitted inflection with <code>k_status = "fitted_estimate_no_partition"</code> remains an estimate until that literal k is explicitly evaluated.</p>
+<p>The pass-rate curve alone should not be used to declare a selected partition unimodal. Inspect the separate criterion matrices and, for consequential claims, validate complete transformed marker distributions with independent tests and sensitivity analyses.</p>
+</div>
+<div class="section level2">
+<h2 id="migrating-to-2-0-0">Migrating to 2.0.0<a class="anchor" aria-label="anchor" href="#migrating-to-2-0-0"></a>
+</h2>
+<p><code>set.i</code> is mandatory, literal, unique, and strictly increasing. This call evaluates exactly the printed values and never scans above 100:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results</span><span class="op">$</span><span class="va">ggplot</span></span></code></pre></div>
-<p>To see which markers still carry residual bimodal expression across the tested metaclusterings, use <code>marker.performance(results)</code>.</p>
+<code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq.int</a></span><span class="op">(</span><span class="fl">25L</span>, <span class="fl">100L</span>, by <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">schedule</span><span class="op">)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span><span class="va">dataset</span>, set.i <span class="op">=</span> <span class="va">schedule</span><span class="op">)</span></span></code></pre></div>
+<p>To request the former adaptive spacing, construct it explicitly with a hard upper bound:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/inflect_adaptive_set_i.html">inflect_adaptive_set_i</a></span><span class="op">(</span></span>
+<span>  n_nodes <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">nNodes</span>,</span>
+<span>  max_k <span class="op">=</span> <span class="fl">100L</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Parallel scoring is opt-in and requires an explicit valid worker count:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
+<span>  <span class="va">dataset</span>,</span>
+<span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
+<span>  multicore <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  cores <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">42L</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>On platforms without fork support, the same arguments are validated and a recorded serial fallback is used. Simulated dip p-values and optional subsampling are deterministic per subtree and marker, preserve the caller RNG state, and are invariant to worker count.</p>
+<p><code>zeroes.in = FALSE</code> is now an explicit compatibility mode. It excludes every non-positive value, warns when negative values are present, and records per-marker exclusion counts:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">provenance</span><span class="op">$</span><span class="va">zero_handling</span></span></code></pre></div>
+<p>Canonical 2.0 names are <code>scores</code>, <code>qc_pass_rate</code>, <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code>. <code>collection.U</code>, <code>U.set</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> are deprecated aliases retained for migration.</p>
+<p>See <code><a href="articles/migrating-to-fastINFLECT-2.html">vignette("migrating-to-fastINFLECT-2")</a></code> for the complete contract.</p>
 </div>
-<div class="section level3">
-<h3 id="relationship-to-original-inflect">Relationship to original INFLECT<a class="anchor" aria-label="anchor" href="#relationship-to-original-inflect"></a>
-</h3>
-<p>fastINFLECT is derived from the original INFLECT implementation developed by Jan Verhoeff in the lab of JJ. Garcia-Vallejo at the <a href="https://github.com/jnverhoeff/GarciaVallejoLab" class="external-link">GarciaVallejoLab</a>. The package keeps the original marker-unimodality idea and its public <code><a href="reference/INFLECT.html">INFLECT()</a></code> workflow as the main user entry point. The new package name reflects the focus of this reimplementation: making the original algorithm fast enough for dense k sweeps, explicit benchmark comparisons, and direct inspection of residual bimodal marker expression.</p>
+<div class="section level2">
+<h2 id="real-model-modality-audit">Real-model modality audit<a class="anchor" aria-label="anchor" href="#real-model-modality-audit"></a>
+</h2>
+<p>The repository includes a resumable audit for the 39,050,953-event BMV model:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ex">data-raw/submit-real-model-modality.sh</span></a></code></pre></div>
+<p>It materialises every requested Ward and FlowSOM control partition, stages nested deterministic event samples, runs dip and ACR tests with Benjamini-Hochberg correction within each 27-marker cluster family, repeats flagged and audited pairs at 1,000 and 5,000 events, and writes checkpointed evidence under <code>inst/benchmarks/real-model-modality/</code>.</p>
+<p>For the frozen BMV model (<code>md5 784b3a6048c379ca64bbe8d4c0fb063d</code>), the literal full-event k = 25,…,100 comparison gives a combined INFLECT inflection at k = 27 and combined/dip Kneedle at k = 44. The first five-k consensus-stability plateau starts at k = 29, while IQR and event-weighted dispersion place the upper spread sensitivity at k = 55. Accordingly, the fitted-model operational recommendation is nominal k = 44, with k = 27–29 as a lower-resolution structural sensitivity and k = 55 as a spread sensitivity.</p>
+<p>Nominal k = 44 contains 43 event-populated clusters because one SOM-only cluster has zero events. Its independent final audit contains 56 detected, 118 ambiguous, 28 unresolved, and 986 no-detected cluster-marker entries. This supports neither a global unimodality claim nor biological optimality. Exact comparisons and provenance are in <code>inst/benchmarks/real-model-selection/</code>.</p>
+<p>The allowed outcome labels are <code>detected_multimodality</code>, <code>ambiguous</code>, <code>no_detected_multimodality</code>, and <code>unresolved_discrete</code>. The workflow never jitters tied measurements and never converts “no detected multimodality” into a claim that a cluster is truly unimodal.</p>
 </div>
-<div class="section level3">
-<h3 id="whats-new-in-100">What’s new in 1.0.0<a class="anchor" aria-label="anchor" href="#whats-new-in-100"></a>
-</h3>
-<ul>
-<li>
-<strong>Much faster, legacy-matched results.</strong> The QC sweep memoises each distinct SOM-node set (hierarchical metaclusterings are nested, so there are only ~<code>2·nNodes</code> distinct clusters across <em>any</em> sweep) and uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with legacy-matched p-value interpolation plus small Rcpp accelerators. A full dense sweep of every k on the bundled Levine32 SOM (375 nodes) runs in a few seconds instead of hours while preserving the original QC decisions. Dense sweeps being cheap means the diagnostic curve and its inflection point are far better resolved.</li>
-<li>
-<strong>Clearer answer to “how many clusters”.</strong> <code><a href="reference/INFLECT.html">INFLECT()</a></code> reports three recommended k values: the LL.4 <code>inflection</code> (default), a nonparametric <code>kneedle</code> knee, and a <code>threshold</code>, the smallest k reaching a target unimodality (<code>target=</code>), which directly encodes “no cluster with residual bimodal marker expression, without over-clustering”.</li>
-<li>
-<strong>Size-robust scoring.</strong> <code>max.n.diptest=</code> caps the events per dip test (seeded, deterministic) so large clusters no longer make the dip test over-powered.</li>
-<li>
-<strong><code><a href="reference/bimodality.coefficient.html">bimodality.coefficient()</a></code></strong> is exported as a fast complementary diagnostic.</li>
-<li>
-<strong>Benchmark evidence.</strong> The benchmark vignette compares fastINFLECT 1.0 against the original INFLECT loop and FlowSOM consensus, and includes marker-expression histograms for residual bimodality versus overlapping fastINFLECT unimodal clusters.</li>
-<li>
-<strong>Levine metacluster quality audit.</strong> The comparison vignette includes all-cluster histograms of per-metacluster marker-unimodality pass rates for FlowSOM consensus, FlowSOM auto-k, hierarchical cuts, and fastINFLECT.</li>
-</ul>
+<div class="section level2">
+<h2 id="relationship-to-the-original-inflect-package">Relationship to the original INFLECT package<a class="anchor" aria-label="anchor" href="#relationship-to-the-original-inflect-package"></a>
+</h2>
+<p>fastINFLECT is derived from the INFLECT implementation developed by Jan Verhoeff in the lab of JJ. Garcia-Vallejo and available from the <a href="https://github.com/jnverhoeff/GarciaVallejoLab" class="external-link">GarciaVallejoLab repository</a>. The exported <code><a href="reference/INFLECT.html">INFLECT()</a></code> name is retained for API continuity. Memoised hierarchy cuts, marker-at-a-time indexed scoring, deterministic sampling, and compiled accelerators provide the faster implementation.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

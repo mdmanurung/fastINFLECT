@@ -1,11 +1,11 @@
 # Locate the knee of a diminishing-returns curve (Kneedle)
 
 Nonparametric knee/elbow detector following Satopää et al. (2011). For a
-concave, increasing curve (as the fastINFLECT unimodality sweep
-typically is) the knee is the x at which the normalised curve is
-farthest above the diagonal joining its endpoints. Unlike the
-four-parameter log-logistic fit used by `QC.to.curve`, it assumes no
-functional form, which makes it a robust cross-check on dense sweeps.
+concave, increasing curve (as a fastINFLECT QC sweep typically is) the
+knee is the x at which the normalised curve is farthest above the
+diagonal joining its endpoints. Unlike the four-parameter log-logistic
+fit used by `QC.to.curve`, it assumes no functional form, which makes it
+a robust cross-check on dense sweeps.
 
 ## Usage
 
@@ -21,7 +21,7 @@ inflect_kneedle(x, y, concave = TRUE, increasing = TRUE)
 
   - y:
     
-    Numeric vector of y coordinates (e.g. unimodality score).
+    Numeric vector of y coordinates (for example, a QC pass rate).
 
   - concave:
     

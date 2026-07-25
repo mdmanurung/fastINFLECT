@@ -29,4 +29,4 @@ as.data.frame(x, row.names = NULL, optional = FALSE, ...)
 
 ## Value
 
-`x$collection.U` as a `data.frame`.
+Canonical `x$scores` as a `data.frame`.

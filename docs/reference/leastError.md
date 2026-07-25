@@ -1,9 +1,9 @@
-# Determine kneepoint based on minimizing fitting errors
+# Determine kneepoint by minimizing fitting errors
 
-Evaluates the errors for two fitted lines on both parts of a collection
-of points. The helper calculates the error for each possible split and
-selects the split with the smallest combined error. This is the split
-criterion used by `Lfunction`.
+For each candidate split of a point collection, fits two lines and
+computes the weighted combined RMSE. Returns the split index with the
+smallest combined error. This is the split criterion used by
+`Lfunction`.
 
 ## Usage
 
@@ -15,8 +15,8 @@ leastError(dataframe)
 
   - dataframe:
     
-    Dataframe with set.i and corresponding unimodality scores, resulting
-    from `iteration.QC`
+    Data frame with cluster counts and corresponding QC pass rates,
+    typically from `iteration.QC`.
 
 ## Value
 

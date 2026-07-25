@@ -1,426 +1,172 @@
 # Comparing metaclustering strategies with fastINFLECT
 
-## Introduction
+FlowSOM reduces events to SOM nodes; metaclustering assigns those nodes
+to a smaller number of clusters. Different partition engines and
+code-space weights can produce different node assignments even when they
+use the same value of `k`. A fair comparison therefore separates three
+questions:
 
-FlowSOM reduces a high-dimensional cytometry dataset to a
-Self-Organising Map (SOM) of a few hundred nodes, then *metaclusters*
-those nodes into a biologically interpretable number of clusters *k*.
-The central challenge is choosing k: too few clusters merge distinct
-populations; too many split them arbitrarily.
+1.  Which code matrix and weights were used?
+2.  Which partition was actually materialised?
+3.  What marker-level evidence remains inside that partition?
 
-Three common strategies exist:
+An aggregate fastINFLECT pass-rate curve answers none of these questions
+by itself.
 
-| Strategy                   | How k is chosen                                                              |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| **FlowSOM consensus**      | User picks k; consensus clustering (ConsensusClusterPlus) cuts the SOM       |
-| **FlowSOM auto-k**         | `MetaClustering()` tests k = 2…max and picks the most stable k               |
-| **Hierarchical (ward.D2)** | User picks k; `hclust` + `cutree` cuts the SOM                               |
-| **fastINFLECT**            | Sweeps k; fits a unimodality curve; picks the inflection point automatically |
+## Materialise each partition
 
-fastINFLECT provides an **objective, marker-level quality score**: for
-each metaclustering it measures what fraction of (cluster, marker)
-combinations follow a unimodal distribution – the assumption underlying
-cluster identity. As k increases, unimodality rises then plateaus; the
-inflection point of that curve is fastINFLECT’s recommendation.
+The examples below are deliberately not executed while building the
+vignette. They show the required contract for a user-supplied FlowSOM
+object named `model`.
 
-This vignette applies all four strategies to the same SOM and compares
-their results using this common metric.
+### Ward.D2 hierarchy
 
------
-
-## The data
-
-The package ships a downsampled version of the Levine *et al.* 2015
-CyTOF dataset (Levine32). It contains 32,288 bone-marrow cells measured
-across 32 surface markers and pre-processed into a FlowSOM object with
-**375 SOM nodes**.
+fastINFLECT uses a Ward.D2 hierarchy over the adapter’s effective code
+matrix. The literal schedule is retained as named node-label vectors:
 
 ``` r
-library(fastINFLECT)
+schedule <- c(25L, 30L, 35L, 40L, 45L, 50L, 55L, 60L, 62L, 65L)
 
-# Load the bundled FlowSOM object
-data_path <- system.file("extdata", "Levine32sample.Rdata", package = "fastINFLECT")
-load(data_path)   # creates object 'dataset' (class FlowSOM)
+ward_partitions <- iteration.metacluster(
+  FlowSOM.results = model,
+  set.i = schedule,
+  multicore = FALSE
+)
 
-# 32,288 cells × 39 columns; 375 SOM nodes; 32 clustering markers
-dim(dataset$data)
-dataset$map$nNodes
-length(dataset$map$colsUsed)
-```
-
------
-
-## Four ways to cut the SOM
-
-All four approaches operate on `dataset$map$codes`, the 375 × 32 matrix
-of SOM node prototypes. They each return an integer vector of length 375
-assigning every node to a metacluster.
-
-### 1\. FlowSOM consensus metaclustering (fixed k)
-
-FlowSOM’s default metaclustering uses ConsensusClusterPlus to build a
-stable partitioning at a user-supplied k. Here we use k = 10 as a
-representative choice:
-
-``` r
-library(FlowSOM)
-
-mc_consensus <- metaClustering_consensus(
-  data = dataset$map$codes,
-  k    = 10,
-  seed = 42
+stopifnot(
+  identical(names(ward_partitions), as.character(schedule)),
+  all(vapply(
+    seq_along(schedule),
+    function(i) length(unique(ward_partitions[[i]])) == schedule[[i]],
+    logical(1)
+  ))
 )
 ```
 
-### 2\. FlowSOM auto-k metaclustering
-
-`MetaClustering()` sweeps k from 2 to a maximum and selects the most
-internally stable solution:
+For a kohonen multi-layer SOM, the adapter multiplies each code layer by
+the square root of its user weight and distance weight before
+concatenating the layers. The recorded values are available in:
 
 ``` r
-mc_autok <- MetaClustering(
-  data   = dataset$map$codes,
-  method = "metaClustering_consensus",
-  max    = 25,
-  seed   = 42
-)
-message("Auto-k chose: ", length(unique(mc_autok)), " metaclusters")
+result$provenance$model
 ```
 
-### 3\. Hierarchical clustering — ward.D2 (fixed k)
+These weights are part of the partition definition. Equal fitted model
+weights and an historical 80/20 construction are different analyses, not
+interchangeable implementations.
 
-fastINFLECT’s exported `metaClusteringhclust()` wraps `hclust(dist(...,
-"minkowski"), "ward.D2")` and `cutree` at k. This is also the engine
-that fastINFLECT uses internally at each sweep point:
+### FlowSOM consensus control
 
-``` r
-mc_hclust <- metaClusteringhclust(
-  data  = dataset$map$codes,
-  nClus = 10
-)
-```
-
-### 4\. fastINFLECT – automatic inflection-point selection
-
-`INFLECT()` sweeps `set.i`, scores unimodality at each k via
-`FlowSOMQC`, fits a four-parameter log-logistic curve, and returns the
-knee of that curve as its recommended k:
+FlowSOM consensus metaclustering is a separate partition engine:
 
 ``` r
-inflect_res <- INFLECT(
-  FlowSOM.results = dataset,
-  set.i           = 5:25,       # explicit vector, not length-2; see ?INFLECT
-  multicore       = FALSE,
-  zeroes.in       = FALSE
+consensus_seeds <- c(1L, 42L, 2026L)
+
+consensus_partitions <- setNames(
+  lapply(consensus_seeds, function(seed) {
+    FlowSOM::metaClustering_consensus(
+      data = effective_codes,
+      k = 62L,
+      seed = seed
+    )
+  }),
+  paste0("seed_", consensus_seeds)
 )
 ```
 
-The results below come from this pre-computed run.
+Compare all three node-label vectors. If every pairwise adjusted Rand
+index is at least 0.95, seed 42 can be used as a displayed control while
+retaining all three partitions in provenance. Otherwise, the controls
+are seed-unstable and all three should be shown.
 
------
+## Score a common marker panel
 
-## fastINFLECT diagnostic curve
-
-The diagnostic curve shows how unimodality improves as k increases. The
-vertical dashed line marks the inflection point – where the curve stops
-rising – and gives fastINFLECT’s recommended k.
-
-``` r
-cache$inflect$ggplot
-```
-
-![fastINFLECT diagnostic curve. Each point is the unimodality score at
-that k; the red curve is the fitted LL.4 model; the dashed vertical line
-is the inflection point
-(knee).](comparing-metaclustering_files/figure-html/inflect-plot-1.png)
-
-fastINFLECT diagnostic curve. Each point is the unimodality score at
-that k; the red curve is the fitted LL.4 model; the dashed vertical line
-is the inflection point (knee).
+`iteration.QC()` accepts a named list containing exactly one partition
+for every requested k. It returns separate dip, IQR, and combined
+evidence:
 
 ``` r
-summary(cache$inflect)
-#>   knee range    angle n_points min_i max_i min_unimodality max_unimodality
-#> 1   12    25 14.11648       21     5    25            92.5        98.50543
-#>   n_markers uniform.test th.pvalue th.IQR zeroes.in basedata package_version
-#> 1        32         both      0.05      2     FALSE    Curve           1.0.0
-#>   k_inflection k_kneedle k_threshold
-#> 1           12         8           8
-```
-
-The `knee` column is fastINFLECT’s recommended number of metaclusters.
-`range` is the fitted plateau level (maximum expected unimodality);
-`angle` is the sharpness of the curve bend.
-
------
-
-## Head-to-head comparison
-
-We score every method on the same unimodality metric: the percentage of
-(cluster, marker) pairs that pass fastINFLECT’s QC test (dip test + IQR
-spread). Higher is better.
-
-``` r
-knee    <- cache$inflect$lfunction$knee
-autok   <- cache$autok_point
-
-ggplot(cache$comparison_df, aes(x = k, y = unimodality, colour = method)) +
-  geom_line(linewidth = 0.8) +
-  geom_point(size = 1.8) +
-  geom_vline(xintercept = knee, linetype = "dashed", colour = "black", linewidth = 0.7) +
-  annotate("text", x = knee + 0.3, y = min(cache$comparison_df$unimodality),
-           label = paste0("fastINFLECT\nknee = ", knee),
-           hjust = 0, vjust = 0, size = 3.2) +
-  geom_point(data = autok,
-             aes(x = k, y = unimodality),
-             shape = 17, size = 4, colour = "#7B2D8B") +
-  geom_label(data = autok,
-             aes(x = k, y = unimodality,
-                 label = paste0("Auto-k\nk = ", k)),
-             hjust = -0.15, vjust = 0.5, size = 3, colour = "#7B2D8B",
-             label.size = 0.2) +
-  scale_colour_manual(
-    values = c("FlowSOM consensus"     = "#E07B39",
-               "Hierarchical (ward.D2)" = "#3D7AB5"),
-    name = NULL
-  ) +
-  scale_x_continuous(breaks = cache$k_range) +
-  labs(
-    x = "Number of metaclusters (k)",
-    y = "Unimodality score (%)",
-    title = "Unimodality by metaclustering strategy"
-  ) +
-  theme_bw(base_size = 11) +
-  theme(legend.position = "bottom",
-        panel.grid.minor = element_blank())
-#> Warning: The `label.size` argument of `geom_label()` is deprecated as of ggplot2 3.5.0.
-#> ℹ Please use the `linewidth` argument instead.
-#> This warning is displayed once per session.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-#> generated.
-```
-
-![Unimodality score across k for each fixed-k strategy. The dashed
-vertical line marks fastINFLECT's chosen knee; the triangle shows
-FlowSOM auto-k's chosen k and its unimodality
-score.](comparing-metaclustering_files/figure-html/comparison-plot-1.png)
-
-Unimodality score across k for each fixed-k strategy. The dashed
-vertical line marks fastINFLECT’s chosen knee; the triangle shows
-FlowSOM auto-k’s chosen k and its unimodality score.
-
-### Summary table
-
-``` r
-knee <- cache$inflect$lfunction$knee
-
-# For fixed-k methods, report their best unimodality across the sweep
-# (the k that maximises unimodality — their theoretical optimum if the user chose perfectly)
-best_k <- function(method_name) {
-  d <- subset(cache$comparison_df, method == method_name)
-  d[which.max(d$unimodality), ]
-}
-best_consensus <- best_k("FlowSOM consensus")
-best_hclust    <- best_k("Hierarchical (ward.D2)")
-
-# fastINFLECT score at its knee
-inflect_at_knee <- subset(cache$inflect$collection.U, i == knee)
-
-tbl <- rbind(
-  data.frame(
-    Method            = "FlowSOM consensus",
-    `k selection`     = "manual",
-    `Best k in sweep` = best_consensus$k,
-    `Unimodality (%)` = round(best_consensus$unimodality, 1),
-    stringsAsFactors  = FALSE, check.names = FALSE
-  ),
-  data.frame(
-    Method            = "Hierarchical (ward.D2)",
-    `k selection`     = "manual",
-    `Best k in sweep` = best_hclust$k,
-    `Unimodality (%)` = round(best_hclust$unimodality, 1),
-    stringsAsFactors  = FALSE, check.names = FALSE
-  ),
-  data.frame(
-    Method            = "FlowSOM auto-k",
-    `k selection`     = "automatic",
-    `Best k in sweep` = cache$autok_point$k,
-    `Unimodality (%)` = round(cache$autok_point$unimodality, 1),
-    stringsAsFactors  = FALSE, check.names = FALSE
-  ),
-  data.frame(
-    Method            = "fastINFLECT",
-    `k selection`     = "automatic (inflection point)",
-    `Best k in sweep` = knee,
-    `Unimodality (%)` = round(inflect_at_knee$Unimodality, 1),
-    stringsAsFactors  = FALSE, check.names = FALSE
-  )
+qc <- iteration.QC(
+  FlowSOM.results = model,
+  metaclustering.list = ward_partitions,
+  set.i = schedule,
+  zeroes.in = TRUE,
+  uniform.test = "both",
+  multicore = TRUE,
+  cores = 2L,
+  seed = 42L
 )
 
-knitr::kable(tbl, align = c("l", "l", "r", "r"))
+qc$scores
+qc$dip_pass[["62"]]
+qc$iqr_pass[["62"]]
+qc$combined_pass[["62"]]
+qc$qc.details[["62"]]$failure_reason
 ```
 
-| Method                 | k selection                  | Best k in sweep | Unimodality (%) |
-| :--------------------- | :--------------------------- | --------------: | --------------: |
-| FlowSOM consensus      | manual                       |              25 |            97.6 |
-| Hierarchical (ward.D2) | manual                       |              23 |            98.5 |
-| FlowSOM auto-k         | automatic                    |               9 |            94.1 |
-| fastINFLECT            | automatic (inflection point) |              12 |            96.1 |
+`uniform.test = "spread"` selects only the IQR pass rate for the
+aggregate curve. It does not perform a dip-based modality assessment.
+Conversely, `uniform.test = "unimodality"` selects the dip result but
+still cannot prove a unimodal distribution.
 
-For fixed-k methods the table reports their **best** unimodality across
-the entire sweep — the score they would achieve if a user happened to
-choose the optimal k. Automatic methods are shown at their own selected
-k. This highlights that even under the best-case assumption for manual
-selection, the automatic methods (especially fastINFLECT) reach
-competitive or superior scores without requiring the user to know the
-right k in advance.
+The default `zeroes.in = TRUE` retains the complete finite transformed
+distribution. Setting it to `FALSE` excludes every non-positive value
+and can substantially change a centred marker distribution.
 
------
+## Compare solutions without hiding cluster size
 
-## All-cluster quality histograms
+For each fully materialised solution, report at least:
 
-A global score can hide whether a method leaves a few poor metaclusters
-behind. The plot below treats each generated metacluster as one
-observation and asks: what percentage of evaluated markers pass the
-unimodality/IQR QC inside that cluster? The FlowSOM consensus and
-hierarchical examples use the representative fixed `k = 10` shown above;
-FlowSOM auto-k uses its selected k; fastINFLECT is shown at both the
-original inflection criterion and the threshold criterion.
+  - unweighted fractions of cluster-marker statuses;
+  - event-weighted fractions of the same statuses;
+  - the fraction of clusters with no detected or unresolved marker;
+  - pairwise node-level adjusted Rand index;
+  - a cluster-by-marker status heatmap.
 
-``` r
-cq_bins <- cache$cluster_quality_bins
-cq <- cache$cluster_quality_df
-cq_summary <- cache$cluster_quality_summary
-method_levels <- unique(cq$method)
-cq_bins$method <- factor(cq_bins$method, levels = method_levels)
-cq_summary$method <- factor(cq_summary$method, levels = method_levels)
-cq_summary <- cq_summary[match(method_levels, as.character(cq_summary$method)), , drop = FALSE]
+Event-weighted and unweighted summaries answer different questions. A
+small problematic cluster counts equally in the unweighted summary but
+contributes few events to the weighted summary. Both are needed.
 
-ggplot(cq_bins, aes(x = quality_midpoint, y = cluster_fraction)) +
-  geom_col(width = 9, fill = "#3D7AB5", colour = "white", linewidth = 0.2) +
-  geom_vline(data = cq_summary,
-             aes(xintercept = median_cluster_unimodality),
-             linetype = "dashed", colour = "#2E2E2E", linewidth = 0.5) +
-  facet_wrap(~ method, ncol = 1) +
-  scale_x_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 20),
-                     expand = expansion(mult = c(0, 0.01))) +
-  scale_y_continuous(labels = function(x) paste0(round(100 * x), "%"),
-                     expand = expansion(mult = c(0, 0.08))) +
-  labs(
-    x = "markers passing QC within a metacluster (%)",
-    y = "metaclusters within method (%)",
-    title = "Cluster-level unimodality distributions"
-  ) +
-  theme_bw(base_size = 11) +
-  theme(panel.grid.minor = element_blank())
-```
+## Validate modality independently
 
-![Distribution of per-metacluster unimodality on the Levine32 dataset.
-Each bar is the fraction of metaclusters whose marker-level QC pass rate
-falls in that 10-point bin. Dashed lines mark the median cluster-level
-score for each
-method.](comparing-metaclustering_files/figure-html/cluster-quality-hist-1.png)
+For consequential claims, fastINFLECT’s aggregate screen should be
+followed by independent tests on deterministic samples from complete
+transformed distributions. The repository workflow uses:
 
-Distribution of per-metacluster unimodality on the Levine32 dataset.
-Each bar is the fraction of metaclusters whose marker-level QC pass rate
-falls in that 10-point bin. Dashed lines mark the median cluster-level
-score for each method.
+  - `diptest::dip.test()`;
+  - `multimode::modetest(mod0 = 1, method = "ACR", B = 1999)`;
+  - seeds 1, 42, and 2026;
+  - Benjamini-Hochberg correction across the marker family within each
+    cluster, method, seed, and sample size;
+  - repeats at 1,000 and 5,000 events for detected or ambiguous pairs
+    and for a deterministic 5% audit of apparent passes.
 
-``` r
-cq_tbl <- data.frame(
-  Method = cq_summary$method,
-  `k used` = cq_summary$k,
-  `metaclusters` = cq_summary$clusters,
-  `median cluster QC (%)` = round(cq_summary$median_cluster_unimodality, 1),
-  `minimum cluster QC (%)` = round(cq_summary$min_cluster_unimodality, 1),
-  `clusters below 95%` = cq_summary$clusters_below_95,
-  `clusters below 100%` = cq_summary$clusters_below_100,
-  check.names = FALSE
-)
-knitr::kable(cq_tbl, align = c("l", "r", "r", "r", "r", "r", "r"))
-```
+The correction controls the marker family within a cluster. It is not
+global control across all clusters.
 
-| Method                 | k used | metaclusters | median cluster QC (%) | minimum cluster QC (%) | clusters below 95% | clusters below 100% |
-| :--------------------- | -----: | -----------: | --------------------: | ---------------------: | -----------------: | ------------------: |
-| FlowSOM consensus      |     10 |           10 |                  95.3 |                   87.5 |                  5 |                   8 |
-| FlowSOM auto-k         |      9 |            9 |                  93.8 |                   81.2 |                  5 |                   7 |
-| Hierarchical (ward.D2) |     10 |           10 |                  95.3 |                   90.6 |                  5 |                   7 |
-| fastINFLECT inflection |     12 |           12 |                  96.9 |                   90.6 |                  5 |                   8 |
-| fastINFLECT threshold  |      8 |            8 |                  95.3 |                   90.6 |                  4 |                   6 |
+Tied or saturated cytometry measurements are not silently jittered.
+Pairs with insufficient unique values, excessive ties, boundary
+saturation, or test failure are labelled `unresolved_discrete`.
 
-This simple view is the direct cluster-quality audit: methods whose
-histograms shift toward 100% produce metaclusters where marker
-expression is more often unimodal across the full marker panel. The
-threshold readout is included because it is the fastINFLECT criterion
-that most directly encodes “avoid residual bimodal marker expression
-without over-clustering.”
+## Interpret conservatively
 
------
+Use four outcome labels:
 
-## Per-marker performance
+  - `detected_multimodality`: both independent tests reject after
+    correction in at least two seeds and required sample-size checks
+    agree;
+  - `no_detected_multimodality`: neither test rejects in any valid seed
+    and required checks remain stable;
+  - `ambiguous`: test disagreement, seed instability, borderline
+    evidence, or sample-size sensitivity;
+  - `unresolved_discrete`: the measurement grid or a test failure
+    prevents a valid assessment.
 
-Which markers are hardest to resolve? `marker.performance()` shows, for
-each marker, the fraction of metaclusters where that marker passes QC
-across the full sweep.
+Do not call a cluster “truly unimodal.” Failure to reject a unimodal
+null is not proof of that null, and univariate marker marginals do not
+establish multivariate cluster homogeneity or biological validity.
 
-``` r
-cache$mp_plot
-#> Warning: The following aesthetics were dropped during statistical transformation:
-#> colour.
-#> ℹ This can happen when ggplot fails to infer the correct grouping structure in
-#>   the data.
-#> ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
-#>   variable into a factor?
-```
-
-![Per-marker unimodality pass rate (%) across all tested
-metaclusterings. Points are individual metaclusterings coloured by k;
-boxes summarise the distribution. Markers with low pass rates are
-systematically multimodal and may warrant panel or gating
-review.](comparing-metaclustering_files/figure-html/marker-performance-1.png)
-
-Per-marker unimodality pass rate (%) across all tested metaclusterings.
-Points are individual metaclusterings coloured by k; boxes summarise the
-distribution. Markers with low pass rates are systematically multimodal
-and may warrant panel or gating review.
-
-Markers that consistently score low across all k values are
-intrinsically multimodal in this dataset — they may reflect biphasic
-biology (e.g. dim vs. bright populations) that the SOM has not fully
-resolved, or technical artefacts worth revisiting.
-
------
-
-## Conclusion
-
-fastINFLECT automates the most subjective step in a FlowSOM workflow –
-choosing k – by fitting an objective quality curve to a unimodality
-score computed from the data itself. Compared with manual selection or
-rule-based auto-k approaches, the inflection-point criterion is:
-
-  - **Interpretable**: the diagnostic curve directly shows where cluster
-    quality stops improving.
-  - **Objective**: no heuristics or stability measures; it quantifies
-    the actual distributional quality of each marker within each
-    metacluster.
-  - **Reproducible**: the same input SOM always produces the same
-    recommended k.
-
-For downstream analysis, call `plot(inflect_res)` for the diagnostic
-curve, `summary(inflect_res)` for a one-row results table, and
-`marker.performance(inflect_res)` to identify markers that may require
-targeted gating.
-
------
-
-``` r
-knitr::kable(vignette_reproducibility(), align = c("l", "l"))
-```
-
-| Component            | Version                      |
-| :------------------- | :--------------------------- |
-| R                    | R version 4.5.1 (2025-06-13) |
-| fastINFLECT          | 1.0.0                        |
-| FlowSOM              | 2.18.0                       |
-| diptest              | 0.77.2                       |
-| ConsensusClusterPlus | 1.74.0                       |
+The pre-2.0 `vignette_cache.rds` is retained only as historical package
+performance material. Because it used `zeroes.in = FALSE` and an
+aggregate pass-rate interpretation, it is not scientific evidence for
+cluster modality.

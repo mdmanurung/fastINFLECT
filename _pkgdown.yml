@@ -7,7 +7,7 @@ home:
   title: fastINFLECT
   description: >
     A fast reimplementation of the original INFLECT package for selecting
-    FlowSOM and kohonen metaclustering endpoints from marker-unimodality
+    FlowSOM and kohonen metaclustering endpoints from marker-level
     diagnostics.
 
 navbar:
@@ -16,9 +16,9 @@ navbar:
     right: [search, github]
 
 articles:
-- title: Migration
+- title: Package interface
   contents:
-  - migrating-to-fastINFLECT-2
+  - using-fastINFLECT-1
 - title: Benchmarks and method comparisons
   navbar: Benchmarks
   contents:

@@ -12,7 +12,8 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
 \item{set.i}{Literal, unique, strictly increasing integer cluster counts
 within the SOM-node range.}
 
-\item{multicore}{Retained for backward compatibility. Hierarchical clustering is now computed once and is not parallelized.}
+\item{multicore}{Retained for backward compatibility. Hierarchical
+clustering is computed once and is not parallelized.}
 
 \item{cores}{Retained for backward compatibility.}
 }

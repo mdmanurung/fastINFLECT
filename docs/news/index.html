@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">fastINFLECT</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,64 +42,65 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="2.0.0" id="fastinflect-2-0-0">fastINFLECT 2.0.0<a class="anchor" aria-label="anchor" href="#fastinflect-2-0-0"></a></h2>
-<div class="section level3">
-<h3 id="breaking-api-changes-2-0-0">Breaking API changes<a class="anchor" aria-label="anchor" href="#breaking-api-changes-2-0-0"></a></h3>
-<ul><li>
-<code>set.i</code> is now required and literal. It must contain at least five unique, strictly increasing integer cluster counts within the SOM-node range. Two-value inputs such as <code>c(25, 100)</code> now fail instead of silently expanding past 100. Use <code>seq.int(25L, 100L, by = 5L)</code> for that exact scan, or <code>inflect_adaptive_set_i(n_nodes, max_k)</code> for the former adaptive spacing with an explicit upper bound.</li>
-<li>Parallel QC is now opt-in: <code>multicore = FALSE</code> is the default. Enabling it requires <code>cores &gt;= 2</code>; failed worker/subtree results are validated and reported before result matrices are assembled. Platforms without fork support use a provenance-recorded serial fallback after applying the same validation.</li>
-<li>
-<code>zeroes.in = TRUE</code> is now the scientific default. It retains negative, zero, and positive finite transformed values. The compatibility setting <code>zeroes.in = FALSE</code> excludes every non-positive value, warns when negatives are present, and records per-marker exclusion counts.</li>
-<li>Aggregate output is now named <code>qc_pass_rate</code> and carries criterion-aware labels. Canonical output includes separate <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code> matrices. The historical <code>U.set</code>, <code>collection.U</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> names remain as documented deprecated aliases for migration.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="memory-and-statistical-controls-2-0-0">Memory and statistical controls<a class="anchor" aria-label="anchor" href="#memory-and-statistical-controls-2-0-0"></a></h3>
-<ul><li>Subtrees are scored by row index, one marker at a time, instead of copying a full events-by-markers matrix for every subtree.</li>
-<li>Added <code>max.events.per.node</code>. When set, every SOM node is sampled once using <code>seed</code>, and that shared event sample is used for both dip and IQR scoring in every worker. Original and retained event counts are recorded in provenance.</li>
-<li>
-<code>qc.details</code> now retains dip p-values, IQR values, original and testable event counts, non-finite and non-positive exclusions, and explicit failure reasons. Both component criteria are retained regardless of the aggregate selected by <code>uniform.test</code>.</li>
-<li>Simulated dip p-values and optional subsampling use overflow-safe seeds derived per subtree and marker. Results preserve the caller RNG state and are identical across serial and two-worker execution.</li>
-<li>Small-sample dip interpolation now passes <code>ties = mean</code> explicitly, avoiding duplicate-grid warnings without changing p-values.</li>
-<li>Recommendation tables now identify whether each k was directly tested and report the fitted score for fitted-curve recommendations. An unscheduled fitted k is labelled <code>fitted_estimate_no_partition</code> and is never silently evaluated.</li>
-<li>QC-boundary provenance now consolidates the selected criterion, thresholds, marker panel, zero handling, sampling order and seeds, effective workers, model layer weights, retained events, and per-criterion summaries.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="validation-and-interpretation-2-0-0">Validation and interpretation<a class="anchor" aria-label="anchor" href="#validation-and-interpretation-2-0-0"></a></h3>
-<ul><li>Added a checkpointed, Slurm-array-compatible real-model modality workflow in <code>data-raw/validate-real-model-modality.R</code>. It materialises the requested Ward and FlowSOM controls, uses deterministic nested samples, combines the dip test with the optional <code>multimode</code> ACR test, and records base and sample-size refinement evidence under <code>inst/benchmarks/</code>.</li>
-<li>Documentation now uses <code>detected_multimodality</code>, <code>ambiguous</code>, <code>no_detected_multimodality</code>, and <code>unresolved_discrete</code>. A criterion pass or a failure to reject unimodality is not described as proof that a cluster is truly unimodal.</li>
-</ul></div>
-</div>
-    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="fastinflect-1-0-0">fastINFLECT 1.0.0<a class="anchor" aria-label="anchor" href="#fastinflect-1-0-0"></a></h2>
-<ul><li>Package renamed from <code>INFLECT</code> to <code>fastINFLECT</code>. The exported <code><a href="../reference/INFLECT.html">INFLECT()</a></code> function is retained for API continuity, and the documentation now explicitly frames this repository as a fast reimplementation of the original INFLECT method.</li></ul><div class="section level3">
-<h3 id="performance-1-0-0">Performance<a class="anchor" aria-label="anchor" href="#performance-1-0-0"></a></h3>
-<ul><li>Rewrote the QC sweep to be dramatically faster while preserving the original QC decisions. On the bundled Levine32 SOM (375 nodes, 32,288 events, 32 markers) a full dense sweep of every k from 5 to 370 now runs in a few seconds; the previous per-k implementation would have taken hours.<ul><li>
-<strong>Sub-tree memoisation.</strong> <code><a href="../reference/iteration.QC.html">iteration.QC()</a></code> now evaluates each distinct SOM-node set only once. Because <code>hclust</code>/<code>cutree</code> metaclusterings are nested, there are at most <code>2 * nNodes - 1</code> distinct clusters across the whole sweep regardless of how densely <code>set.i</code> samples k, so the cost no longer grows with the number of tested k values.</li>
-<li>
-<strong>Faster kernel.</strong> The dip test now uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> for the statistic plus legacy-matched p-value interpolation, with exact small-sample fallback, instead of the ~12x more expensive <code>dip.test()</code> per cell.</li>
-<li>
-<strong>Compiled accelerators (Rcpp).</strong> The inter-quartile-range spread test and the hot-path p-value interpolation are implemented in C++ (<code>src/inflect.cpp</code>), with the pure-R paths retained as validated fallbacks when the package is used without its compiled code.</li>
-<li>Parallelism in <code><a href="../reference/iteration.QC.html">iteration.QC()</a></code> now fans out over distinct sub-trees via fork-based <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code> (Unix), replacing the previous per-k <code>foreach</code>/<code>doParallel</code> loop. <code>doParallel</code> and <code>foreach</code> are no longer dependencies.</li>
-</ul></li></ul></div>
+<p>fastINFLECT is the renamed, faster implementation of the original INFLECT method. The exported <code><a href="../reference/INFLECT.html">INFLECT()</a></code> function remains available for API continuity.</p>
 <div class="section level3">
-<h3 id="choosing-k-1-0-0">Choosing k<a class="anchor" aria-label="anchor" href="#choosing-k-1-0-0"></a></h3>
+<h3 id="package-interface-1-0-0">Package interface<a class="anchor" aria-label="anchor" href="#package-interface-1-0-0"></a></h3>
 <ul><li>
-<code><a href="../reference/INFLECT.html">INFLECT()</a></code> now reports the recommended number of metaclusters under three criteria in a new <code>selection</code> element (also shown by <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>):<ul><li>
-<code>inflection</code> — the original LL.4 log-logistic knee (unchanged default);</li>
+<code>set.i</code> is required and literal. It must contain at least five unique, strictly increasing integer cluster counts within the SOM-node range. Two-value inputs such as <code>c(25, 100)</code> fail because their spacing is ambiguous. Use <code>seq.int(25L, 100L, by = 5L)</code> for that exact scan, or <code>inflect_adaptive_set_i(n_nodes, max_k)</code> for an explicitly bounded adaptive schedule.</li>
+<li>Serial QC is the default. Parallel QC requires <code>multicore = TRUE</code> and at least two effective workers. Worker and subtree results are validated before result matrices are assembled. Platforms without fork support use a recorded serial fallback after the same validation.</li>
 <li>
-<code>kneedle</code> — a nonparametric knee (<code><a href="../reference/inflect_kneedle.html">inflect_kneedle()</a></code>, Satopää et al. 2011);</li>
-<li>
-<code>threshold</code> — the smallest k reaching a target unimodality (<code><a href="../reference/inflect_threshold_k.html">inflect_threshold_k()</a></code>, controlled by the new <code>target</code> argument, default 0.95). This directly encodes “admit no cluster with residual bimodal marker expression, without over-clustering”.</li>
-</ul></li></ul></div>
+<code>zeroes.in = TRUE</code> retains negative, zero, and positive finite transformed values. Setting <code>zeroes.in = FALSE</code> excludes every non-positive value, warns when negatives are present, and records per-marker exclusion counts.</li>
+<li>Canonical output uses <code>scores</code> and <code>qc_pass_rate</code>. Separate <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code> matrices retain the component evidence. The historical <code>U.set</code>, <code>collection.U</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> names remain as deprecated compatibility aliases.</li>
+</ul></div>
 <div class="section level3">
-<h3 id="statistics-1-0-0">Statistics<a class="anchor" aria-label="anchor" href="#statistics-1-0-0"></a></h3>
-<ul><li>New <code>max.n.diptest</code> argument (in <code><a href="../reference/INFLECT.html">INFLECT()</a></code> and <code><a href="../reference/iteration.QC.html">iteration.QC()</a></code>) optionally caps the number of events used per (cluster, marker) dip test. This removes the sample-size sensitivity of the dip test — large clusters otherwise reject unimodality for negligible deviations — making the score size-robust. Subsampling is seeded (<code>seed</code>) and therefore deterministic. The default <code>NULL</code> preserves the legacy scoring path.</li>
-<li>New exported <code><a href="../reference/bimodality.coefficient.html">bimodality.coefficient()</a></code> computes Sarle’s bimodality coefficient as a fast, size-robust diagnostic that complements the dip test (documented with its caveat: it can over-flag skewed-but-unimodal markers).</li>
+<h3 id="performance-and-memory-1-0-0">Performance and memory<a class="anchor" aria-label="anchor" href="#performance-and-memory-1-0-0"></a></h3>
+<ul><li>
+<code><a href="../reference/iteration.QC.html">iteration.QC()</a></code> evaluates each distinct SOM-node set once. A nested <code>hclust</code> and <code>cutree</code> sweep contains at most <code>2 * nNodes - 1</code> distinct clusters, regardless of schedule density.</li>
+<li>On the bundled Levine32 SOM with 375 nodes, 32,288 events, and 32 markers, a historical engineering benchmark completed the dense <code>k = 5:370</code> sweep in seconds. The projected repeated per-k implementation required hours on the same machine.</li>
+<li>The dip-test kernel uses <code><a href="https://rdrr.io/pkg/diptest/man/dip.html" class="external-link">diptest::dip()</a></code> with legacy-matched p-value interpolation and an exact small-sample fallback. The sampled legacy benchmark measured <code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">diptest::dip.test()</a></code> at about 12 times the per-call cost.</li>
+<li>Rcpp accelerates the IQR-spread test and p-value interpolation. Validated pure-R paths remain available when compiled code is unavailable.</li>
+<li>Subtrees are scored by row index, one marker at a time, instead of copying a full events-by-markers matrix for every subtree.</li>
+<li>
+<code>max.events.per.node</code> can cap event retention for sensitivity analyses. Each SOM node is sampled once with <code>seed</code>, and the same retained rows feed every marker, criterion, metaclustering, and worker. Provenance records original and retained event counts.</li>
+<li>Fork-based parallel scoring operates over distinct subtrees on Unix-like systems. This replaces the repeated per-k <code>foreach</code> and <code>doParallel</code> implementation, and those packages are no longer dependencies.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="statistical-evidence-and-reproducibility-1-0-0">Statistical evidence and reproducibility<a class="anchor" aria-label="anchor" href="#statistical-evidence-and-reproducibility-1-0-0"></a></h3>
+<ul><li>
+<code>qc.details</code> retains dip p-values, IQR values, original and testable event counts, non-finite and non-positive exclusions, and explicit failure reasons. Both component criteria remain available regardless of <code>uniform.test</code>.</li>
+<li>Simulated dip p-values and optional event samples use overflow-safe seeds derived for each subtree and marker. The implementation preserves the caller RNG state and returns identical tested results with serial and two-worker execution.</li>
+<li>Small-sample dip interpolation uses <code>ties = mean</code>, which avoids duplicate-grid interpolation warnings without changing the tested p-values.</li>
+<li>
+<code>max.n.diptest</code> provides a deterministic marker-level sample cap for sensitivity analysis of dip-test sample-size effects. The default <code>NULL</code> retains all testable events.</li>
+<li>
+<code><a href="../reference/bimodality.coefficient.html">bimodality.coefficient()</a></code> provides Sarle’s bimodality coefficient as an additional diagnostic. Its documentation notes that skewed unimodal distributions can be flagged.</li>
+<li>Provenance records the selected criterion, thresholds, marker panel, zero handling, sampling order and seeds, effective workers, model layer weights, retained events, and per-criterion summaries.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="selecting-k-1-0-0">Selecting k<a class="anchor" aria-label="anchor" href="#selecting-k-1-0-0"></a></h3>
+<ul><li>
+<code><a href="../reference/INFLECT.html">INFLECT()</a></code> reports three candidate endpoints in <code>selection</code>:<ul><li>
+<code>inflection</code>, the original LL.4 log-logistic knee;</li>
+<li>
+<code>kneedle</code>, a nonparametric knee from <code><a href="../reference/inflect_kneedle.html">inflect_kneedle()</a></code> following Satopää et al. (2011);</li>
+<li>
+<code>threshold</code>, the smallest tested k that reaches the requested criterion-specific pass rate through <code><a href="../reference/inflect_threshold_k.html">inflect_threshold_k()</a></code>, with a default target of 0.95.</li>
+</ul></li>
+<li>Each recommendation reports whether k was directly tested, whether a partition is available, and whether its score came from tested data or the fitted curve. An unscheduled fitted k is labelled <code>fitted_estimate_no_partition</code> and is not evaluated implicitly.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="real-model-validation-1-0-0">Real-model validation<a class="anchor" aria-label="anchor" href="#real-model-validation-1-0-0"></a></h3>
+<ul><li>The checkpointed, Slurm-array-compatible workflow in <code>data-raw/validate-real-model-modality.R</code> materialises Ward and FlowSOM controls, uses deterministic nested samples, and combines the dip test with the optional <code>multimode</code> ACR test. Base and sample-size refinement evidence is stored under <code>inst/benchmarks/</code>.</li>
+<li>The frozen BMV model contains 39,050,953 events, 900 SOM nodes, and 27 markers. The full-event comparison gives a combined INFLECT inflection at k = 27, a combined and dip Kneedle at k = 44, a consensus plateau beginning at k = 29, and an upper spread sensitivity at k = 55.</li>
+<li>The operational BMV partition is nominal k = 44, with 43 event-populated clusters and one empty nominal cluster. Its independent audit contains 56 detected, 118 ambiguous, 28 unresolved, and 986 no-detected cluster-marker entries. These results do not support a global unimodality claim.</li>
+<li>Documentation uses <code>detected_multimodality</code>, <code>ambiguous</code>, <code>no_detected_multimodality</code>, and <code>unresolved_discrete</code>. A criterion pass or failure to reject the unimodal null is not treated as proof of unimodality.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-1-0-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-0"></a></h3>
-<ul><li>New vignette “Benchmarking fastINFLECT against consensus metaclustering” times the cost of scanning k on the bundled Levine32 SOM: fastINFLECT’s memoised sweep versus the original INFLECT loop and FlowSOM consensus metaclustering, both as a single ConsensusClusterPlus run and as the per-k convenience pattern. It also includes marker-expression histograms showing residual bimodality in the standard consensus partition versus overlapping fastINFLECT unimodal clusters. (Timings and histogram data are precomputed by <code>data-raw/make-benchmark-cache.R</code>.)</li>
-<li>The metaclustering comparison vignette now includes all-cluster histograms on the Levine32 dataset, showing the distribution of per-metacluster marker-unimodality pass rates for FlowSOM consensus, FlowSOM auto-k, hierarchical cuts, and fastINFLECT recommendations.</li>
+<ul><li>The vignette “Using fastINFLECT 1.0.0” defines the literal schedule, value handling, criterion-specific outputs, parallel execution, sampling controls, selection metadata, and provenance contract.</li>
+<li>“Benchmarking fastINFLECT against consensus metaclustering” separates the historical Levine32 performance cache from the full BMV selection and modality evidence. The historical cache is retained for engineering context, not modality claims.</li>
+<li>“Comparing metaclustering strategies with fastINFLECT” covers Ward.D2 and FlowSOM consensus partitions, common marker panels, cluster-size-aware summaries, and independent modality validation.</li>
 </ul></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

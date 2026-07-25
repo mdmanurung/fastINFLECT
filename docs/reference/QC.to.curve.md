@@ -29,7 +29,8 @@ QC.to.curve(collection.U, basedata, ggtitle = NULL)
 ## Value
 
 A list containing canonical `scores`, `fittedcurve`, `lfunction`, and
-`ggplot`. Deprecated `collection.U` is retained as a migration alias.
+`ggplot`. Deprecated `collection.U` is retained as a compatibility
+alias.
 
 ## See also
 

@@ -7,9 +7,9 @@
 #'
 #' The core INFLECT idea is to scan metaclusterings, calculate a marker-level QC
 #' pass rate, and locate the inflection where additional clusters stop
-#' improving that aggregate. Version 2.0 retains separate dip-test and
-#' IQR-spread evidence, distinguishes fitted estimates from materialised
-#' partitions, and avoids interpreting a pass rate as proof of unimodality.
+#' improving that aggregate. fastINFLECT retains separate dip-test and
+#' IQR-spread evidence and distinguishes fitted estimates from materialised
+#' partitions. A pass rate is a screening result, not proof of unimodality.
 #'
 #' The original INFLECT implementation was developed by Jan Verhoeff in the
 #' lab of JJ. Garcia-Vallejo and is available at

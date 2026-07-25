@@ -11,9 +11,9 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="fastINFLECT">
-<meta name="description" content="A fast reimplementation of the original INFLECT package for selecting FlowSOM and kohonen metaclustering endpoints from marker-unimodality diagnostics.
+<meta name="description" content="A fast reimplementation of the original INFLECT package for selecting FlowSOM and kohonen metaclustering endpoints from marker-level diagnostics.
 ">
-<meta property="og:description" content="A fast reimplementation of the original INFLECT package for selecting FlowSOM and kohonen metaclustering endpoints from marker-unimodality diagnostics.
+<meta property="og:description" content="A fast reimplementation of the original INFLECT package for selecting FlowSOM and kohonen metaclustering endpoints from marker-level diagnostics.
 ">
 </head>
 <body>
@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">fastINFLECT</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="fastinflect">fastINFLECT<a class="anchor" aria-label="anchor" href="#fastinflect"></a>
 </h1></div>
-<p>fastINFLECT performs marker-level quality control across literal metaclustering schedules for FlowSOM and kohonen self-organising maps. It retains separate Hartigan dip-test and IQR-spread evidence, fits a diagnostic pass-rate curve, and reports candidate endpoints without pretending that an unscheduled fitted value has a partition.</p>
+<p>fastINFLECT performs marker-level quality control across literal metaclustering schedules for FlowSOM and kohonen self-organising maps. It retains separate Hartigan dip-test and IQR-spread evidence, fits a diagnostic pass-rate curve, and labels unscheduled fitted endpoints as estimates without partitions.</p>
 <p>A dip or IQR pass is a criterion-specific screening result. It is not proof that a marker distribution, cluster, or biological population is truly unimodal.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -74,7 +74,7 @@
 <p>For kohonen SOM objects, install the optional <code>kohonen</code> package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"kohonen"</span><span class="op">)</span></span></code></pre></div>
-<p>The independent real-model modality audit additionally uses the optional <code>multimode</code> package. It is not required for ordinary fastINFLECT use.</p>
+<p>The real-model modality audit uses the optional <code>multimode</code> package. Ordinary fastINFLECT use does not require it.</p>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
@@ -96,7 +96,7 @@
 <span>  uniform.test <span class="op">=</span> <span class="st">"both"</span>,</span>
 <span>  multicore <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Version 2.0 retains all finite transformed values, including negative values and zero, by default. The aggregate score is named for what it is:</p>
+<p>fastINFLECT retains all finite transformed values, including negative values and zero, by default. The aggregate score is named for what it measures:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">scores</span></span>
 <span><span class="co"># k, qc_pass_rate, criterion</span></span>
@@ -122,14 +122,14 @@
 <p>The pass-rate curve alone should not be used to declare a selected partition unimodal. Inspect the separate criterion matrices and, for consequential claims, validate complete transformed marker distributions with independent tests and sensitivity analyses.</p>
 </div>
 <div class="section level2">
-<h2 id="migrating-to-2-0-0">Migrating to 2.0.0<a class="anchor" aria-label="anchor" href="#migrating-to-2-0-0"></a>
+<h2 id="package-interface">Package interface<a class="anchor" aria-label="anchor" href="#package-interface"></a>
 </h2>
 <p><code>set.i</code> is mandatory, literal, unique, and strictly increasing. This call evaluates exactly the printed values and never scans above 100:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq.int</a></span><span class="op">(</span><span class="fl">25L</span>, <span class="fl">100L</span>, by <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">schedule</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/INFLECT.html">INFLECT</a></span><span class="op">(</span><span class="va">dataset</span>, set.i <span class="op">=</span> <span class="va">schedule</span><span class="op">)</span></span></code></pre></div>
-<p>To request the former adaptive spacing, construct it explicitly with a hard upper bound:</p>
+<p>For an adaptive schedule with a hard upper bound, construct the values explicitly:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/inflect_adaptive_set_i.html">inflect_adaptive_set_i</a></span><span class="op">(</span></span>
 <span>  n_nodes <span class="op">=</span> <span class="va">dataset</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">nNodes</span>,</span>
@@ -145,11 +145,11 @@
 <span>  seed <span class="op">=</span> <span class="fl">42L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>On platforms without fork support, the same arguments are validated and a recorded serial fallback is used. Simulated dip p-values and optional subsampling are deterministic per subtree and marker, preserve the caller RNG state, and are invariant to worker count.</p>
-<p><code>zeroes.in = FALSE</code> is now an explicit compatibility mode. It excludes every non-positive value, warns when negative values are present, and records per-marker exclusion counts:</p>
+<p>Setting <code>zeroes.in = FALSE</code> excludes every non-positive value, warns when negative values are present, and records per-marker exclusion counts:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">provenance</span><span class="op">$</span><span class="va">zero_handling</span></span></code></pre></div>
-<p>Canonical 2.0 names are <code>scores</code>, <code>qc_pass_rate</code>, <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code>. <code>collection.U</code>, <code>U.set</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> are deprecated aliases retained for migration.</p>
-<p>See <code><a href="articles/migrating-to-fastINFLECT-2.html">vignette("migrating-to-fastINFLECT-2")</a></code> for the complete contract.</p>
+<p>Canonical result names are <code>scores</code>, <code>qc_pass_rate</code>, <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code>. <code>collection.U</code>, <code>U.set</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> are deprecated aliases retained for compatibility.</p>
+<p>See <code><a href="articles/using-fastINFLECT-1.html">vignette("using-fastINFLECT-1")</a></code> for the complete contract.</p>
 </div>
 <div class="section level2">
 <h2 id="real-model-modality-audit">Real-model modality audit<a class="anchor" aria-label="anchor" href="#real-model-modality-audit"></a>
@@ -157,9 +157,9 @@
 <p>The repository includes a resumable audit for the 39,050,953-event BMV model:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="ex">data-raw/submit-real-model-modality.sh</span></a></code></pre></div>
 <p>It materialises every requested Ward and FlowSOM control partition, stages nested deterministic event samples, runs dip and ACR tests with Benjamini-Hochberg correction within each 27-marker cluster family, repeats flagged and audited pairs at 1,000 and 5,000 events, and writes checkpointed evidence under <code>inst/benchmarks/real-model-modality/</code>.</p>
-<p>For the frozen BMV model (<code>md5 784b3a6048c379ca64bbe8d4c0fb063d</code>), the literal full-event k = 25,…,100 comparison gives a combined INFLECT inflection at k = 27 and combined/dip Kneedle at k = 44. The first five-k consensus-stability plateau starts at k = 29, while IQR and event-weighted dispersion place the upper spread sensitivity at k = 55. Accordingly, the fitted-model operational recommendation is nominal k = 44, with k = 27–29 as a lower-resolution structural sensitivity and k = 55 as a spread sensitivity.</p>
-<p>Nominal k = 44 contains 43 event-populated clusters because one SOM-only cluster has zero events. Its independent final audit contains 56 detected, 118 ambiguous, 28 unresolved, and 986 no-detected cluster-marker entries. This supports neither a global unimodality claim nor biological optimality. Exact comparisons and provenance are in <code>inst/benchmarks/real-model-selection/</code>.</p>
-<p>The allowed outcome labels are <code>detected_multimodality</code>, <code>ambiguous</code>, <code>no_detected_multimodality</code>, and <code>unresolved_discrete</code>. The workflow never jitters tied measurements and never converts “no detected multimodality” into a claim that a cluster is truly unimodal.</p>
+<p>For the frozen BMV model (<code>md5 784b3a6048c379ca64bbe8d4c0fb063d</code>), the literal full-event k = 25,…,100 comparison gives a combined INFLECT inflection at k = 27 and combined/dip Kneedle at k = 44. The first five-k consensus-stability plateau starts at k = 29, while IQR and event-weighted dispersion place the upper spread sensitivity at k = 55. The fitted-model operational recommendation is nominal k = 44. Values from k = 27 to 29 provide a lower-resolution structural sensitivity, and k = 55 provides a spread sensitivity.</p>
+<p>Nominal k = 44 contains 43 event-populated clusters because one SOM-only cluster has zero events. Its independent final audit contains 56 detected, 118 ambiguous, 28 unresolved, and 986 no-detected cluster-marker entries. These residual statuses preclude claims of global unimodality or biological optimality. Exact comparisons and provenance are in <code>inst/benchmarks/real-model-selection/</code>.</p>
+<p>The allowed outcome labels are <code>detected_multimodality</code>, <code>ambiguous</code>, <code>no_detected_multimodality</code>, and <code>unresolved_discrete</code>. The workflow leaves tied measurements unchanged and reports “no detected multimodality” without upgrading it to confirmed unimodality.</p>
 </div>
 <div class="section level2">
 <h2 id="relationship-to-the-original-inflect-package">Relationship to the original INFLECT package<a class="anchor" aria-label="anchor" href="#relationship-to-the-original-inflect-package"></a>

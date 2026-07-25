@@ -4,8 +4,8 @@ pkgdown_sha: ~
 articles:
   benchmark-inflect-vs-consensus: benchmark-inflect-vs-consensus.html
   comparing-metaclustering: comparing-metaclustering.html
-  migrating-to-fastINFLECT-2: migrating-to-fastINFLECT-2.html
-last_built: 2026-07-25T14:08Z
+  using-fastINFLECT-1: using-fastINFLECT-1.html
+last_built: 2026-07-25T16:49Z
 urls:
   reference: https://mdmanurung.github.io/fastINFLECT/reference
   article: https://mdmanurung.github.io/fastINFLECT/articles

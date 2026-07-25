@@ -1,8 +1,8 @@
 ---
-title: "Migrating to fastINFLECT 2.0"
+title: "Using fastINFLECT 1.0.0"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Migrating to fastINFLECT 2.0}
+  %\VignetteIndexEntry{Using fastINFLECT 1.0.0}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,18 +12,19 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(fastINFLECT)
 ```
 
-fastINFLECT 2.0 is a breaking release. It makes the tested cluster-count
-schedule literal, retains complete transformed marker distributions by
-default, separates dip and IQR evidence, and distinguishes fitted estimates
-from partitions that actually exist.
+fastINFLECT 1.0.0 uses literal cluster-count schedules, retains complete
+transformed marker distributions by default, and reports dip and IQR evidence
+separately. It also distinguishes fitted estimates from partitions that were
+materialised.
 
 The aggregate diagnostic remains useful for screening candidate values of
 `k`. It does not establish that a cluster is truly unimodal.
 
 ## Supply a literal schedule
 
-`set.i` is required. It must contain at least five unique, strictly increasing
-integer values, and no value may exceed the number of SOM nodes.
+Candidate values enter through the required `set.i` argument. It must contain
+at least five unique, strictly increasing integer values, and no value may
+exceed the number of SOM nodes.
 
 ```{r literal, eval = FALSE}
 schedule <- seq.int(25L, 100L, by = 5L)
@@ -31,10 +32,11 @@ print(schedule)
 result <- INFLECT(model, set.i = schedule)
 ```
 
-The call evaluates exactly `25, 30, ..., 100`. The former shorthand
-`set.i = c(25, 100)` now fails because its spacing is ambiguous.
+The call evaluates exactly `25, 30, ..., 100`. A two-value input such as
+`set.i = c(25, 100)` fails because its spacing is ambiguous.
 
-For the pre-2.0 adaptive spacing, construct the schedule explicitly:
+For an adaptive schedule with a fixed upper bound, construct the values
+explicitly:
 
 ```{r adaptive}
 inflect_adaptive_set_i(n_nodes = 900L, max_k = 100L)
@@ -45,9 +47,10 @@ refuses schedules that are unsafe to materialise.
 
 ## Retain complete transformed values
 
-`zeroes.in = TRUE` is the new default. It retains negative, zero, and positive
-finite values. This matters for centred or otherwise transformed marker data:
-dropping non-positive measurements changes the tested distribution.
+With the schedule defined, `zeroes.in = TRUE` retains negative, zero, and
+positive finite values. This matters for centred or otherwise transformed
+marker data because dropping non-positive measurements changes the tested
+distribution.
 
 ```{r complete-values, eval = FALSE}
 result <- INFLECT(
@@ -57,9 +60,8 @@ result <- INFLECT(
 )
 ```
 
-`zeroes.in = FALSE` remains available as an explicit compatibility setting. It
-excludes every non-positive value, warns when negative inputs are present, and
-records exclusions:
+Conversely, `zeroes.in = FALSE` excludes every non-positive value, warns when
+negative inputs are present, and records the exclusions:
 
 ```{r excluded-values, eval = FALSE}
 compatibility_result <- INFLECT(
@@ -71,12 +73,13 @@ compatibility_result <- INFLECT(
 compatibility_result$provenance$zero_handling
 ```
 
-No zero-valued padding observations are manufactured.
+Under either `zeroes.in` setting, no zero-valued padding observations are
+manufactured.
 
 ## Read separated criteria
 
-`uniform.test` selects the aggregate pass-rate curve but no longer hides the
-component evidence:
+`uniform.test` selects the aggregate pass-rate curve. All component evidence
+remains available:
 
 | `uniform.test` | Aggregate curve | Evidence still retained |
 |---|---|---|
@@ -104,8 +107,8 @@ details$test_event_count
 details$failure_reason
 ```
 
-The canonical aggregate column is `qc_pass_rate`. The following aliases are
-deprecated but retained during migration:
+The canonical aggregate column is `qc_pass_rate`. Compatibility aliases from
+the original INFLECT interface remain available but are deprecated:
 
 | Deprecated | Canonical |
 |---|---|
@@ -115,7 +118,8 @@ deprecated but retained during migration:
 
 ## Opt in to parallel scoring
 
-Serial scoring is the default. Parallel scoring requires at least two workers:
+With the result fields defined, serial scoring is the default. Parallel
+scoring requires at least two workers:
 
 ```{r parallel, eval = FALSE}
 result <- INFLECT(
@@ -135,7 +139,7 @@ Simulated dip p-values and optional event sampling use deterministic,
 overflow-safe streams derived from the subtree and marker. They preserve the
 caller's RNG state and return the same result with one or two workers.
 
-## Bound event retention only as a sensitivity analysis
+## Use event caps for sensitivity analysis
 
 `max.events.per.node` samples each node once with `seed`. The same retained
 rows feed every marker, both criteria, every k, and every worker:
@@ -158,8 +162,8 @@ checking score and endpoint stability across relevant sample sizes and seeds.
 
 ## Distinguish estimates from partitions
 
-`result$selection` reports `partition_available`, `k_status`, and
-`score_source`:
+With the event-sampling choice established, `result$selection` reports
+`partition_available`, `k_status`, and `score_source`:
 
 ```{r selection, eval = FALSE}
 result$selection[c(
@@ -190,7 +194,7 @@ and per-criterion summaries:
 str(result$provenance, max.level = 2)
 ```
 
-Use the following language for downstream validation:
+Then use the following language for downstream validation:
 
 - `detected_multimodality` when independent tests reproducibly reject;
 - `no_detected_multimodality` when valid tests do not reject;
@@ -198,5 +202,6 @@ Use the following language for downstream validation:
 - `unresolved_discrete` for insufficient unique values, excessive ties,
   saturation, or test failure.
 
-“No detected multimodality” is deliberately weaker than “unimodal.” The dip
-test can reject a unimodal null; failure to reject does not prove that null.
+Of these, “no detected multimodality” is deliberately weaker than “unimodal.”
+The dip test can reject a unimodal null; failure to reject does not prove that
+null.

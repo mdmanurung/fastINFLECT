@@ -76,7 +76,7 @@ and both tests.}
 A list containing canonical \code{scores}, separate named lists of
 \code{dip_pass}, \code{iqr_pass}, \code{combined_pass}, and selected \code{criterion_pass}
 matrices, full \code{qc.details}, and \code{provenance}. Deprecated \code{U.set} and
-\code{Accuracy.matrixes} aliases are retained for 2.0 migration.
+\code{Accuracy.matrixes} aliases are retained for compatibility.
 }
 \description{
 Scores every requested metaclustering using separate Hartigan dip-test and

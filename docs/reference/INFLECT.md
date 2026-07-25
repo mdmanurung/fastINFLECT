@@ -44,69 +44,69 @@ INFLECT(
     FlowSOM objects and kohonen objects returned by `som` or `xyf`.
 
   - set.i:
-    
+
     Required vector of at least five unique, strictly increasing integer
     cluster counts within the SOM-node range. Values are used literally.
     See `inflect_adaptive_set_i` to construct an explicitly bounded
     adaptive schedule.
 
   - multicore:
-    
+
     logical, should the QC sweep be run in parallel (fork-based
     `mclapply` over distinct SOM-node subtrees on Unix). Ignored on
     Windows. Default is `FALSE`.
 
   - cores:
-    
+
     If `multicore == TRUE`, number of cores to be used. Must be at least
     2. If `NULL`, the number of detected cores minus one is used.
 
   - zeroes.in:
-    
+
     If `TRUE` (default), retain negative, zero, and positive finite
     transformed values. If `FALSE`, exclude all non-positive values,
     record per-marker counts, and warn when negatives are present.
 
   - only.clustering.markers:
-    
+
     If `TRUE` only evaluates markers specified as clustering markers.
     For kohonen objects this is the first data layer.
 
   - acquired\_markers:
-    
+
     Vector of column names with marker data to be evaluated by
     fastINFLECT. Ignored if `only.clustering.markers == TRUE`
 
   - basedata:
-    
+
     Data to be used to calculate inflection point, given as a string.
     Options are `Curve` and `Points`
 
   - ggtitle:
-    
+
     Optional title for resulting diagnostic graph. Default `NULL`
 
   - uniform.test:
-    
+
     What tests are performed per marker per cluster. Options are
     `"both"`, `"spread"`, or `"unimodality"`.
 
   - th.pvalue:
-    
+
     Dip-test pass threshold. A pair passes the dip criterion when its
     p-value is at least this value. Default is `0.05`.
 
   - th.IQR:
-    
+
     Threshold for rejecting marker distribution based on inter-quartile
     range. Default is arc-sinh transformed value of `2`.
 
   - verbose:
-    
+
     `logical`, default is `FALSE`.
 
   - max.n.diptest:
-    
+
     Optional integer cap on the number of events used per cluster-marker
     dip test. The dip test's power depends on sample size, so a cap can
     be used for a sensitivity analysis. Subsampling is seeded and
@@ -120,18 +120,18 @@ INFLECT(
     `NULL` uses all events.
 
   - seed:
-    
+
     Non-negative integer base seed for optional event sampling. Default
     `1L`.
 
   - target:
-    
+
     Target QC pass rate (fraction in `(0,1]` or percentage in `(1,100]`)
     used to report the smallest tested k reaching the threshold. Default
     `0.95`. See `inflect_threshold_k`.
 
   - ...:
-    
+
     Arguments to pass to `dip.test` through `FlowSOMQC`.
 
 ## Value
@@ -140,8 +140,8 @@ An S3 `inflect.results` object containing criterion-specific `scores`,
 separated dip/IQR/combined matrices and `qc.details`, the fitted curve,
 literal metaclustering partitions, selection estimates, and consolidated
 provenance. Deprecated score and accuracy aliases are retained for
-migration. Running the individual function `iteration.metacluster` and
-`QC.to.curve` might provide more options and flexibility.
+compatibility. Running the individual function `iteration.metacluster`
+and `QC.to.curve` might provide more options and flexibility.
 
 ## See also
 

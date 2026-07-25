@@ -16,7 +16,7 @@ marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 \value{
 A list with \code{marker.dataframe} and \code{plot}. The data frame contains
 canonical \code{k}, \code{marker}, and \code{qc_pass_rate} columns. Deprecated \code{i}, \code{Marker},
-and \code{Performance} aliases are retained for migration.
+and \code{Performance} aliases are retained for compatibility.
 }
 \description{
 Plots criterion-specific marker QC across metaclusterings. The

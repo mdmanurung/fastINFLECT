@@ -12,7 +12,8 @@
 #' @param ggtitle Optional plot title.
 #'
 #' @return A list containing canonical `scores`, `fittedcurve`, `lfunction`,
-#'   and `ggplot`. Deprecated `collection.U` is retained as a migration alias.
+#'   and `ggplot`. Deprecated `collection.U` is retained as a compatibility
+#'   alias.
 #' @seealso \code{\link{INFLECT}}, \code{\link{iteration.QC}},
 #'   \code{\link{Lfunction}}
 #' @export

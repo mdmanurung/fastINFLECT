@@ -361,9 +361,9 @@
   as.integer(metaclustering)
 }
 
-## Apply the requested zero rule literally. Version 2.0 defaults to retaining the
-## complete transformed distribution. The compatibility mode excludes every
-## non-positive value; it never manufactures padding observations.
+## Apply the requested zero rule literally. The default retains the complete
+## transformed distribution. Compatibility mode excludes every non-positive
+## value and never manufactures padding observations.
 .inflect_marker_expression <- function(values, zeroes.in) {
   if (isFALSE(zeroes.in)) {
     return(values[values > 0])
@@ -801,8 +801,8 @@
   out
 }
 
-## Deprecated Boolean-row wrapper retained for internal migration and exact
-## comparison tests. New code should consume `.inflect_qc_row_indexed()`.
+## Deprecated Boolean-row wrapper retained for exact comparison tests. New
+## code should consume `.inflect_qc_row_indexed()`.
 .inflect_accuracy_row <- function(expr,
                                   zeroes.in,
                                   uniform.test,

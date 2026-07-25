@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-## Checkpointed real-model modality audit for fastINFLECT 2.0.
+## Checkpointed real-model modality audit for fastINFLECT 1.0.0.
 ##
 ## The workflow is intentionally staged because the source model contains
 ## 39,050,953 events and ACR mode tests use B = 1999:

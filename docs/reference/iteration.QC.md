@@ -38,59 +38,59 @@ iteration.QC(
     FlowSOM objects and kohonen objects returned by `som` or `xyf`.
 
   - metaclustering.list:
-    
+
     Named list containing exactly one node-label vector for every value
     in `set.i`.
 
   - set.i:
-    
+
     Literal, unique, strictly increasing integer cluster counts.
 
   - multicore:
-    
+
     Logical. On Unix, use fork-based `mclapply` over distinct SOM-node
     subtrees. Other platforms validate the same arguments and use a
     recorded serial fallback. Default `FALSE`.
 
   - cores:
-    
+
     Worker count when `multicore = TRUE`; must be at least two.
 
   - zeroes.in:
-    
+
     Logical. If `TRUE` (the default), retain negative, zero, and
     positive finite transformed values. If `FALSE`, every non-positive
     value is excluded, per-marker counts are recorded, and negative
     inputs trigger a warning.
 
   - only.clustering.markers:
-    
+
     If `TRUE`, evaluate only clustering markers.
 
   - acquired\_markers:
-    
+
     Marker names to evaluate when `only.clustering.markers = FALSE`.
 
   - uniform.test:
-    
+
     Aggregate criterion: `"both"` selects the combined dip and IQR pass,
     `"spread"` selects IQR only, and `"unimodality"` selects the dip
     test only. Both component tests are always retained in `qc.details`.
 
   - th.pvalue:
-    
+
     Dip-test pass threshold. A cell passes when `p_value >= th.pvalue`.
 
   - th.IQR:
-    
+
     IQR-spread pass threshold. A cell passes when `IQR < th.IQR`.
 
   - verbose:
-    
+
     Logical.
 
   - max.n.diptest:
-    
+
     Optional positive dip-test sample cap of at least four. Sampling is
     deterministic per subtree and marker.
 
@@ -101,11 +101,11 @@ iteration.QC(
     tests.
 
   - seed:
-    
+
     Non-negative base seed.
 
   - ...:
-    
+
     Additional arguments passed to `dip.test`.
 
 ## Value
@@ -113,7 +113,7 @@ iteration.QC(
 A list containing canonical `scores`, separate named lists of
 `dip_pass`, `iqr_pass`, `combined_pass`, and selected `criterion_pass`
 matrices, full `qc.details`, and `provenance`. Deprecated `U.set` and
-`Accuracy.matrixes` aliases are retained for 2.0 migration.
+`Accuracy.matrixes` aliases are retained for compatibility.
 
 ## See also
 

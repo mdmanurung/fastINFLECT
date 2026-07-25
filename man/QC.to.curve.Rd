@@ -16,7 +16,8 @@ data frame with \code{k} and \code{qc_pass_rate}, or the deprecated score aliase
 }
 \value{
 A list containing canonical \code{scores}, \code{fittedcurve}, \code{lfunction},
-and \code{ggplot}. Deprecated \code{collection.U} is retained as a migration alias.
+and \code{ggplot}. Deprecated \code{collection.U} is retained as a compatibility
+alias.
 }
 \description{
 Fits the original four-parameter log-logistic diagnostic curve to

@@ -175,6 +175,6 @@ Do not call a cluster “truly unimodal.” Failure to reject a unimodal null is
 proof of that null, and univariate marker marginals do not establish
 multivariate cluster homogeneity or biological validity.
 
-The pre-2.0 `vignette_cache.rds` is retained only as historical package
-performance material. Because it used `zeroes.in = FALSE` and an aggregate
-pass-rate interpretation, it is not scientific evidence for cluster modality.
+The historical pre-release `vignette_cache.rds` is retained as engineering
+performance material. It used `zeroes.in = FALSE` and an aggregate pass-rate
+interpretation, so it does not support claims about cluster modality.

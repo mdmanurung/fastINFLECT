@@ -81,7 +81,8 @@ Default \code{0.95}. See \code{\link{inflect_threshold_k}}.}
 An S3 \code{inflect.results} object containing criterion-specific
 \code{scores}, separated dip/IQR/combined matrices and \code{qc.details}, the fitted
 curve, literal metaclustering partitions, selection estimates, and consolidated
-provenance. Deprecated score and accuracy aliases are retained for migration.
+provenance. Deprecated score and accuracy aliases are retained for
+compatibility.
 Running the individual function \code{\link{iteration.metacluster}} and \code{\link{QC.to.curve}} might provide more options and flexibility.
 }
 \description{

@@ -24,7 +24,7 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
 
   - multicore:
     
-    Retained for backward compatibility. Hierarchical clustering is now
+    Retained for backward compatibility. Hierarchical clustering is
     computed once and is not parallelized.
 
   - cores:

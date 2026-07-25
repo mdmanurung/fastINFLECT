@@ -47,20 +47,20 @@ FlowSOMQC(
     Evaluate only clustering markers.
 
   - acquired\_markers:
-    
+
     Marker names used when `only.clustering.markers = FALSE`.
 
   - uniform.test:
-    
+
     Aggregate criterion: `"both"` (dip and IQR), `"spread"` (IQR), or
     `"unimodality"` (dip).
 
   - th.pvalue:
-    
+
     Dip-test pass threshold.
 
   - th.IQR:
-    
+
     IQR pass threshold.
 
   - max.n.diptest:
@@ -74,11 +74,11 @@ FlowSOMQC(
     RNG state.
 
   - verbose:
-    
+
     Logical.
 
   - ...:
-    
+
     Additional arguments passed to `dip.test`.
 
 ## Value

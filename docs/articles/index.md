@@ -1,9 +1,9 @@
 # Articles
 
-### Migration
+### Package interface
 
-  - [Migrating to
-    fastINFLECT 2.0](https://mdmanurung.github.io/fastINFLECT/articles/migrating-to-fastINFLECT-2.md):
+  - [Using
+    fastINFLECT 1.0.0](https://mdmanurung.github.io/fastINFLECT/articles/using-fastINFLECT-1.md):
 
 ### Benchmarks and method comparisons
 

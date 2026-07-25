@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Migrating to fastINFLECT 2.0 • fastINFLECT</title>
+<title>Using fastINFLECT 1.0.0 • fastINFLECT</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Migrating to fastINFLECT 2.0">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Using fastINFLECT 1.0.0">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">fastINFLECT</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,27 +58,27 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Migrating to fastINFLECT 2.0</h1>
+      <h1>Using fastINFLECT 1.0.0</h1>
 
 
-      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/fastINFLECT/blob/HEAD/vignettes/migrating-to-fastINFLECT-2.Rmd" class="external-link"><code>vignettes/migrating-to-fastINFLECT-2.Rmd</code></a></small>
-      <div class="d-none name"><code>migrating-to-fastINFLECT-2.Rmd</code></div>
+      <small class="dont-index">Source: <a href="https://github.com/mdmanurung/fastINFLECT/blob/HEAD/vignettes/using-fastINFLECT-1.Rmd" class="external-link"><code>vignettes/using-fastINFLECT-1.Rmd</code></a></small>
+      <div class="d-none name"><code>using-fastINFLECT-1.Rmd</code></div>
     </div>
 
 
 
-<p>fastINFLECT 2.0 is a breaking release. It makes the tested cluster-count schedule literal, retains complete transformed marker distributions by default, separates dip and IQR evidence, and distinguishes fitted estimates from partitions that actually exist.</p>
+<p>fastINFLECT 1.0.0 uses literal cluster-count schedules, retains complete transformed marker distributions by default, and reports dip and IQR evidence separately. It also distinguishes fitted estimates from partitions that were materialised.</p>
 <p>The aggregate diagnostic remains useful for screening candidate values of <code>k</code>. It does not establish that a cluster is truly unimodal.</p>
 <div class="section level2">
 <h2 id="supply-a-literal-schedule">Supply a literal schedule<a class="anchor" aria-label="anchor" href="#supply-a-literal-schedule"></a>
 </h2>
-<p><code>set.i</code> is required. It must contain at least five unique, strictly increasing integer values, and no value may exceed the number of SOM nodes.</p>
+<p>Candidate values enter through the required <code>set.i</code> argument. It must contain at least five unique, strictly increasing integer values, and no value may exceed the number of SOM nodes.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">schedule</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq.int</a></span><span class="op">(</span><span class="fl">25L</span>, <span class="fl">100L</span>, by <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">schedule</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span><span class="va">model</span>, set.i <span class="op">=</span> <span class="va">schedule</span><span class="op">)</span></span></code></pre></div>
-<p>The call evaluates exactly <code>25, 30, ..., 100</code>. The former shorthand <code>set.i = c(25, 100)</code> now fails because its spacing is ambiguous.</p>
-<p>For the pre-2.0 adaptive spacing, construct the schedule explicitly:</p>
+<p>The call evaluates exactly <code>25, 30, ..., 100</code>. A two-value input such as <code>set.i = c(25, 100)</code> fails because its spacing is ambiguous.</p>
+<p>For an adaptive schedule with a fixed upper bound, construct the values explicitly:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/inflect_adaptive_set_i.html">inflect_adaptive_set_i</a></span><span class="op">(</span>n_nodes <span class="op">=</span> <span class="fl">900L</span>, max_k <span class="op">=</span> <span class="fl">100L</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1]   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23</span></span>
@@ -88,14 +88,14 @@
 <div class="section level2">
 <h2 id="retain-complete-transformed-values">Retain complete transformed values<a class="anchor" aria-label="anchor" href="#retain-complete-transformed-values"></a>
 </h2>
-<p><code>zeroes.in = TRUE</code> is the new default. It retains negative, zero, and positive finite values. This matters for centred or otherwise transformed marker data: dropping non-positive measurements changes the tested distribution.</p>
+<p>With the schedule defined, <code>zeroes.in = TRUE</code> retains negative, zero, and positive finite values. This matters for centred or otherwise transformed marker data because dropping non-positive measurements changes the tested distribution.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
 <span>  zeroes.in <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>zeroes.in = FALSE</code> remains available as an explicit compatibility setting. It excludes every non-positive value, warns when negative inputs are present, and records exclusions:</p>
+<p>Conversely, <code>zeroes.in = FALSE</code> excludes every non-positive value, warns when negative inputs are present, and records the exclusions:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">compatibility_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
@@ -104,12 +104,12 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">compatibility_result</span><span class="op">$</span><span class="va">provenance</span><span class="op">$</span><span class="va">zero_handling</span></span></code></pre></div>
-<p>No zero-valued padding observations are manufactured.</p>
+<p>Under either <code>zeroes.in</code> setting, no zero-valued padding observations are manufactured.</p>
 </div>
 <div class="section level2">
 <h2 id="read-separated-criteria">Read separated criteria<a class="anchor" aria-label="anchor" href="#read-separated-criteria"></a>
 </h2>
-<p><code>uniform.test</code> selects the aggregate pass-rate curve but no longer hides the component evidence:</p>
+<p><code>uniform.test</code> selects the aggregate pass-rate curve. All component evidence remains available:</p>
 <table class="table">
 <thead><tr class="header">
 <th><code>uniform.test</code></th>
@@ -152,7 +152,7 @@
 <span><span class="va">details</span><span class="op">$</span><span class="va">event_count</span></span>
 <span><span class="va">details</span><span class="op">$</span><span class="va">test_event_count</span></span>
 <span><span class="va">details</span><span class="op">$</span><span class="va">failure_reason</span></span></code></pre></div>
-<p>The canonical aggregate column is <code>qc_pass_rate</code>. The following aliases are deprecated but retained during migration:</p>
+<p>The canonical aggregate column is <code>qc_pass_rate</code>. Compatibility aliases from the original INFLECT interface remain available but are deprecated:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Deprecated</th>
@@ -181,7 +181,7 @@
 <div class="section level2">
 <h2 id="opt-in-to-parallel-scoring">Opt in to parallel scoring<a class="anchor" aria-label="anchor" href="#opt-in-to-parallel-scoring"></a>
 </h2>
-<p>Serial scoring is the default. Parallel scoring requires at least two workers:</p>
+<p>With the result fields defined, serial scoring is the default. Parallel scoring requires at least two workers:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/INFLECT.html">INFLECT</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
@@ -193,7 +193,7 @@
 <p>Simulated dip p-values and optional event sampling use deterministic, overflow-safe streams derived from the subtree and marker. They preserve the caller’s RNG state and return the same result with one or two workers.</p>
 </div>
 <div class="section level2">
-<h2 id="bound-event-retention-only-as-a-sensitivity-analysis">Bound event retention only as a sensitivity analysis<a class="anchor" aria-label="anchor" href="#bound-event-retention-only-as-a-sensitivity-analysis"></a>
+<h2 id="use-event-caps-for-sensitivity-analysis">Use event caps for sensitivity analysis<a class="anchor" aria-label="anchor" href="#use-event-caps-for-sensitivity-analysis"></a>
 </h2>
 <p><code>max.events.per.node</code> samples each node once with <code>seed</code>. The same retained rows feed every marker, both criteria, every k, and every worker:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -212,7 +212,7 @@
 <div class="section level2">
 <h2 id="distinguish-estimates-from-partitions">Distinguish estimates from partitions<a class="anchor" aria-label="anchor" href="#distinguish-estimates-from-partitions"></a>
 </h2>
-<p><code>result$selection</code> reports <code>partition_available</code>, <code>k_status</code>, and <code>score_source</code>:</p>
+<p>With the event-sampling choice established, <code>result$selection</code> reports <code>partition_available</code>, <code>k_status</code>, and <code>score_source</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">selection</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"method"</span>,</span>
@@ -231,7 +231,7 @@
 <p>The QC boundary records the criterion, thresholds, marker set, zero handling, sampling order, seeds, worker backend, model layer weights, retained events, and per-criterion summaries:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">provenance</span>, max.level <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p>Use the following language for downstream validation:</p>
+<p>Then use the following language for downstream validation:</p>
 <ul>
 <li>
 <code>detected_multimodality</code> when independent tests reproducibly reject;</li>
@@ -242,7 +242,7 @@
 <li>
 <code>unresolved_discrete</code> for insufficient unique values, excessive ties, saturation, or test failure.</li>
 </ul>
-<p>“No detected multimodality” is deliberately weaker than “unimodal.” The dip test can reject a unimodal null; failure to reject does not prove that null.</p>
+<p>Of these, “no detected multimodality” is deliberately weaker than “unimodal.” The dip test can reject a unimodal null; failure to reject does not prove that null.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

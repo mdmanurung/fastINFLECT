@@ -10,13 +10,13 @@ Source:
 [`DESCRIPTION`](https://github.com/mdmanurung/fastINFLECT/blob/HEAD/DESCRIPTION)
 
 VERHOEFF J (2026). *fastINFLECT: Fast discovery of the metaclustering
-endpoint for SOM objects*. R package version 2.0.0,
+endpoint for SOM objects*. R package version 1.0.0,
 <https://mdmanurung.github.io/fastINFLECT>.
 
     @Manual{,
       title = {fastINFLECT: Fast discovery of the metaclustering endpoint for SOM objects},
       author = {Jan VERHOEFF},
       year = {2026},
-      note = {R package version 2.0.0},
+      note = {R package version 1.0.0},
       url = {https://mdmanurung.github.io/fastINFLECT},
     }

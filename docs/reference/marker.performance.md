@@ -31,7 +31,7 @@ marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 
 A list with `marker.dataframe` and `plot`. The data frame contains
 canonical `k`, `marker`, and `qc_pass_rate` columns. Deprecated `i`,
-`Marker`, and `Performance` aliases are retained for migration.
+`Marker`, and `Performance` aliases are retained for compatibility.
 
 ## Examples
 

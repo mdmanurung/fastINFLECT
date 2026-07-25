@@ -1,9 +1,8 @@
 # Build an explicitly bounded adaptive k schedule
 
-Constructs the adaptive schedule used by fastINFLECT before version 2.0:
-dense single-k steps at low k, five-k steps at medium k, and ten-k steps
-at high k. Unlike the former implicit two-value expansion, `max_k` is an
-explicit upper bound and the returned schedule never exceeds it.
+Constructs the legacy adaptive schedule explicitly: dense single-k steps
+at low k, five-k steps at medium k, and ten-k steps at high k. `max_k`
+is an explicit upper bound, and the returned schedule never exceeds it.
 
 ## Usage
 

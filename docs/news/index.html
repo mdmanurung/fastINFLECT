@@ -15,17 +15,8 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Benchmarks</h6></li>
-    <li><a class="dropdown-item" href="../articles/benchmark-inflect-vs-consensus.html">Benchmarking fastINFLECT against consensus metaclustering</a></li>
-    <li><a class="dropdown-item" href="../articles/comparing-metaclustering.html">Comparing metaclustering strategies with fastINFLECT</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
-  </ul></li>
-<li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/fastINFLECT.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/mdmanurung/fastINFLECT/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -42,7 +33,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.0" id="fastinflect-1-0-0">fastINFLECT 1.0.0<a class="anchor" aria-label="anchor" href="#fastinflect-1-0-0"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="fastinflect-100">fastINFLECT 1.0.0<a class="anchor" aria-label="anchor" href="#fastinflect-100"></a></h2>
 <p>fastINFLECT is the renamed, faster implementation of the original INFLECT method. The exported <code><a href="../reference/INFLECT.html">INFLECT()</a></code> function remains available for API continuity.</p>
 <div class="section level3">
 <h3 id="package-interface-1-0-0">Package interface<a class="anchor" aria-label="anchor" href="#package-interface-1-0-0"></a></h3>
@@ -80,10 +71,11 @@
 <div class="section level3">
 <h3 id="selecting-k-1-0-0">Selecting k<a class="anchor" aria-label="anchor" href="#selecting-k-1-0-0"></a></h3>
 <ul><li>
-<code><a href="../reference/INFLECT.html">INFLECT()</a></code> reports three candidate endpoints in <code>selection</code>:<ul><li>
+<code><a href="../reference/INFLECT.html">INFLECT()</a></code> reports three candidate endpoints in <code>selection</code>:
+<ul><li>
 <code>inflection</code>, the original LL.4 log-logistic knee;</li>
 <li>
-<code>kneedle</code>, a nonparametric knee from <code><a href="../reference/inflect_kneedle.html">inflect_kneedle()</a></code> following Satopää et al. (2011);</li>
+<code>kneedle</code>, a nonparametric knee from <code><a href="../reference/inflect_kneedle.html">inflect_kneedle()</a></code> following Satopää et al. (2011);</li>
 <li>
 <code>threshold</code>, the smallest tested k that reaches the requested criterion-specific pass rate through <code><a href="../reference/inflect_threshold_k.html">inflect_threshold_k()</a></code>, with a default target of 0.95.</li>
 </ul></li>
@@ -98,9 +90,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-1-0-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-0-0"></a></h3>
-<ul><li>The vignette “Using fastINFLECT 1.0.0” defines the literal schedule, value handling, criterion-specific outputs, parallel execution, sampling controls, selection metadata, and provenance contract.</li>
-<li>“Benchmarking fastINFLECT against consensus metaclustering” separates the historical Levine32 performance cache from the full BMV selection and modality evidence. The historical cache is retained for engineering context, not modality claims.</li>
-<li>“Comparing metaclustering strategies with fastINFLECT” covers Ward.D2 and FlowSOM consensus partitions, common marker panels, cluster-size-aware summaries, and independent modality validation.</li>
+<ul><li>The single “Use and interpret fastINFLECT” vignette runs the package, explains each result field, and shows how to inspect and report a candidate partition.</li>
+<li>The pkgdown site links directly to the guide and groups the reference index by user task.</li>
 </ul></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

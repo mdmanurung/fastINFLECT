@@ -2,7 +2,7 @@
 % Please edit documentation in R/inflect-results-methods.R
 \name{as.data.frame.inflect.results}
 \alias{as.data.frame.inflect.results}
-\title{Coerce a fastINFLECT result to a data frame}
+\title{Extract tested fastINFLECT QC scores}
 \usage{
 \method{as.data.frame}{inflect.results}(x, row.names = NULL, optional = FALSE, ...)
 }
@@ -19,5 +19,6 @@
 Canonical \code{x$scores} as a \code{data.frame}.
 }
 \description{
-Coerce a fastINFLECT result to a data frame
+Returns one row per tested \code{k}, with the aggregate \code{qc_pass_rate} and the
+criterion selected by \code{uniform.test}.
 }

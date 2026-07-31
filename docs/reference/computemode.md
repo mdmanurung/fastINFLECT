@@ -11,9 +11,9 @@ computemode(x)
 
 ## Arguments
 
-  - x:
-    
-    a numeric vector
+- x:
+
+  a numeric vector
 
 ## Value
 

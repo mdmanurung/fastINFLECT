@@ -4,8 +4,10 @@ Nonparametric knee/elbow detector following Satopää et al. (2011). For a
 concave, increasing curve (as a fastINFLECT QC sweep typically is) the
 knee is the x at which the normalised curve is farthest above the
 diagonal joining its endpoints. Unlike the four-parameter log-logistic
-fit used by `QC.to.curve`, it assumes no functional form, which makes it
-a robust cross-check on dense sweeps.
+fit used by
+[`QC.to.curve`](https://mdmanurung.github.io/fastINFLECT/reference/QC.to.curve.md),
+it assumes no functional form, which makes it a robust cross-check on
+dense sweeps.
 
 ## Usage
 
@@ -15,22 +17,22 @@ inflect_kneedle(x, y, concave = TRUE, increasing = TRUE)
 
 ## Arguments
 
-  - x:
-    
-    Numeric vector of x coordinates (e.g. number of metaclusters).
+- x:
 
-  - y:
-    
-    Numeric vector of y coordinates (for example, a QC pass rate).
+  Numeric vector of x coordinates (e.g. number of metaclusters).
 
-  - concave:
-    
-    `logical`; `TRUE` (default) for a concave curve (diminishing
-    returns). Set `FALSE` for a convex curve.
+- y:
 
-  - increasing:
-    
-    `logical`; `TRUE` (default) if `y` rises with `x`.
+  Numeric vector of y coordinates (for example, a QC pass rate).
+
+- concave:
+
+  `logical`; `TRUE` (default) for a concave curve (diminishing returns).
+  Set `FALSE` for a convex curve.
+
+- increasing:
+
+  `logical`; `TRUE` (default) if `y` rises with `x`.
 
 ## Value
 
@@ -44,4 +46,5 @@ Satopää, V., Albrecht, J., Irwin, D., & Raghavan, B. (2011). Finding a
 
 ## See also
 
-`inflect_threshold_k`, `QC.to.curve`
+[`inflect_threshold_k`](https://mdmanurung.github.io/fastINFLECT/reference/inflect_threshold_k.md),
+[`QC.to.curve`](https://mdmanurung.github.io/fastINFLECT/reference/QC.to.curve.md)

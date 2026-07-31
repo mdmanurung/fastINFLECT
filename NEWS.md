@@ -105,16 +105,11 @@ continuity.
 
 ## Documentation
 
-* The vignette "Using fastINFLECT 1.0.0" defines the literal schedule, value
-  handling, criterion-specific outputs, parallel execution, sampling controls,
-  selection metadata, and provenance contract.
-* "Benchmarking fastINFLECT against consensus metaclustering" separates the
-  historical Levine32 performance cache from the full BMV selection and
-  modality evidence. The historical cache is retained for engineering
-  context, not modality claims.
-* "Comparing metaclustering strategies with fastINFLECT" covers Ward.D2 and
-  FlowSOM consensus partitions, common marker panels, cluster-size-aware
-  summaries, and independent modality validation.
+* The single "Use and interpret fastINFLECT" vignette runs the package,
+  explains each result field, and shows how to inspect and report a candidate
+  partition.
+* The pkgdown site links directly to the guide and groups the reference index
+  by user task.
 
 # INFLECT 0.2.1
 

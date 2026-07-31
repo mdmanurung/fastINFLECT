@@ -13,15 +13,15 @@ inflect_threshold_k(collection.U, target = 0.95)
 
 ## Arguments
 
-  - collection.U:
-    
-    Canonical score data frame with `k` and `qc_pass_rate`, or the
-    deprecated `i` and `Unimodality` aliases.
+- collection.U:
 
-  - target:
-    
-    Desired pass rate. Values in `(0, 1]` are read as a fraction and
-    values in `(1, 100]` as a percentage. Default `0.95`.
+  Canonical score data frame with `k` and `qc_pass_rate`, or the
+  deprecated `i` and `Unimodality` aliases.
+
+- target:
+
+  Desired pass rate. Values in `(0, 1]` are read as a fraction and
+  values in `(1, 100]` as a percentage. Default `0.95`.
 
 ## Value
 
@@ -30,4 +30,5 @@ reaches it.
 
 ## See also
 
-`inflect_kneedle`, `INFLECT`
+[`inflect_kneedle`](https://mdmanurung.github.io/fastINFLECT/reference/inflect_kneedle.md),
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md)

@@ -1,39 +1,32 @@
 # fastINFLECT
 
-fastINFLECT performs marker-level quality control across literal
-metaclustering schedules for FlowSOM and kohonen self-organising maps.
-It retains separate Hartigan dip-test and IQR-spread evidence, fits a
-diagnostic pass-rate curve, and labels unscheduled fitted endpoints as
-estimates without partitions.
+fastINFLECT evaluates a literal set of metacluster counts for a FlowSOM
+or kohonen self-organising map. It returns the tested partitions,
+marker-level QC evidence, and candidate values of `k`. Use the
+candidates to narrow the search, then inspect the retained evidence
+before choosing a partition.
 
-A dip or IQR pass is a criterion-specific screening result. It is not
-proof that a marker distribution, cluster, or biological population is
-truly unimodal.
-
-## Installation
-
-fastINFLECT is not on CRAN. The simplest installation path uses `pak`,
-which also resolves the Bioconductor dependency on FlowSOM:
+## Install fastINFLECT
 
 ``` r
+
 # install.packages("pak")
 pak::pak("mdmanurung/fastINFLECT")
 ```
 
-For kohonen SOM objects, install the optional `kohonen` package:
+Install `kohonen` only when the input is a kohonen SOM:
 
 ``` r
+
 install.packages("kohonen")
 ```
 
-The real-model modality audit uses the optional `multimode` package.
-Ordinary fastINFLECT use does not require it.
+## Run an analysis
 
-## Quick start
-
-The package ships a downsampled Levine32 FlowSOM object:
+The package includes a downsampled Levine32 FlowSOM object.
 
 ``` r
+
 library(fastINFLECT)
 
 load(system.file(
@@ -42,151 +35,140 @@ load(system.file(
   package = "fastINFLECT"
 ))
 
-schedule <- 5:20
 result <- INFLECT(
   FlowSOM.results = dataset,
-  set.i = schedule,
-  uniform.test = "both",
-  multicore = FALSE
+  set.i = 5:12,
+  uniform.test = "both"
 )
 ```
 
-fastINFLECT retains all finite transformed values, including negative
-values and zero, by default. The aggregate score is named for what it
-measures:
+`set.i` is the exact schedule to evaluate. Supply at least five unique,
+increasing integers within the number of SOM nodes. The default
+`zeroes.in = TRUE` retains every finite transformed value, including
+zero and negative values.
+
+## Read the result
 
 ``` r
-result$scores
-# k, qc_pass_rate, criterion
 
-result$dip_pass[["10"]]
-result$iqr_pass[["10"]]
-result$combined_pass[["10"]]
-
-details <- result$qc.details[["10"]]
-details$dip_p_value
-details$iqr
-details$failure_reason
+result
+plot(result)
+as.data.frame(result)
+result$selection
 ```
 
-The diagnostic curve is available as `result$ggplot`. Its selection
-table distinguishes tested partitions from fitted estimates:
+The main fields answer different questions:
+
+| Field | Meaning |
+|----|----|
+| `scores` | QC pass rate for each tested `k` |
+| `selection` | Inflection, Kneedle, and target-threshold candidates |
+| `metaclustering.list` | Node labels for every tested partition |
+| `criterion_pass` | Decision matrix selected by `uniform.test` and used for `qc_pass_rate` |
+| `dip_pass`, `iqr_pass`, `combined_pass` | Separate cluster-by-marker decisions |
+| `qc.details` | P-values, IQRs, event counts, exclusions, and failure reasons |
+| `provenance` | Schedule, markers, thresholds, sampling, and run settings |
+
+Candidate rows are diagnostic summaries, not a ranking. The example
+below uses the directly tested inflection candidate only to demonstrate
+inspection; it is not a default recommendation. Only a row with
+`partition_available = TRUE` has a matching partition. If a finite
+candidate was not directly tested, inspect `k_status`, add its `k` to
+`set.i`, and rerun before inspection. Candidate methods that happen to
+return the same `k` are not independent confirmation.
+
+## Inspect a candidate partition
 
 ``` r
-result$selection[c(
-  "method",
-  "k",
-  "qc_pass_rate_at_k",
-  "partition_available",
-  "k_status"
-)]
-```
 
-Only rows with `partition_available = TRUE` have a corresponding entry
-in `result$metaclustering.list`. A fitted inflection with `k_status =
-"fitted_estimate_no_partition"` remains an estimate until that literal k
-is explicitly evaluated.
+candidate_method <- "inflection"
+candidate <- result$selection[
+  result$selection$method == candidate_method,
+  ,
+  drop = FALSE
+]
 
-The pass-rate curve alone should not be used to declare a selected
-partition unimodal. Inspect the separate criterion matrices and, for
-consequential claims, validate complete transformed marker distributions
-with independent tests and sensitivity analyses.
+if (nrow(candidate) != 1L) {
+  stop("Expected exactly one inflection candidate.", call. = FALSE)
+}
+if (!isTRUE(candidate$partition_available[[1L]])) {
+  stop(
+    "Inspect `k_status`; if the candidate k is finite, add it to `set.i` and rerun.",
+    call. = FALSE
+  )
+}
 
-## Package interface
+candidate_k <- candidate$k[[1L]]
+key <- as.character(candidate_k)
+if (!key %in% names(result$metaclustering.list)) {
+  stop("The directly tested candidate partition is missing.", call. = FALSE)
+}
 
-`set.i` is mandatory, literal, unique, and strictly increasing. This
-call evaluates exactly the printed values and never scans above 100:
+candidate[c("method", "k", "qc_pass_rate_at_k", "partition_available", "k_status")]
 
-``` r
-schedule <- seq.int(25L, 100L, by = 5L)
-print(schedule)
-result <- INFLECT(dataset, set.i = schedule)
-```
-
-For an adaptive schedule with a hard upper bound, construct the values
-explicitly:
-
-``` r
-schedule <- inflect_adaptive_set_i(
-  n_nodes = dataset$map$nNodes,
-  max_k = 100L
+partition <- result$metaclustering.list[[key]]
+partition_map <- data.frame(
+  som_node = seq_along(partition),
+  metacluster = unname(partition)
 )
+head(partition_map)
+table(partition_map$metacluster)
+
+criterion_summary <- result$provenance$criterion_summary
+selected_criterion_summary <- criterion_summary[
+  criterion_summary$k == candidate_k & criterion_summary$selected,
+  c("k", "criterion", "passed", "failed", "unresolved", "total", "qc_pass_rate"),
+  drop = FALSE
+]
+if (nrow(selected_criterion_summary) != 1L) {
+  stop("Expected exactly one selected criterion summary.", call. = FALSE)
+}
+selected_criterion_summary
+
+result$criterion_pass[[key]]
+result$dip_pass[[key]]
+result$iqr_pass[[key]]
+result$combined_pass[[key]]
+result$qc.details[[key]]$failure_reason
+
+marker_qc <- marker.performance(result)
+marker_qc$plot
 ```
 
-Parallel scoring is opt-in and requires an explicit valid worker count:
+This is an inspected candidate partition, not a scientifically selected
+partition. Positions are SOM nodes and values are nominal metacluster
+labels. The table counts SOM nodes, not events or cells. Labels are not
+ordered scores and must not be compared numerically across different
+values of `k`.
 
-``` r
-result <- INFLECT(
-  dataset,
-  set.i = schedule,
-  multicore = TRUE,
-  cores = 2L,
-  seed = 42L
-)
-```
+`criterion_pass[[key]]` is the matrix used to calculate `qc_pass_rate`.
+It equals `dip_pass[[key]]` for `uniform.test = "unimodality"`,
+`iqr_pass[[key]]` for `"spread"`, and `combined_pass[[key]]` for
+`"both"`. `TRUE` passed the recorded threshold, `FALSE` did not, and
+`NA` means that the selected decision was unavailable. Under `"both"`, a
+definitive component failure can determine `FALSE` even if the other
+component is unresolved, so inspect the component matrices and
+`failure_reason` as well.
 
-On platforms without fork support, the same arguments are validated and
-a recorded serial fallback is used. Simulated dip p-values and optional
-subsampling are deterministic per subtree and marker, preserve the
-caller RNG state, and are invariant to worker count.
+`qc_pass_rate` is `100 * passed / total` over the metacluster-by-marker
+matrix selected by `uniform.test`; unresolved (`NA`) decisions remain in
+`total`. Because `k`, cluster event counts, and test behavior change
+across candidates, compare `passed`, `failed`, `unresolved`, and
+`total`. A higher rate means only that a larger fraction passed. It does
+not imply fewer absolute failures or that a partition is preferable or
+biologically valid.
 
-Setting `zeroes.in = FALSE` excludes every non-positive value, warns
-when negative values are present, and records per-marker exclusion
-counts:
+Use these interpretations:
 
-``` r
-result$provenance$zero_handling
-```
+- Dip-test non-rejection means no detected multimodality at the recorded
+  threshold, not proof of unimodality.
+- IQR is a spread screen, not a unimodality test.
+- Per-pair thresholds are not multiplicity-controlled inference.
+- Increasing `k` changes group sizes and test behavior, so a rising
+  curve is diagnostic rather than evidence that larger `k` is
+  biologically better.
+- A candidate `k` remains diagnostic until its marker-level evidence,
+  stability, and biological usefulness are checked.
 
-Canonical result names are `scores`, `qc_pass_rate`, `dip_pass`,
-`iqr_pass`, `combined_pass`, and `criterion_pass`. `collection.U`,
-`U.set`, `Unimodality`, `Accuracy.sets`, and `Accuracy.matrixes` are
-deprecated aliases retained for compatibility.
-
-See `vignette("using-fastINFLECT-1")` for the complete contract.
-
-## Real-model modality audit
-
-The repository includes a resumable audit for the 39,050,953-event BMV
-model:
-
-``` bash
-data-raw/submit-real-model-modality.sh
-```
-
-It materialises every requested Ward and FlowSOM control partition,
-stages nested deterministic event samples, runs dip and ACR tests with
-Benjamini-Hochberg correction within each 27-marker cluster family,
-repeats flagged and audited pairs at 1,000 and 5,000 events, and writes
-checkpointed evidence under `inst/benchmarks/real-model-modality/`.
-
-For the frozen BMV model (`md5 784b3a6048c379ca64bbe8d4c0fb063d`), the
-literal full-event k = 25,…,100 comparison gives a combined INFLECT
-inflection at k = 27 and combined/dip Kneedle at k = 44. The first
-five-k consensus-stability plateau starts at k = 29, while IQR and
-event-weighted dispersion place the upper spread sensitivity at k = 55.
-The fitted-model operational recommendation is nominal k = 44. Values
-from k = 27 to 29 provide a lower-resolution structural sensitivity, and
-k = 55 provides a spread sensitivity.
-
-Nominal k = 44 contains 43 event-populated clusters because one SOM-only
-cluster has zero events. Its independent final audit contains 56
-detected, 118 ambiguous, 28 unresolved, and 986 no-detected
-cluster-marker entries. These residual statuses preclude claims of
-global unimodality or biological optimality. Exact comparisons and
-provenance are in `inst/benchmarks/real-model-selection/`.
-
-The allowed outcome labels are `detected_multimodality`, `ambiguous`,
-`no_detected_multimodality`, and `unresolved_discrete`. The workflow
-leaves tied measurements unchanged and reports “no detected
-multimodality” without upgrading it to confirmed unimodality.
-
-## Relationship to the original INFLECT package
-
-fastINFLECT is derived from the INFLECT implementation developed by Jan
-Verhoeff in the lab of JJ. Garcia-Vallejo and available from the
-[GarciaVallejoLab
-repository](https://github.com/jnverhoeff/GarciaVallejoLab). The
-exported `INFLECT()` name is retained for API continuity. Memoised
-hierarchy cuts, marker-at-a-time indexed scoring, deterministic
-sampling, and compiled accelerators provide the faster implementation.
+The complete workflow is in
+[`vignette("fastINFLECT")`](https://mdmanurung.github.io/fastINFLECT/articles/fastINFLECT.md).

@@ -2,7 +2,7 @@
 % Please edit documentation in R/inflect-results-methods.R
 \name{plot.inflect.results}
 \alias{plot.inflect.results}
-\title{Plot a fastINFLECT result}
+\title{Plot the fastINFLECT QC pass-rate curve}
 \usage{
 \method{plot}{inflect.results}(x, ...)
 }
@@ -15,5 +15,6 @@
 The stored diagnostic \code{ggplot} object.
 }
 \description{
-Plot a fastINFLECT result
+Returns the diagnostic plot stored during \code{\link[=INFLECT]{INFLECT()}}. Use the curve to see
+how the selected criterion changes across the literal \code{set.i} schedule.
 }

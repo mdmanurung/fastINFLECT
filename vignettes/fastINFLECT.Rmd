@@ -1,0 +1,245 @@
+---
+title: "Use and interpret fastINFLECT"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Use and interpret fastINFLECT}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  out.width = "100%"
+)
+library(fastINFLECT)
+```
+
+fastINFLECT scans the cluster counts you request, scores marker distributions
+within each partition, and reports candidate values of `k`. The candidate
+values guide inspection. The retained cluster-by-marker evidence supports the
+final interpretation.
+
+## Run an analysis
+
+To obtain these candidate values and retained evidence, start with a completed
+FlowSOM or kohonen SOM. The example below uses the downsampled Levine32 FlowSOM
+object included with fastINFLECT.
+
+```{r run, message = FALSE, warning = FALSE}
+load(system.file(
+  "extdata",
+  "Levine32sample.Rdata",
+  package = "fastINFLECT"
+))
+
+schedule <- 5:12
+
+result <- INFLECT(
+  FlowSOM.results = dataset,
+  set.i = schedule,
+  uniform.test = "both",
+  zeroes.in = TRUE,
+  multicore = FALSE
+)
+```
+
+`set.i` is literal. The call above evaluates every integer from 5 through 12
+and stores a partition for each one. Supply at least five unique, increasing
+integers, with no value above the number of SOM nodes. Use
+`inflect_adaptive_set_i()` when you want a denser low-k schedule with a fixed
+upper bound.
+
+| Argument | Use |
+|---|---|
+| `uniform.test = "both"` | Build the aggregate from pairs that pass both dip and IQR criteria |
+| `uniform.test = "unimodality"` | Build the aggregate from the dip criterion |
+| `uniform.test = "spread"` | Build the aggregate from the IQR criterion |
+| `zeroes.in = TRUE` | Retain all finite transformed values |
+| `only.clustering.markers = FALSE` | Evaluate the names supplied in `acquired_markers` |
+| `multicore = TRUE, cores = 2L` | Use two workers on platforms with fork support |
+
+For event sampling, the default analysis uses all events. Treat
+`max.events.per.node` and
+`max.n.diptest` as sensitivity-analysis controls. Compare several caps and
+seeds before using a sampled result.
+
+## Read candidate values
+
+After the analysis completes, print the result for a compact view of the run
+and its candidate values. The plot shows how the selected QC pass rate changes
+across the tested schedule.
+
+```{r overview}
+result
+plot(result)
+```
+
+The tested scores and candidate table are available as data frames.
+
+```{r tables}
+as.data.frame(result)
+
+result$selection[c(
+  "method",
+  "k",
+  "qc_pass_rate_at_k",
+  "partition_available",
+  "k_status"
+)]
+```
+
+| Method | Interpretation |
+|---|---|
+| `inflection` | Bend in the fitted diagnostic curve |
+| `kneedle` | Largest observed departure from a straight-line increase |
+| `threshold` | Smallest tested `k` that reaches `target` |
+
+Candidate rows are diagnostic summaries, not a ranking. The example below uses
+the directly tested inflection candidate only to demonstrate inspection; it is
+not a default recommendation. A row with `partition_available = TRUE` was
+directly tested and has an entry in `metaclustering.list`. If a finite candidate
+was not directly tested, inspect `k_status`, add its `k` to a new `set.i`
+schedule, and rerun before inspection. Candidate methods that happen to return
+the same `k` are not independent confirmation.
+
+## Inspect marker-level evidence
+
+Name the candidate method, require one matching directly tested row, and use
+its character value as the list key. Each pass matrix has one row per
+metacluster and one column per marker.
+
+```{r evidence}
+candidate_method <- "inflection"
+candidate <- result$selection[
+  result$selection$method == candidate_method,
+  ,
+  drop = FALSE
+]
+
+if (nrow(candidate) != 1L) {
+  stop("Expected exactly one inflection candidate.", call. = FALSE)
+}
+if (!isTRUE(candidate$partition_available[[1L]])) {
+  stop(
+    "Inspect `k_status`; if the candidate k is finite, add it to `set.i` and rerun.",
+    call. = FALSE
+  )
+}
+
+candidate_k <- candidate$k[[1L]]
+key <- as.character(candidate_k)
+if (!key %in% names(result$metaclustering.list)) {
+  stop("The directly tested candidate partition is missing.", call. = FALSE)
+}
+
+candidate[c("method", "k", "qc_pass_rate_at_k", "partition_available", "k_status")]
+
+partition <- result$metaclustering.list[[key]]
+partition_map <- data.frame(
+  som_node = seq_along(partition),
+  metacluster = unname(partition)
+)
+head(partition_map)
+table(partition_map$metacluster)
+
+criterion_summary <- result$provenance$criterion_summary
+selected_criterion_summary <- criterion_summary[
+  criterion_summary$k == candidate_k & criterion_summary$selected,
+  c("k", "criterion", "passed", "failed", "unresolved", "total", "qc_pass_rate"),
+  drop = FALSE
+]
+if (nrow(selected_criterion_summary) != 1L) {
+  stop("Expected exactly one selected criterion summary.", call. = FALSE)
+}
+selected_criterion_summary
+
+result$criterion_pass[[key]][1:5, 1:5]
+result$dip_pass[[key]][1:5, 1:5]
+result$iqr_pass[[key]][1:5, 1:5]
+result$combined_pass[[key]][1:5, 1:5]
+```
+
+This is an inspected candidate partition, not a scientifically selected
+partition. Positions are SOM nodes and values are nominal metacluster labels.
+The table counts SOM nodes, not events or cells. Labels are not ordered scores
+and must not be compared numerically across different values of `k`.
+
+`criterion_pass[[key]]` is the matrix used to calculate `qc_pass_rate`. It
+equals `dip_pass[[key]]` for `uniform.test = "unimodality"`, `iqr_pass[[key]]`
+for `"spread"`, and `combined_pass[[key]]` for `"both"`. `TRUE` passed the
+recorded threshold, `FALSE` did not, and `NA` means that the selected decision
+was unavailable. Under `"both"`, a definitive component failure can determine
+`FALSE` even if the other component is unresolved, so inspect the component
+matrices and `failure_reason` as well.
+
+`qc_pass_rate` is `100 * passed / total` over the metacluster-by-marker matrix
+selected by `uniform.test`; unresolved (`NA`) decisions remain in `total`.
+Because `k`, cluster event counts, and test behavior change across candidates,
+compare `passed`, `failed`, `unresolved`, and `total`. A higher rate means only
+that a larger fraction passed. It does not imply fewer absolute failures or
+that a partition is preferable or biologically valid.
+
+Interpret the screening evidence within these limits:
+
+- Dip-test non-rejection means no detected multimodality at the recorded
+  threshold, not proof of unimodality.
+- IQR is a spread screen, not a unimodality test.
+- Per-pair thresholds are not multiplicity-controlled inference.
+- Increasing `k` changes group sizes and test behavior, so a rising curve is
+  diagnostic rather than evidence that larger `k` is biologically better.
+
+```{r details}
+details <- result$qc.details[[key]]
+details$dip_p_value[1:5, 1:5]
+details$iqr[1:5, 1:5]
+table(details$failure_reason, useNA = "ifany")
+```
+
+Use marker summaries next to check whether a small set of markers drives the
+aggregate curve.
+
+```{r marker-performance}
+marker_qc <- marker.performance(result)
+head(marker_qc$marker.dataframe)
+marker_qc$plot
+```
+
+## Report the result
+
+After inspecting the marker-level evidence, record the settings that define the
+run before reporting a candidate. The provenance includes the schedule, marker
+panel, criterion, thresholds, value handling, sampling, seed, and worker
+backend.
+
+```{r provenance}
+result$provenance[c(
+  "set.i",
+  "markers",
+  "uniform.test",
+  "th.pvalue",
+  "th.IQR",
+  "zeroes.in",
+  "max.events.per.node",
+  "seed"
+)]
+```
+
+Use language that matches the evidence:
+
+| Result | Report as |
+|---|---|
+| High `qc_pass_rate` | A larger fraction passed the selected QC criterion; report the counts |
+| `dip_pass = FALSE` | The dip test detected evidence against unimodality at the recorded threshold |
+| `iqr_pass = FALSE` | The marker IQR met or exceeded the recorded spread threshold |
+| `dip_pass = TRUE` | No multimodality was detected by this dip test |
+| Candidate `k` | A diagnostic candidate that still requires stability and biological review |
+
+A criterion pass is a screening result. It does not prove unimodality,
+multivariate cluster homogeneity, or biological validity. Report the selected
+criterion and thresholds, confirm that the partition was directly tested, and
+describe marker-level failures or unresolved measurements alongside the chosen
+`k`.

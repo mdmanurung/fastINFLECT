@@ -12,8 +12,9 @@
 \item{...}{Unused.}
 }
 \value{
-A one-row \code{data.frame}.
+A one-row \code{data.frame} of scan settings and candidate values.
 }
 \description{
-Summarize a fastINFLECT result
+Returns one row with the tested range, QC pass-rate range, run settings, and
+the inflection, Kneedle, and threshold candidates.
 }

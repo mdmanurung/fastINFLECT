@@ -1,6 +1,7 @@
-# Coerce a fastINFLECT result to a data frame
+# Extract tested fastINFLECT QC scores
 
-Coerce a fastINFLECT result to a data frame
+Returns one row per tested `k`, with the aggregate `qc_pass_rate` and
+the criterion selected by `uniform.test`.
 
 ## Usage
 
@@ -11,21 +12,21 @@ as.data.frame(x, row.names = NULL, optional = FALSE, ...)
 
 ## Arguments
 
-  - x:
-    
-    An `inflect.results` object.
+- x:
 
-  - row.names:
-    
-    `row.names` passed to `as.data.frame`.
+  An `inflect.results` object.
 
-  - optional:
-    
-    `optional` passed to `as.data.frame`.
+- row.names:
 
-  - ...:
-    
-    Additional arguments passed to `as.data.frame`.
+  `row.names` passed to `as.data.frame`.
+
+- optional:
+
+  `optional` passed to `as.data.frame`.
+
+- ...:
+
+  Additional arguments passed to `as.data.frame`.
 
 ## Value
 

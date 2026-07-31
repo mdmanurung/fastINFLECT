@@ -2,7 +2,7 @@
 % Please edit documentation in R/inflect-results-methods.R
 \name{print.inflect.results}
 \alias{print.inflect.results}
-\title{Print a fastINFLECT result}
+\title{Print candidate values from a fastINFLECT result}
 \usage{
 \method{print}{inflect.results}(x, ...)
 }
@@ -15,5 +15,7 @@
 \code{x}, invisibly.
 }
 \description{
-Print a fastINFLECT result
+Displays the tested range, marker count, core run settings, and each row of
+\code{x$selection}. The status beside each candidate shows whether its partition
+was directly tested.
 }

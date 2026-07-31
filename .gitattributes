@@ -1,0 +1,3 @@
+docs/**/*.html whitespace=-blank-at-eof,-blank-at-eol
+docs/articles/*.md whitespace=-blank-at-eol
+vignettes/*.html whitespace=-blank-at-eol

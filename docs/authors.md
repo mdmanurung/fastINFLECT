@@ -2,7 +2,7 @@
 
 ## Authors
 
-  - **Jan VERHOEFF**. Maintainer.
+- **Jan VERHOEFF**. Maintainer.
 
 ## Citation
 

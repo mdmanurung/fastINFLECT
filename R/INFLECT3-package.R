@@ -1,19 +1,13 @@
 #' @description
-#' fastINFLECT reimplements the INFLECT method for selecting a FlowSOM or
-#' kohonen metaclustering endpoint from criterion-specific marker QC. The public
-#' `INFLECT()` workflow is retained; the
-#' implementation replaces repeated per-k QC work with memoised SOM-node
-#' subtree scoring, faster dip-test p-value lookup, and Rcpp accelerators.
+#' fastINFLECT evaluates a literal schedule of metacluster counts for a FlowSOM
+#' or kohonen self-organising map. Start with [INFLECT()], then use `print()`,
+#' `plot()`, and `as.data.frame()` to read the candidate values and tested QC
+#' pass rates.
 #'
-#' The core INFLECT idea is to scan metaclusterings, calculate a marker-level QC
-#' pass rate, and locate the inflection where additional clusters stop
-#' improving that aggregate. fastINFLECT retains separate dip-test and
-#' IQR-spread evidence and distinguishes fitted estimates from materialised
-#' partitions. A pass rate is a screening result, not proof of unimodality.
-#'
-#' The original INFLECT implementation was developed by Jan Verhoeff in the
-#' lab of JJ. Garcia-Vallejo and is available at
-#' \url{https://github.com/jnverhoeff/GarciaVallejoLab}.
+#' The result retains the tested partitions, separate dip and IQR decisions,
+#' detailed cluster-marker measurements, and run provenance. Candidate values
+#' narrow the search for `k`; they do not establish biological validity or
+#' prove unimodality.
 #'
 #' @keywords internal
 "_PACKAGE"

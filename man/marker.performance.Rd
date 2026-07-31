@@ -2,16 +2,17 @@
 % Please edit documentation in R/plot-markerperformance.R
 \name{marker.performance}
 \alias{marker.performance}
-\title{Plot marker performance across metaclustering results}
+\title{Plot marker-level QC pass rates}
 \usage{
 marker.performance(inflect.results, ggtitle = NULL, markers = NULL)
 }
 \arguments{
-\item{inflect.results}{A inflect.results object resulting from \code{\link{INFLECT}}.}
+\item{inflect.results}{An \code{inflect.results} object returned by \code{\link[=INFLECT]{INFLECT()}}.}
 
-\item{ggtitle}{Optional. Character string to plot as title.}
+\item{ggtitle}{Optional plot title.}
 
-\item{markers}{Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.}
+\item{markers}{Evaluated marker names to include. A \code{NULL} value displays all
+markers.}
 }
 \value{
 A list with \code{marker.dataframe} and \code{plot}. The data frame contains
@@ -25,21 +26,17 @@ criterion selected in \code{\link[=INFLECT]{INFLECT()}}. It is a screening pass 
 unimodality. The colour gradient denotes the tested cluster count.
 }
 \examples{
-# Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
-# SOM-clustered to 375 clusters.
-flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
+flowsom <- system.file(
+  "extdata",
+  "Levine32sample.Rdata",
+  package = "fastINFLECT"
+)
 load(flowsom)
-inflect.results <- INFLECT(
+result <- INFLECT(
   FlowSOM.results = dataset,
-  set.i = 5:12,
-  multicore = FALSE
+  set.i = 5:12
 )
 
-# Display diagnostic graph
-inflect.results$ggplot
-
-# Now check marker performance for all markers
-marker.performance(inflect.results, ggtitle= "Levine32sample", markers=NULL)
-
-
+marker_qc <- marker.performance(result, ggtitle = "Levine32 sample")
+marker_qc$plot
 }

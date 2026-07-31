@@ -6,6 +6,7 @@
 ^\\.Ruserdata$
 ^\\.agents$
 ^\\.codex$
+^[.]claude$
 ^_pkgdown[.]yml$
 ^docs$
 ^Rplots[.]pdf$

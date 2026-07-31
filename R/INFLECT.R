@@ -1,31 +1,33 @@
-#' @title Run the fastINFLECT computation
+#' @title Run a fastINFLECT metaclustering scan
 #'
-#' @description Runs iterative metaclustering, separated marker-level dip/IQR
-#' quality control, and diagnostic inflection-point estimation. The exported
-#' function is named `INFLECT()`
-#' for continuity with the original INFLECT API; the package uses a memoised
-#' engine that avoids the original repeated per-k QC loop.
-#' `set.i` is a required, literal schedule: fastINFLECT evaluates and
-#' materializes exactly the supplied cluster counts. Complete finite transformed
-#' distributions, including negative and zero values, are scored by default.
-#' A fitted inflection can estimate an unscheduled k, but no partition is
-#' silently created for that estimate.
+#' @description Evaluates every cluster count supplied in `set.i`, scores each
+#' cluster-marker pair with separate dip and IQR criteria, and reports candidate
+#' values of `k`. The result retains every tested partition, the component QC
+#' evidence, and the settings needed to interpret the run. A candidate is a
+#' screening result, not proof that a partition is biologically valid.
 #'
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Required vector of at least five unique, strictly increasing
 #' integer cluster counts within the SOM-node range. Values are used literally.
 #' See \code{\link{inflect_adaptive_set_i}} to construct an explicitly bounded
 #' adaptive schedule.
-#' @param multicore logical, should the QC sweep be run in parallel (fork-based \code{\link[parallel]{mclapply}} over distinct SOM-node subtrees on Unix). Ignored on Windows. Default is \code{FALSE}.
-#' @param cores If \code{multicore == TRUE}, number of cores to be used. Must be at least 2. If \code{NULL}, the number of detected cores minus one is used.
+#' @param multicore Use parallel QC scoring on platforms with fork support.
+#'   Default `FALSE`.
+#' @param cores Worker count when `multicore = TRUE`. Must be at least two. A
+#'   `NULL` value uses the detected core count minus one.
 #' @param zeroes.in If `TRUE` (default), retain negative, zero, and positive
 #' finite transformed values. If `FALSE`, exclude all non-positive values,
 #' record per-marker counts, and warn when negatives are present.
-#' @param only.clustering.markers If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.
-#' @param acquired_markers Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}
-#' @param basedata Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}
-#' @param ggtitle Optional title for resulting diagnostic graph. Default \code{NULL}
-#' @param uniform.test What tests are performed per marker per cluster. Options are \code{"both"}, \code{"spread"}, or \code{"unimodality"}.
+#' @param only.clustering.markers Evaluate only clustering markers. For a
+#'   kohonen object, these are the markers in the first data layer.
+#' @param acquired_markers Marker names to evaluate when
+#'   `only.clustering.markers = FALSE`.
+#' @param basedata Use the fitted `"Curve"` or observed `"Points"` to estimate
+#'   the inflection.
+#' @param ggtitle Optional title for the diagnostic plot.
+#' @param uniform.test Criterion used for the aggregate pass-rate curve:
+#'   `"both"` requires dip and IQR to pass, `"unimodality"` uses dip, and
+#'   `"spread"` uses IQR. Component evidence is retained in every run.
 #' @param th.pvalue Dip-test pass threshold. A pair passes the dip criterion
 #'   when its p-value is at least this value. Default is \code{0.05}.
 #' @param th.IQR Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.
@@ -42,29 +44,36 @@
 #' @param target Target QC pass rate (fraction in \code{(0,1]} or percentage in
 #' \code{(1,100]}) used to report the smallest tested k reaching the threshold.
 #' Default \code{0.95}. See \code{\link{inflect_threshold_k}}.
-#' @param verbose \code{logical}, default is \code{FALSE}.
+#' @param verbose Print progress messages. Default `FALSE`.
 #' @param ... Arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.
 #'
-#' @return An S3 \code{inflect.results} object containing criterion-specific
-#' `scores`, separated dip/IQR/combined matrices and `qc.details`, the fitted
-#' curve, literal metaclustering partitions, selection estimates, and consolidated
-#' provenance. Deprecated score and accuracy aliases are retained for
-#' compatibility.
-#' Running the individual function \code{\link{iteration.metacluster}} and \code{\link{QC.to.curve}} might provide more options and flexibility.
+#' @return An S3 `inflect.results` object. Use `print()` for candidate values,
+#'   `plot()` for the pass-rate curve, `as.data.frame()` for tested scores,
+#'   `result$selection` for candidate metadata, and the criterion matrices plus
+#'   `qc.details` for marker-level interpretation.
 #'
 #' @seealso \code{\link{iteration.metacluster}}, \code{\link{iteration.QC}}, \code{\link{FlowSOMQC}}, \code{\link{QC.to.curve}}, \code{\link{leastError}}, \code{\link{Lfunction}}, \code{\link{marker.performance}}
 #'
 #' @examples
 #'
-#' # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
-#' # SOM-clustered to 375 clusters.
-#' flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
+#' # Load the bundled, downsampled Levine32 FlowSOM object.
+#' flowsom <- system.file(
+#'   "extdata",
+#'   "Levine32sample.Rdata",
+#'   package = "fastINFLECT"
+#' )
 #' load(flowsom)
-#' set.i<- 5:12
-#' inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= set.i, multicore=FALSE)
 #'
-#' # Display diagnostic graph
-#' inflect.results$ggplot
+#' result <- INFLECT(
+#'   FlowSOM.results = dataset,
+#'   set.i = 5:12,
+#'   uniform.test = "both"
+#' )
+#'
+#' result
+#' plot(result)
+#' as.data.frame(result)
+#' result$selection
 #'
 #' @export
 INFLECT <-

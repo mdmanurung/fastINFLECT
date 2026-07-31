@@ -1,20 +1,7 @@
 test_that("release sources consistently identify fastINFLECT 1.0.0", {
   root <- find_package_root()
-  desc <- read.dcf(file.path(root, "DESCRIPTION"))[1, ]
-
-  expect_identical(unname(desc[["Version"]]), "1.0.0")
-  expect_true(file.exists(file.path(
-    root,
-    "vignettes",
-    "using-fastINFLECT-1.Rmd"
-  )))
-  expect_false(file.exists(file.path(
-    root,
-    "vignettes",
-    "migrating-to-fastINFLECT-2.Rmd"
-  )))
-
   source_paths <- file.path(root, c(
+    "DESCRIPTION",
     "README.md",
     "NEWS.md",
     "R/INFLECT.R",
@@ -23,11 +10,39 @@ test_that("release sources consistently identify fastINFLECT 1.0.0", {
     "R/inflect-provenance.R",
     "R/iteration-QC.R",
     "R/plot-markerperformance.R",
-    "vignettes/benchmark-inflect-vs-consensus.Rmd",
-    "vignettes/comparing-metaclustering.Rmd",
-    "vignettes/using-fastINFLECT-1.Rmd"
+    "vignettes/fastINFLECT.Rmd"
   ))
-  source_paths <- source_paths[file.exists(source_paths)]
+  missing_sources <- source_paths[!file.exists(source_paths)]
+  expect_true(
+    length(missing_sources) == 0L,
+    info = paste("Missing required release sources:", paste(missing_sources, collapse = ", "))
+  )
+  if (length(missing_sources) != 0L) {
+    return(invisible(NULL))
+  }
+
+  desc <- read.dcf(file.path(root, "DESCRIPTION"))[1, ]
+  expect_identical(unname(desc[["Version"]]), "1.0.0")
+
+  retired_vignette_slugs <- c(
+    "using-fastINFLECT-1",
+    "benchmark-inflect-vs-consensus",
+    "comparing-metaclustering",
+    "migrating-to-fastINFLECT-2"
+  )
+  retired_vignette_paths <- file.path(
+    root,
+    "vignettes",
+    paste0(retired_vignette_slugs, ".Rmd")
+  )
+  expect_false(
+    any(file.exists(retired_vignette_paths)),
+    info = paste(
+      "Retired vignette sources must remain absent:",
+      paste(retired_vignette_paths[file.exists(retired_vignette_paths)], collapse = ", ")
+    )
+  )
+
   release_text <- paste(
     unlist(lapply(source_paths, readLines, warn = FALSE), use.names = FALSE),
     collapse = "\n"
@@ -38,16 +53,33 @@ test_that("release sources consistently identify fastINFLECT 1.0.0", {
     "version 2.0",
     "pre-2.0",
     "2.0 migration",
-    "migrating-to-fastINFLECT-2"
+    "migrating-to-fastINFLECT-2",
+    "using-fastINFLECT-1",
+    "benchmark-inflect-vs-consensus",
+    "comparing-metaclustering"
   )
   for (pattern in stale_patterns) {
     expect_false(grepl(pattern, release_text, fixed = TRUE), info = pattern)
   }
 
   pkgdown_path <- file.path(root, "_pkgdown.yml")
-  if (file.exists(pkgdown_path)) {
-    pkgdown <- paste(readLines(pkgdown_path, warn = FALSE), collapse = "\n")
-    expect_true(grepl("using-fastINFLECT-1", pkgdown, fixed = TRUE))
-    expect_false(grepl("migrating-to-fastINFLECT-2", pkgdown, fixed = TRUE))
+  if (file.exists(file.path(root, ".git"))) {
+    expect_true(file.exists(pkgdown_path))
+    pkgdown <- readLines(pkgdown_path, warn = FALSE)
+    get_started_line <- grep(
+      "^[[:space:]]*text:[[:space:]]*Get started[[:space:]]*$",
+      pkgdown
+    )
+    expect_length(get_started_line, 1L)
+    if (length(get_started_line) == 1L) {
+      expect_identical(
+        trimws(pkgdown[[get_started_line + 1L]]),
+        "href: articles/fastINFLECT.html"
+      )
+    }
+    pkgdown_text <- paste(pkgdown, collapse = "\n")
+    for (slug in retired_vignette_slugs) {
+      expect_false(grepl(slug, pkgdown_text, fixed = TRUE), info = slug)
+    }
   }
 })

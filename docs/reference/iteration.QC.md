@@ -32,81 +32,84 @@ iteration.QC(
 
 ## Arguments
 
-  - FlowSOM.results:
+- FlowSOM.results:
 
-    A supported SOM object with completed SOM clustering. Supports
-    FlowSOM objects and kohonen objects returned by `som` or `xyf`.
+  A supported SOM object with completed SOM clustering. Supports FlowSOM
+  objects and kohonen objects returned by
+  [`som`](https://rdrr.io/pkg/kohonen/man/supersom.html) or
+  [`xyf`](https://rdrr.io/pkg/kohonen/man/supersom.html).
 
-  - metaclustering.list:
+- metaclustering.list:
 
-    Named list containing exactly one node-label vector for every value
-    in `set.i`.
+  Named list containing exactly one node-label vector for every value in
+  `set.i`.
 
-  - set.i:
+- set.i:
 
-    Literal, unique, strictly increasing integer cluster counts.
+  Literal, unique, strictly increasing integer cluster counts.
 
-  - multicore:
+- multicore:
 
-    Logical. On Unix, use fork-based `mclapply` over distinct SOM-node
-    subtrees. Other platforms validate the same arguments and use a
-    recorded serial fallback. Default `FALSE`.
+  Logical. On Unix, use fork-based
+  [`mclapply`](https://rdrr.io/r/parallel/mclapply.html) over distinct
+  SOM-node subtrees. Other platforms validate the same arguments and use
+  a recorded serial fallback. Default `FALSE`.
 
-  - cores:
+- cores:
 
-    Worker count when `multicore = TRUE`; must be at least two.
+  Worker count when `multicore = TRUE`; must be at least two.
 
-  - zeroes.in:
+- zeroes.in:
 
-    Logical. If `TRUE` (the default), retain negative, zero, and
-    positive finite transformed values. If `FALSE`, every non-positive
-    value is excluded, per-marker counts are recorded, and negative
-    inputs trigger a warning.
+  Logical. If `TRUE` (the default), retain negative, zero, and positive
+  finite transformed values. If `FALSE`, every non-positive value is
+  excluded, per-marker counts are recorded, and negative inputs trigger
+  a warning.
 
-  - only.clustering.markers:
+- only.clustering.markers:
 
-    If `TRUE`, evaluate only clustering markers.
+  If `TRUE`, evaluate only clustering markers.
 
-  - acquired\_markers:
+- acquired_markers:
 
-    Marker names to evaluate when `only.clustering.markers = FALSE`.
+  Marker names to evaluate when `only.clustering.markers = FALSE`.
 
-  - uniform.test:
+- uniform.test:
 
-    Aggregate criterion: `"both"` selects the combined dip and IQR pass,
-    `"spread"` selects IQR only, and `"unimodality"` selects the dip
-    test only. Both component tests are always retained in `qc.details`.
+  Aggregate criterion: `"both"` selects the combined dip and IQR pass,
+  `"spread"` selects IQR only, and `"unimodality"` selects the dip test
+  only. Both component tests are always retained in `qc.details`.
 
-  - th.pvalue:
+- th.pvalue:
 
-    Dip-test pass threshold. A cell passes when `p_value >= th.pvalue`.
+  Dip-test pass threshold. A cell passes when `p_value >= th.pvalue`.
 
-  - th.IQR:
+- th.IQR:
 
-    IQR-spread pass threshold. A cell passes when `IQR < th.IQR`.
+  IQR-spread pass threshold. A cell passes when `IQR < th.IQR`.
 
-  - verbose:
+- verbose:
 
-    Logical.
+  Logical.
 
-  - max.n.diptest:
+- max.n.diptest:
 
-    Optional positive dip-test sample cap of at least four. Sampling is
-    deterministic per subtree and marker.
+  Optional positive dip-test sample cap of at least four. Sampling is
+  deterministic per subtree and marker.
 
-  - max.events.per.node:
+- max.events.per.node:
 
-    Optional positive integer. Each SOM node is sampled once before
-    subtree assembly; the retained rows feed every marker and both
-    tests.
+  Optional positive integer. Each SOM node is sampled once before
+  subtree assembly; the retained rows feed every marker and both tests.
 
-  - seed:
+- seed:
 
-    Non-negative base seed.
+  Non-negative base seed.
 
-  - ...:
+- ...:
 
-    Additional arguments passed to `dip.test`.
+  Additional arguments passed to
+  [`dip.test`](https://rdrr.io/pkg/diptest/man/dip.test.html).
 
 ## Value
 
@@ -117,4 +120,6 @@ matrices, full `qc.details`, and `provenance`. Deprecated `U.set` and
 
 ## See also
 
-`INFLECT`, `iteration.metacluster`, `FlowSOMQC`
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md),
+[`iteration.metacluster`](https://mdmanurung.github.io/fastINFLECT/reference/iteration.metacluster.md),
+[`FlowSOMQC`](https://mdmanurung.github.io/fastINFLECT/reference/FlowSOMQC.md)

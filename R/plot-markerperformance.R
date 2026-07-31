@@ -1,36 +1,33 @@
-#' @title Plot marker performance across metaclustering results
+#' @title Plot marker-level QC pass rates
 #'
 #' @description Plots criterion-specific marker QC across metaclusterings. The
 #' score is the percentage of clusters where a marker passed the aggregate
 #' criterion selected in [INFLECT()]. It is a screening pass rate, not proof of
 #' unimodality. The colour gradient denotes the tested cluster count.
 #'
-#' @param inflect.results A inflect.results object resulting from \code{\link{INFLECT}}.
-#' @param ggtitle Optional. Character string to plot as title.
-#' @param markers Which markers should be included in the plot? A vector of strings matching evaluated marker names. If \code{NULL}, all evaluated markers are displayed.
+#' @param inflect.results An `inflect.results` object returned by [INFLECT()].
+#' @param ggtitle Optional plot title.
+#' @param markers Evaluated marker names to include. A `NULL` value displays all
+#'   markers.
 #'
 #' @return A list with `marker.dataframe` and `plot`. The data frame contains
 #' canonical `k`, `marker`, and `qc_pass_rate` columns. Deprecated `i`, `Marker`,
 #' and `Performance` aliases are retained for compatibility.
 #'
 #' @examples
-#' # Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
-#' # SOM-clustered to 375 clusters.
-#' flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
+#' flowsom <- system.file(
+#'   "extdata",
+#'   "Levine32sample.Rdata",
+#'   package = "fastINFLECT"
+#' )
 #' load(flowsom)
-#' inflect.results <- INFLECT(
+#' result <- INFLECT(
 #'   FlowSOM.results = dataset,
-#'   set.i = 5:12,
-#'   multicore = FALSE
+#'   set.i = 5:12
 #' )
 #'
-#' # Display diagnostic graph
-#' inflect.results$ggplot
-#'
-#' # Now check marker performance for all markers
-#'marker.performance(inflect.results, ggtitle= "Levine32sample", markers=NULL)
-#'
-#'
+#' marker_qc <- marker.performance(result, ggtitle = "Levine32 sample")
+#' marker_qc$plot
 #' @export
 
 marker.performance <- function(inflect.results, ggtitle = NULL, markers = NULL) {

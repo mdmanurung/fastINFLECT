@@ -13,18 +13,20 @@ QC.to.curve(collection.U, basedata, ggtitle = NULL)
 
 ## Arguments
 
-  - collection.U:
-    
-    Result from `iteration.QC`, a canonical score data frame with `k`
-    and `qc_pass_rate`, or the deprecated score aliases.
+- collection.U:
 
-  - basedata:
-    
-    `"Curve"` or `"Points"`.
+  Result from
+  [`iteration.QC`](https://mdmanurung.github.io/fastINFLECT/reference/iteration.QC.md),
+  a canonical score data frame with `k` and `qc_pass_rate`, or the
+  deprecated score aliases.
 
-  - ggtitle:
-    
-    Optional plot title.
+- basedata:
+
+  `"Curve"` or `"Points"`.
+
+- ggtitle:
+
+  Optional plot title.
 
 ## Value
 
@@ -34,4 +36,6 @@ alias.
 
 ## See also
 
-`INFLECT`, `iteration.QC`, `Lfunction`
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md),
+[`iteration.QC`](https://mdmanurung.github.io/fastINFLECT/reference/iteration.QC.md),
+[`Lfunction`](https://mdmanurung.github.io/fastINFLECT/reference/Lfunction.md)

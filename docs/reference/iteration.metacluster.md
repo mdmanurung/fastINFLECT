@@ -12,24 +12,26 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
 
 ## Arguments
 
-  - FlowSOM.results:
-    
-    A supported SOM object with completed SOM clustering. Supports
-    FlowSOM objects and kohonen objects returned by `som` or `xyf`.
+- FlowSOM.results:
 
-  - set.i:
-    
-    Literal, unique, strictly increasing integer cluster counts within
-    the SOM-node range.
+  A supported SOM object with completed SOM clustering. Supports FlowSOM
+  objects and kohonen objects returned by
+  [`som`](https://rdrr.io/pkg/kohonen/man/supersom.html) or
+  [`xyf`](https://rdrr.io/pkg/kohonen/man/supersom.html).
 
-  - multicore:
-    
-    Retained for backward compatibility. Hierarchical clustering is
-    computed once and is not parallelized.
+- set.i:
 
-  - cores:
-    
-    Retained for backward compatibility.
+  Literal, unique, strictly increasing integer cluster counts within the
+  SOM-node range.
+
+- multicore:
+
+  Retained for backward compatibility. Hierarchical clustering is
+  computed once and is not parallelized.
+
+- cores:
+
+  Retained for backward compatibility.
 
 ## Value
 
@@ -38,4 +40,4 @@ SOM nodes within the input object.
 
 ## See also
 
-`INFLECT`
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md)

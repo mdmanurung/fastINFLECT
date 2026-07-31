@@ -53,7 +53,11 @@
   .inflect_scalar(provenance, name)
 }
 
-#' Print a fastINFLECT result
+#' Print candidate values from a fastINFLECT result
+#'
+#' Displays the tested range, marker count, core run settings, and each row of
+#' `x$selection`. The status beside each candidate shows whether its partition
+#' was directly tested.
 #'
 #' @param x An `inflect.results` object.
 #' @param ... Unused.
@@ -118,10 +122,13 @@ print.inflect.results <- function(x, ...) {
 
 #' Summarize a fastINFLECT result
 #'
+#' Returns one row with the tested range, QC pass-rate range, run settings, and
+#' the inflection, Kneedle, and threshold candidates.
+#'
 #' @param object An `inflect.results` object.
 #' @param ... Unused.
 #'
-#' @return A one-row `data.frame`.
+#' @return A one-row `data.frame` of scan settings and candidate values.
 #' @export
 summary.inflect.results <- function(object, ...) {
   collection <- object$scores
@@ -174,7 +181,10 @@ summary.inflect.results <- function(object, ...) {
   result_summary
 }
 
-#' Plot a fastINFLECT result
+#' Plot the fastINFLECT QC pass-rate curve
+#'
+#' Returns the diagnostic plot stored during [INFLECT()]. Use the curve to see
+#' how the selected criterion changes across the literal `set.i` schedule.
 #'
 #' @param x An `inflect.results` object.
 #' @param ... Unused.
@@ -185,7 +195,10 @@ plot.inflect.results <- function(x, ...) {
   x$ggplot
 }
 
-#' Coerce a fastINFLECT result to a data frame
+#' Extract tested fastINFLECT QC scores
+#'
+#' Returns one row per tested `k`, with the aggregate `qc_pass_rate` and the
+#' criterion selected by `uniform.test`.
 #'
 #' @param x An `inflect.results` object.
 #' @param row.names `row.names` passed to `as.data.frame`.

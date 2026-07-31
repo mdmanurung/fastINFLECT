@@ -1,11 +1,11 @@
 # Sarle's bimodality coefficient
 
 Computes Sarle's bimodality coefficient (BC) for a numeric sample, a
-fast moment-based screen for bimodality: $$BC = (g^2 + 1) / (k + 3
-(n-1)^2 / ((n-2)(n-3)))$$ where \\(g\\) is the sample skewness and
-\\(k\\) the sample excess kurtosis. BC lies in `(0, 1]`; the benchmark
-`5/9` (about 0.555) is the value for a uniform distribution, and larger
-values indicate a more bimodal shape.
+fast moment-based screen for bimodality: \$\$BC = (g^2 + 1) / (k + 3
+(n-1)^2 / ((n-2)(n-3)))\$\$ where \\g\\ is the sample skewness and \\k\\
+the sample excess kurtosis. BC lies in `(0, 1]`; the benchmark `5/9`
+(about 0.555) is the value for a uniform distribution, and larger values
+indicate a more bimodal shape.
 
 BC is a moment-based diagnostic that can complement the dip-test
 evidence retained by fastINFLECT. It is deliberately *not* the default
@@ -22,14 +22,14 @@ bimodality.coefficient(x, na.rm = TRUE)
 
 ## Arguments
 
-  - x:
-    
-    A numeric vector (missing values are dropped). At least four finite
-    values are required.
+- x:
 
-  - na.rm:
-    
-    `logical`; drop missing values before computing. Default `TRUE`.
+  A numeric vector (missing values are dropped). At least four finite
+  values are required.
+
+- na.rm:
+
+  `logical`; drop missing values before computing. Default `TRUE`.
 
 ## Value
 
@@ -38,7 +38,8 @@ too few points or the sample has zero variance.
 
 ## See also
 
-`FlowSOMQC`, `computemode`
+[`FlowSOMQC`](https://mdmanurung.github.io/fastINFLECT/reference/FlowSOMQC.md),
+[`computemode`](https://mdmanurung.github.io/fastINFLECT/reference/computemode.md)
 
 ## Examples
 

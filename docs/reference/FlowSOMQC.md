@@ -28,58 +28,59 @@ FlowSOMQC(
 
 ## Arguments
 
-  - FlowSOM.results:
+- FlowSOM.results:
 
-    A supported FlowSOM or kohonen SOM object.
+  A supported FlowSOM or kohonen SOM object.
 
-  - metaclustering:
+- metaclustering:
 
-    Integer vector with one metacluster label per SOM node.
+  Integer vector with one metacluster label per SOM node.
 
-  - zeroes.in:
+- zeroes.in:
 
-    If `TRUE` (default), retain all finite transformed values. If
-    `FALSE`, exclude every non-positive value and warn when negative
-    values are present.
+  If `TRUE` (default), retain all finite transformed values. If `FALSE`,
+  exclude every non-positive value and warn when negative values are
+  present.
 
-  - only.clustering.markers:
+- only.clustering.markers:
 
-    Evaluate only clustering markers.
+  Evaluate only clustering markers.
 
-  - acquired\_markers:
+- acquired_markers:
 
-    Marker names used when `only.clustering.markers = FALSE`.
+  Marker names used when `only.clustering.markers = FALSE`.
 
-  - uniform.test:
+- uniform.test:
 
-    Aggregate criterion: `"both"` (dip and IQR), `"spread"` (IQR), or
-    `"unimodality"` (dip).
+  Aggregate criterion: `"both"` (dip and IQR), `"spread"` (IQR), or
+  `"unimodality"` (dip).
 
-  - th.pvalue:
+- th.pvalue:
 
-    Dip-test pass threshold.
+  Dip-test pass threshold.
 
-  - th.IQR:
+- th.IQR:
 
-    IQR pass threshold.
+  IQR pass threshold.
 
-  - max.n.diptest:
+- max.n.diptest:
 
-    Optional dip-test sample cap of at least four.
+  Optional dip-test sample cap of at least four.
 
-  - seed:
+- seed:
 
-    Non-negative seed. Simulated dip p-values and optional subsampling
-    use deterministic subtree-marker streams and preserve the caller's
-    RNG state.
+  Non-negative seed. Simulated dip p-values and optional subsampling use
+  deterministic subtree-marker streams and preserve the caller's RNG
+  state.
 
-  - verbose:
+- verbose:
 
-    Logical.
+  Logical.
 
-  - ...:
+- ...:
 
-    Additional arguments passed to `dip.test`.
+  Additional arguments passed to
+  [`dip.test`](https://rdrr.io/pkg/diptest/man/dip.test.html).
 
 ## Value
 
@@ -88,4 +89,5 @@ Invisibly, the selected-criterion logical matrix. Attributes
 
 ## See also
 
-`INFLECT`, `iteration.QC`
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md),
+[`iteration.QC`](https://mdmanurung.github.io/fastINFLECT/reference/iteration.QC.md)

@@ -6,49 +6,47 @@ template:
 home:
   title: fastINFLECT
   description: >
-    A fast reimplementation of the original INFLECT package for selecting
-    FlowSOM and kohonen metaclustering endpoints from marker-level
-    diagnostics.
+    Select and inspect FlowSOM and kohonen metaclustering endpoints with
+    marker-level QC diagnostics.
 
 navbar:
   structure:
-    left: [reference, articles, news]
+    left: [intro, reference]
     right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/fastINFLECT.html
 
 articles:
-- title: Package interface
+- title: Get started
   contents:
-  - using-fastINFLECT-1
-- title: Benchmarks and method comparisons
-  navbar: Benchmarks
-  contents:
-  - benchmark-inflect-vs-consensus
-  - comparing-metaclustering
+  - fastINFLECT
 
 reference:
-- title: Main workflow
+- title: Run an analysis
   contents:
   - INFLECT
-  - FlowSOMQC
-  - marker.performance
-- title: Metaclustering and QC internals
-  contents:
-  - iteration.metacluster
-  - iteration.QC
-  - metaClusteringhclust
-  - QC.to.curve
-  - Lfunction
-  - leastError
-- title: Selection helpers and diagnostics
-  contents:
-  - computemode
   - inflect_adaptive_set_i
-  - inflect_kneedle
-  - inflect_threshold_k
-  - bimodality.coefficient
-- title: Result methods
+- title: Read and plot results
   contents:
   - print.inflect.results
   - summary.inflect.results
   - plot.inflect.results
   - as.data.frame.inflect.results
+  - marker.performance
+- title: Build a custom workflow
+  contents:
+  - iteration.metacluster
+  - iteration.QC
+  - FlowSOMQC
+  - metaClusteringhclust
+- title: Inspect selection diagnostics
+  contents:
+  - QC.to.curve
+  - inflect_kneedle
+  - inflect_threshold_k
+  - Lfunction
+  - leastError
+  - computemode
+  - bimodality.coefficient

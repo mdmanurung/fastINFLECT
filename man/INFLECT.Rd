@@ -2,7 +2,7 @@
 % Please edit documentation in R/INFLECT.R
 \name{INFLECT}
 \alias{INFLECT}
-\title{Run the fastINFLECT computation}
+\title{Run a fastINFLECT metaclustering scan}
 \usage{
 INFLECT(
   FlowSOM.results,
@@ -33,30 +33,37 @@ integer cluster counts within the SOM-node range. Values are used literally.
 See \code{\link{inflect_adaptive_set_i}} to construct an explicitly bounded
 adaptive schedule.}
 
-\item{multicore}{logical, should the QC sweep be run in parallel (fork-based \code{\link[parallel]{mclapply}} over distinct SOM-node subtrees on Unix). Ignored on Windows. Default is \code{FALSE}.}
+\item{multicore}{Use parallel QC scoring on platforms with fork support.
+Default \code{FALSE}.}
 
-\item{cores}{If \code{multicore == TRUE}, number of cores to be used. Must be at least 2. If \code{NULL}, the number of detected cores minus one is used.}
+\item{cores}{Worker count when \code{multicore = TRUE}. Must be at least two. A
+\code{NULL} value uses the detected core count minus one.}
 
 \item{zeroes.in}{If \code{TRUE} (default), retain negative, zero, and positive
 finite transformed values. If \code{FALSE}, exclude all non-positive values,
 record per-marker counts, and warn when negatives are present.}
 
-\item{only.clustering.markers}{If \code{TRUE} only evaluates markers specified as clustering markers. For \pkg{kohonen} objects this is the first data layer.}
+\item{only.clustering.markers}{Evaluate only clustering markers. For a
+kohonen object, these are the markers in the first data layer.}
 
-\item{acquired_markers}{Vector of column names with marker data to be evaluated by fastINFLECT. Ignored if \code{only.clustering.markers == TRUE}}
+\item{acquired_markers}{Marker names to evaluate when
+\code{only.clustering.markers = FALSE}.}
 
-\item{basedata}{Data to be used to calculate inflection point, given as a string. Options are \code{Curve} and \code{Points}}
+\item{basedata}{Use the fitted \code{"Curve"} or observed \code{"Points"} to estimate
+the inflection.}
 
-\item{ggtitle}{Optional title for resulting diagnostic graph. Default \code{NULL}}
+\item{ggtitle}{Optional title for the diagnostic plot.}
 
-\item{uniform.test}{What tests are performed per marker per cluster. Options are \code{"both"}, \code{"spread"}, or \code{"unimodality"}.}
+\item{uniform.test}{Criterion used for the aggregate pass-rate curve:
+\code{"both"} requires dip and IQR to pass, \code{"unimodality"} uses dip, and
+\code{"spread"} uses IQR. Component evidence is retained in every run.}
 
 \item{th.pvalue}{Dip-test pass threshold. A pair passes the dip criterion
 when its p-value is at least this value. Default is \code{0.05}.}
 
 \item{th.IQR}{Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.}
 
-\item{verbose}{\code{logical}, default is \code{FALSE}.}
+\item{verbose}{Print progress messages. Default \code{FALSE}.}
 
 \item{max.n.diptest}{Optional integer cap on the number of events used per
 cluster-marker dip test. The dip test's power depends on sample size, so a
@@ -78,36 +85,38 @@ Default \code{0.95}. See \code{\link{inflect_threshold_k}}.}
 \item{...}{Arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.}
 }
 \value{
-An S3 \code{inflect.results} object containing criterion-specific
-\code{scores}, separated dip/IQR/combined matrices and \code{qc.details}, the fitted
-curve, literal metaclustering partitions, selection estimates, and consolidated
-provenance. Deprecated score and accuracy aliases are retained for
-compatibility.
-Running the individual function \code{\link{iteration.metacluster}} and \code{\link{QC.to.curve}} might provide more options and flexibility.
+An S3 \code{inflect.results} object. Use \code{print()} for candidate values,
+\code{plot()} for the pass-rate curve, \code{as.data.frame()} for tested scores,
+\code{result$selection} for candidate metadata, and the criterion matrices plus
+\code{qc.details} for marker-level interpretation.
 }
 \description{
-Runs iterative metaclustering, separated marker-level dip/IQR
-quality control, and diagnostic inflection-point estimation. The exported
-function is named \code{INFLECT()}
-for continuity with the original INFLECT API; the package uses a memoised
-engine that avoids the original repeated per-k QC loop.
-\code{set.i} is a required, literal schedule: fastINFLECT evaluates and
-materializes exactly the supplied cluster counts. Complete finite transformed
-distributions, including negative and zero values, are scored by default.
-A fitted inflection can estimate an unscheduled k, but no partition is
-silently created for that estimate.
+Evaluates every cluster count supplied in \code{set.i}, scores each
+cluster-marker pair with separate dip and IQR criteria, and reports candidate
+values of \code{k}. The result retains every tested partition, the component QC
+evidence, and the settings needed to interpret the run. A candidate is a
+screening result, not proof that a partition is biologically valid.
 }
 \examples{
 
-# Read in FlowSOM object from file. Downsampled clustering result of Levine32 dataset clustering.
-# SOM-clustered to 375 clusters.
-flowsom <- system.file("extdata", "Levine32sample.Rdata", package="fastINFLECT")
+# Load the bundled, downsampled Levine32 FlowSOM object.
+flowsom <- system.file(
+  "extdata",
+  "Levine32sample.Rdata",
+  package = "fastINFLECT"
+)
 load(flowsom)
-set.i<- 5:12
-inflect.results<- INFLECT(FlowSOM.results= dataset, set.i= set.i, multicore=FALSE)
 
-# Display diagnostic graph
-inflect.results$ggplot
+result <- INFLECT(
+  FlowSOM.results = dataset,
+  set.i = 5:12,
+  uniform.test = "both"
+)
+
+result
+plot(result)
+as.data.frame(result)
+result$selection
 
 }
 \seealso{

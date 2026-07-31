@@ -1,6 +1,9 @@
-# Plot a fastINFLECT result
+# Plot the fastINFLECT QC pass-rate curve
 
-Plot a fastINFLECT result
+Returns the diagnostic plot stored during
+[`INFLECT()`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md).
+Use the curve to see how the selected criterion changes across the
+literal `set.i` schedule.
 
 ## Usage
 
@@ -11,13 +14,13 @@ plot(x, ...)
 
 ## Arguments
 
-  - x:
-    
-    An `inflect.results` object.
+- x:
 
-  - ...:
-    
-    Unused.
+  An `inflect.results` object.
+
+- ...:
+
+  Unused.
 
 ## Value
 

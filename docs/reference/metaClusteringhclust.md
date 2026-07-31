@@ -11,14 +11,14 @@ metaClusteringhclust(data, nClus)
 
 ## Arguments
 
-  - data:
-    
-    Matrix with the median values for each clustering parameter for all
-    SOM clusters.
+- data:
 
-  - nClus:
-    
-    Amount of metaclusters to be obtained.
+  Matrix with the median values for each clustering parameter for all
+  SOM clusters.
+
+- nClus:
+
+  Amount of metaclusters to be obtained.
 
 ## Value
 
@@ -26,4 +26,4 @@ A `scalar` of `length(SOMclusters)` with metacluster identity.
 
 ## See also
 
-`INFLECT`
+[`INFLECT`](https://mdmanurung.github.io/fastINFLECT/reference/INFLECT.md)

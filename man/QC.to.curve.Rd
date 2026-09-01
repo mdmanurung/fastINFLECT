@@ -4,15 +4,11 @@
 \alias{QC.to.curve}
 \title{Plot a criterion-specific fastINFLECT QC curve}
 \usage{
-QC.to.curve(collection.U, basedata, ggtitle = NULL)
+QC.to.curve(collection.U)
 }
 \arguments{
 \item{collection.U}{Result from \code{\link{iteration.QC}}, a canonical score
 data frame with \code{k} and \code{qc_pass_rate}, or the deprecated score aliases.}
-
-\item{basedata}{\code{"Curve"} or \code{"Points"}.}
-
-\item{ggtitle}{Optional plot title.}
 }
 \value{
 A list containing canonical \code{scores}, \code{fittedcurve}, \code{lfunction},

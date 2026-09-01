@@ -4,18 +4,13 @@
 \alias{iteration.metacluster}
 \title{Run iterative metaclustering on SOM-clustered objects}
 \usage{
-iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
+iteration.metacluster(FlowSOM.results, set.i)
 }
 \arguments{
 \item{FlowSOM.results}{A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.}
 
 \item{set.i}{Literal, unique, strictly increasing integer cluster counts
 within the SOM-node range.}
-
-\item{multicore}{Retained for backward compatibility. Hierarchical
-clustering is computed once and is not parallelized.}
-
-\item{cores}{Retained for backward compatibility.}
 }
 \value{
 metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.

@@ -8,19 +8,15 @@ iteration.QC(
   FlowSOM.results,
   metaclustering.list,
   set.i,
-  multicore = FALSE,
-  cores = NULL,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
+  workers = 1L,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
-  verbose = FALSE,
   max.n.diptest = NULL,
   max.events.per.node = NULL,
   seed = 1L,
-  ...
+  progress = interactive()
 )
 }
 \arguments{
@@ -33,22 +29,10 @@ vector for every value in \code{set.i}.}
 
 \item{set.i}{Literal, unique, strictly increasing integer cluster counts.}
 
-\item{multicore}{Logical. On Unix, use fork-based
-\code{\link[parallel]{mclapply}} over distinct SOM-node subtrees.
-Other platforms validate the same arguments and use a recorded serial
-fallback. Default \code{FALSE}.}
+\item{workers}{Number of QC workers. \code{1L} is serial; values above one use
+fork-based \code{\link[parallel]{mclapply}} where supported.}
 
-\item{cores}{Worker count when \code{multicore = TRUE}; must be at least two.}
-
-\item{zeroes.in}{Logical. If \code{TRUE} (the default), retain negative, zero, and
-positive finite transformed values. If \code{FALSE}, every non-positive value is
-excluded, per-marker counts are recorded, and negative inputs trigger a
-warning.}
-
-\item{only.clustering.markers}{If \code{TRUE}, evaluate only clustering markers.}
-
-\item{acquired_markers}{Marker names to evaluate when
-\code{only.clustering.markers = FALSE}.}
+\item{markers}{Marker names to score. \code{NULL} uses the SOM clustering markers.}
 
 \item{uniform.test}{Aggregate criterion: \code{"both"} selects the combined dip
 and IQR pass, \code{"spread"} selects IQR only, and \code{"unimodality"} selects the
@@ -59,8 +43,6 @@ dip test only. Both component tests are always retained in \code{qc.details}.}
 
 \item{th.IQR}{IQR-spread pass threshold. A cell passes when \code{IQR < th.IQR}.}
 
-\item{verbose}{Logical.}
-
 \item{max.n.diptest}{Optional positive dip-test sample cap of at least four.
 Sampling is deterministic per subtree and marker.}
 
@@ -70,7 +52,8 @@ and both tests.}
 
 \item{seed}{Non-negative base seed.}
 
-\item{...}{Additional arguments passed to \code{\link[diptest]{dip.test}}.}
+\item{progress}{Show stage messages and a serial progress bar. Defaults to
+\code{interactive()}.}
 }
 \value{
 A list containing canonical \code{scores}, separate named lists of
@@ -84,6 +67,8 @@ IQR-spread criteria. Each distinct SOM-node subtree is evaluated once and the
 per-k matrices are assembled from that cache. The aggregate
 \code{qc_pass_rate} is explicitly tied to the criterion selected by
 \code{uniform.test}; it is not evidence that a distribution is truly unimodal.
+All selected marker values must be finite; negative and zero values are
+retained unchanged.
 }
 \seealso{
 \code{\link{INFLECT}}, \code{\link{iteration.metacluster}},

@@ -7,22 +7,16 @@
 INFLECT(
   FlowSOM.results,
   set.i,
-  multicore = FALSE,
-  cores = NULL,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
-  basedata = "Curve",
-  ggtitle = NULL,
+  workers = 1L,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
-  verbose = FALSE,
   max.n.diptest = NULL,
   max.events.per.node = NULL,
   seed = 1L,
   target = 0.95,
-  ...
+  progress = interactive()
 )
 }
 \arguments{
@@ -33,26 +27,10 @@ integer cluster counts within the SOM-node range. Values are used literally.
 See \code{\link{inflect_adaptive_set_i}} to construct an explicitly bounded
 adaptive schedule.}
 
-\item{multicore}{Use parallel QC scoring on platforms with fork support.
-Default \code{FALSE}.}
+\item{workers}{Number of QC workers. \code{1L} is serial; values above one use
+fork-based parallelism where supported.}
 
-\item{cores}{Worker count when \code{multicore = TRUE}. Must be at least two. A
-\code{NULL} value uses the detected core count minus one.}
-
-\item{zeroes.in}{If \code{TRUE} (default), retain negative, zero, and positive
-finite transformed values. If \code{FALSE}, exclude all non-positive values,
-record per-marker counts, and warn when negatives are present.}
-
-\item{only.clustering.markers}{Evaluate only clustering markers. For a
-kohonen object, these are the markers in the first data layer.}
-
-\item{acquired_markers}{Marker names to evaluate when
-\code{only.clustering.markers = FALSE}.}
-
-\item{basedata}{Use the fitted \code{"Curve"} or observed \code{"Points"} to estimate
-the inflection.}
-
-\item{ggtitle}{Optional title for the diagnostic plot.}
+\item{markers}{Marker names to score. \code{NULL} uses the SOM clustering markers.}
 
 \item{uniform.test}{Criterion used for the aggregate pass-rate curve:
 \code{"both"} requires dip and IQR to pass, \code{"unimodality"} uses dip, and
@@ -62,8 +40,6 @@ the inflection.}
 when its p-value is at least this value. Default is \code{0.05}.}
 
 \item{th.IQR}{Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of \code{2}.}
-
-\item{verbose}{Print progress messages. Default \code{FALSE}.}
 
 \item{max.n.diptest}{Optional integer cap on the number of events used per
 cluster-marker dip test. The dip test's power depends on sample size, so a
@@ -82,7 +58,8 @@ Default \code{1L}.}
 \code{(1,100]}) used to report the smallest tested k reaching the threshold.
 Default \code{0.95}. See \code{\link{inflect_threshold_k}}.}
 
-\item{...}{Arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.}
+\item{progress}{Show stage messages and a serial progress bar. Defaults to
+\code{interactive()}.}
 }
 \value{
 An S3 \code{inflect.results} object. Use \code{print()} for candidate values,

@@ -50,7 +50,7 @@ rows <- lapply(criteria, function(criterion) {
   warning_messages <- character()
   warning_calls <- character()
   fit <- withCallingHandlers(
-    fastINFLECT::QC.to.curve(data, basedata = "Curve"),
+    fastINFLECT::QC.to.curve(data),
     warning = function(w) {
       warning_messages <<- c(warning_messages, conditionMessage(w))
       warning_calls <<- c(

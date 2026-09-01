@@ -103,10 +103,10 @@ test_that("inflect_adaptive_set_i is explicit and bounded", {
   expect_identical(overflow_safe, 5:100)
 })
 
-test_that("resolve_inflect_markers returns evaluated markers using FlowSOMQC rules", {
+test_that("marker selection defaults to clustering markers or accepts explicit names", {
   env <- new.env(parent = globalenv())
   source_pkg_file("som-adapter.R", envir = env)
-  source_pkg_file("inflect-provenance.R", envir = env)
+  source_pkg_file("inflect-qc-core.R", envir = env)
 
   fake <- make_fake_flowsom(
     matrix(
@@ -117,13 +117,11 @@ test_that("resolve_inflect_markers returns evaluated markers using FlowSOMQC rul
     cols_used = c(2, 4)
   )
 
-  expect_equal(env$resolve_inflect_markers(fake), c("CD2", "CD3"))
+  view <- env$as_inflect_som(fake)
+  expect_equal(env$.inflect_select_markers(view), c("CD2", "CD3"))
   expect_equal(
-    env$resolve_inflect_markers(
-      fake,
-      only.clustering.markers = FALSE,
-      acquired_markers = c("CD10", "CD1", "CD3")
-    ),
+    env$.inflect_select_markers(view, c("CD10", "CD1", "CD3")),
     c("CD3", "CD1", "CD10")
   )
+  expect_error(env$.inflect_select_markers(view, c("CD3", "missing")), "`markers`")
 })

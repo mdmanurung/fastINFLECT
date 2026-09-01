@@ -8,21 +8,13 @@
 #'
 #' @param collection.U Result from \code{\link{iteration.QC}}, a canonical score
 #'   data frame with `k` and `qc_pass_rate`, or the deprecated score aliases.
-#' @param basedata `"Curve"` or `"Points"`.
-#' @param ggtitle Optional plot title.
-#'
 #' @return A list containing canonical `scores`, `fittedcurve`, `lfunction`,
 #'   and `ggplot`. Deprecated `collection.U` is retained as a compatibility
 #'   alias.
 #' @seealso \code{\link{INFLECT}}, \code{\link{iteration.QC}},
 #'   \code{\link{Lfunction}}
 #' @export
-QC.to.curve <- function(collection.U,
-                        basedata,
-                        ggtitle = NULL) {
-  if (!basedata %in% c("Curve", "Points")) {
-    stop('basedata should match either "Curve" or "Points"', call. = FALSE)
-  }
+QC.to.curve <- function(collection.U) {
   scores <- .inflect_score_frame(collection.U)
   if (nrow(scores) < 5L) {
     stop("QC scores must contain at least five rows.", call. = FALSE)
@@ -53,35 +45,22 @@ QC.to.curve <- function(collection.U,
     )
   )
 
-  if (basedata == "Curve") {
-    lfunction.data <- fittedcurve[-seq_len(4), , drop = FALSE]
-    result.full <- Lfunction(lfunction.data, cutoff = 1000)
-  } else {
-    result.full <- Lfunction(scores[, c("k", "qc_pass_rate")], cutoff = 1000)
-  }
+  lfunction.data <- fittedcurve[-seq_len(4), , drop = FALSE]
+  result.full <- Lfunction(lfunction.data, cutoff = 1000)
 
   setcolors <- RColorBrewer::brewer.pal(name = "Set1", n = 9)
-  if (basedata == "Curve") {
-    part1 <- fittedcurve[
-      fittedcurve$k >= min(lfunction.data$k) &
-        fittedcurve$k <= result.full$knee,
-      ,
-      drop = FALSE
-    ]
-    part2 <- fittedcurve[
-      fittedcurve$k >= result.full$knee &
-        fittedcurve$k <= result.full$range,
-      ,
-      drop = FALSE
-    ]
-  } else {
-    part1 <- scores[scores$k <= result.full$knee, , drop = FALSE]
-    part2 <- scores[
-      scores$k >= result.full$knee & scores$k <= result.full$range,
-      ,
-      drop = FALSE
-    ]
-  }
+  part1 <- fittedcurve[
+    fittedcurve$k >= min(lfunction.data$k) &
+      fittedcurve$k <= result.full$knee,
+    ,
+    drop = FALSE
+  ]
+  part2 <- fittedcurve[
+    fittedcurve$k >= result.full$knee &
+      fittedcurve$k <= result.full$range,
+    ,
+    drop = FALSE
+  ]
   touchline1 <- stats::lm(qc_pass_rate ~ k, part1)
   touchline2 <- stats::lm(qc_pass_rate ~ k, part2)
   label <- data.frame(
@@ -96,7 +75,6 @@ QC.to.curve <- function(collection.U,
       ggplot2::aes(x = k, y = qc_pass_rate),
       color = setcolors[[1]]
     ) +
-    ggplot2::ggtitle(ggtitle) +
     ggplot2::geom_line(
       data = data.frame(k = part1$k, qc_pass_rate = stats::fitted(touchline1)),
       ggplot2::aes(x = k, y = qc_pass_rate),

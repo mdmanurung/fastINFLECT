@@ -42,8 +42,7 @@ result <- INFLECT(
   FlowSOM.results = dataset,
   set.i = schedule,
   uniform.test = "both",
-  zeroes.in = TRUE,
-  multicore = FALSE
+  progress = FALSE
 )
 ```
 
@@ -58,14 +57,20 @@ upper bound.
 | `uniform.test = "both"` | Build the aggregate from pairs that pass both dip and IQR criteria |
 | `uniform.test = "unimodality"` | Build the aggregate from the dip criterion |
 | `uniform.test = "spread"` | Build the aggregate from the IQR criterion |
-| `zeroes.in = TRUE` | Retain all finite transformed values |
-| `only.clustering.markers = FALSE` | Evaluate the names supplied in `acquired_markers` |
-| `multicore = TRUE, cores = 2L` | Use two workers on platforms with fork support |
+| `markers = c("CD3", "CD4")` | Override the default SOM clustering markers |
+| `workers = 2L` | Use two QC workers where fork-based parallelism is supported |
+| `progress = TRUE` | Show stage messages and a serial progress bar |
+
+All selected marker values must be finite. Negative and zero values are kept
+unchanged. `NA`, `NaN`, `Inf`, or `-Inf` produces an early error that reports
+the affected markers before metaclustering or QC scoring starts.
 
 For event sampling, the default analysis uses all events. Treat
 `max.events.per.node` and
 `max.n.diptest` as sensitivity-analysis controls. Compare several caps and
-seeds before using a sampled result.
+seeds before using a sampled result. fastINFLECT warns whenever either cap is
+active. A request for multiple workers on an unsupported platform also warns
+and falls back to one worker.
 
 ## Read candidate values
 
@@ -219,10 +224,13 @@ backend.
 result$provenance[c(
   "set.i",
   "markers",
+  "marker_selection",
   "uniform.test",
   "th.pvalue",
   "th.IQR",
-  "zeroes.in",
+  "value_handling",
+  "parallel",
+  "max.n.diptest",
   "max.events.per.node",
   "seed"
 )]

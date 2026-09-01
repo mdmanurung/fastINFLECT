@@ -89,8 +89,6 @@ print.inflect.results <- function(x, ...) {
     cat(
       "  provenance: uniform.test=",
       .inflect_provenance_scalar(x$provenance, "uniform.test"),
-      ", zeroes.in=",
-      .inflect_provenance_scalar(x$provenance, "zeroes.in"),
       "\n",
       sep = ""
     )
@@ -159,8 +157,6 @@ summary.inflect.results <- function(object, ...) {
     result_summary$uniform.test <- .inflect_provenance_scalar(provenance, "uniform.test")
     result_summary$th.pvalue <- .inflect_provenance_scalar(provenance, "th.pvalue")
     result_summary$th.IQR <- .inflect_provenance_scalar(provenance, "th.IQR")
-    result_summary$zeroes.in <- .inflect_provenance_scalar(provenance, "zeroes.in")
-    result_summary$basedata <- .inflect_provenance_scalar(provenance, "basedata")
     result_summary$package_version <- .inflect_provenance_scalar(provenance, "package_version")
     result_summary$criterion <- .inflect_provenance_scalar(provenance, "criterion")
   }

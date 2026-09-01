@@ -7,16 +7,13 @@
 FlowSOMQC(
   FlowSOM.results,
   metaclustering,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
   max.n.diptest = NULL,
   seed = 1L,
-  verbose = TRUE,
-  ...
+  progress = interactive()
 )
 }
 \arguments{
@@ -24,14 +21,7 @@ FlowSOMQC(
 
 \item{metaclustering}{Integer vector with one metacluster label per SOM node.}
 
-\item{zeroes.in}{If \code{TRUE} (default), retain all finite transformed values.
-If \code{FALSE}, exclude every non-positive value and warn when negative values
-are present.}
-
-\item{only.clustering.markers}{Evaluate only clustering markers.}
-
-\item{acquired_markers}{Marker names used when
-\code{only.clustering.markers = FALSE}.}
+\item{markers}{Marker names to score. \code{NULL} uses the SOM clustering markers.}
 
 \item{uniform.test}{Aggregate criterion: \code{"both"} (dip and IQR), \code{"spread"}
 (IQR), or \code{"unimodality"} (dip).}
@@ -46,9 +36,7 @@ are present.}
 subsampling use deterministic subtree-marker streams and preserve the
 caller's RNG state.}
 
-\item{verbose}{Logical.}
-
-\item{...}{Additional arguments passed to \code{\link[diptest]{dip.test}}.}
+\item{progress}{Show scoring progress. Defaults to \code{interactive()}.}
 }
 \value{
 Invisibly, the selected-criterion logical matrix. Attributes
@@ -58,8 +46,10 @@ Invisibly, the selected-criterion logical matrix. Attributes
 Computes separate Hartigan dip-test and IQR-spread evidence for every
 cluster-marker pair. The returned matrix contains the pass decision selected
 by \code{uniform.test}; its \code{qc.details} attribute contains \code{dip_pass},
-\code{iqr_pass}, \code{combined_pass}, p-values, IQRs, counts, exclusions, and failure
-reasons. A pass is criterion-specific and does not prove true unimodality.
+\code{iqr_pass}, \code{combined_pass}, p-values, IQRs, counts, and failure
+reasons. All selected marker values must be finite; negative and zero values
+are retained unchanged. A pass is criterion-specific and does not prove true
+unimodality.
 }
 \seealso{
 \code{\link{INFLECT}}, \code{\link{iteration.QC}}

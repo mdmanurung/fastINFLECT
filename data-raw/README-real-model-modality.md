@@ -55,9 +55,10 @@ samples, tests, seeds, or output paths.
 ## Cluster-number comparison
 
 `evaluate-real-model-selection.R` complements the modality audit with the
-criteria needed to compare candidate values of k. It runs the literal
-full-event `25:100` schedule with `zeroes.in = TRUE` and retains separate dip,
-IQR-spread, and combined pass rates. It also compares:
+criteria needed to compare candidate values of k. It requires finite marker
+values, retains the complete full-event distributions, runs the literal
+`25:100` schedule, and keeps separate dip, IQR-spread, and combined pass rates.
+It also compares:
 
 - silhouette, Calinski-Harabasz, Davies-Bouldin, and explained-dispersion
   knees on both the fitted model code space and the historical intended 80/20

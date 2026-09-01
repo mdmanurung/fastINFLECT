@@ -129,9 +129,8 @@ test_that("FlowSOMQC accepts kohonen SOM objects", {
   result <- FlowSOMQC(
     FlowSOM.results = object,
     metaclustering = as.integer(c(1, 2)),
-    zeroes.in = TRUE,
     uniform.test = "spread",
-    verbose = FALSE
+    progress = FALSE
   )
 
   expect_true(all(result, na.rm = TRUE))
@@ -165,10 +164,9 @@ test_that("iteration.QC accepts kohonen SOM objects", {
     FlowSOM.results = object,
     metaclustering.list = metaclustering.list,
     set.i = 2,
-    multicore = FALSE,
-    zeroes.in = TRUE,
+    workers = 1L,
     uniform.test = "spread",
-    verbose = FALSE
+    progress = FALSE
   )
 
   expect_equal(result$U.set$i, 2)
@@ -199,7 +197,7 @@ test_that("iteration.metacluster accepts kohonen XYF objects", {
     unit.classif = c(1L, 2L, 3L, 4L)
   )
 
-  result <- iteration.metacluster(object, set.i = c(2, 3), multicore = FALSE)
+  result <- iteration.metacluster(object, set.i = c(2, 3))
 
   expect_equal(names(result), c("2", "3"))
   expect_true(all(vapply(result, is.integer, logical(1))))
@@ -282,18 +280,16 @@ test_that("INFLECT accepts real kohonen SOM and XYF objects with literal set.i",
   som.result <- INFLECT(
     som,
     set.i = 5:9,
-    multicore = FALSE,
-    zeroes.in = TRUE,
+    workers = 1L,
     uniform.test = "spread",
-    verbose = FALSE
+    progress = FALSE
   )
   xyf.result <- INFLECT(
     xyf,
     set.i = 5:9,
-    multicore = FALSE,
-    zeroes.in = TRUE,
+    workers = 1L,
     uniform.test = "spread",
-    verbose = FALSE
+    progress = FALSE
   )
 
   expect_s3_class(som.result, "inflect.results")

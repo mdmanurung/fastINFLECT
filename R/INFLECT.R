@@ -11,20 +11,9 @@
 #' integer cluster counts within the SOM-node range. Values are used literally.
 #' See \code{\link{inflect_adaptive_set_i}} to construct an explicitly bounded
 #' adaptive schedule.
-#' @param multicore Use parallel QC scoring on platforms with fork support.
-#'   Default `FALSE`.
-#' @param cores Worker count when `multicore = TRUE`. Must be at least two. A
-#'   `NULL` value uses the detected core count minus one.
-#' @param zeroes.in If `TRUE` (default), retain negative, zero, and positive
-#' finite transformed values. If `FALSE`, exclude all non-positive values,
-#' record per-marker counts, and warn when negatives are present.
-#' @param only.clustering.markers Evaluate only clustering markers. For a
-#'   kohonen object, these are the markers in the first data layer.
-#' @param acquired_markers Marker names to evaluate when
-#'   `only.clustering.markers = FALSE`.
-#' @param basedata Use the fitted `"Curve"` or observed `"Points"` to estimate
-#'   the inflection.
-#' @param ggtitle Optional title for the diagnostic plot.
+#' @param workers Number of QC workers. `1L` is serial; values above one use
+#'   fork-based parallelism where supported.
+#' @param markers Marker names to score. `NULL` uses the SOM clustering markers.
 #' @param uniform.test Criterion used for the aggregate pass-rate curve:
 #'   `"both"` requires dip and IQR to pass, `"unimodality"` uses dip, and
 #'   `"spread"` uses IQR. Component evidence is retained in every run.
@@ -44,8 +33,8 @@
 #' @param target Target QC pass rate (fraction in \code{(0,1]} or percentage in
 #' \code{(1,100]}) used to report the smallest tested k reaching the threshold.
 #' Default \code{0.95}. See \code{\link{inflect_threshold_k}}.
-#' @param verbose Print progress messages. Default `FALSE`.
-#' @param ... Arguments to pass to \code{\link[diptest]{dip.test}} through \code{\link{FlowSOMQC}}.
+#' @param progress Show stage messages and a serial progress bar. Defaults to
+#'   `interactive()`.
 #'
 #' @return An S3 `inflect.results` object. Use `print()` for candidate values,
 #'   `plot()` for the pass-rate curve, `as.data.frame()` for tested scores,
@@ -79,22 +68,16 @@
 INFLECT <-
   function(FlowSOM.results,
            set.i,
-           multicore = FALSE,
-           cores = NULL,
-           zeroes.in = TRUE,
-           only.clustering.markers = TRUE,
-           acquired_markers = NULL,
-           basedata = "Curve",
-           ggtitle = NULL,
+           workers = 1L,
+           markers = NULL,
            uniform.test = c("both", "spread", "unimodality"),
            th.pvalue = 0.05,
            th.IQR = 2,
-           verbose = FALSE,
            max.n.diptest = NULL,
            max.events.per.node = NULL,
            seed = 1L,
            target = 0.95,
-           ...) {
+           progress = interactive()) {
     if (missing(set.i)) {
       stop(
         "`set.i` is required; supply at least five literal cluster counts.",
@@ -102,52 +85,54 @@ INFLECT <-
       )
     }
     start_time <- proc.time()[["elapsed"]]
-    diptest_args <- list(...)
+    progress <- .inflect_validate_progress(progress)
+    workers <- .inflect_validate_workers(workers)
+    .inflect_progress_message(progress, "[fastINFLECT 1/4] Validating input")
     uniform.test <- match.arg(uniform.test)
     invisible(.inflect_target_percent(target))
-    cores <- .inflect_resolve_cores(multicore, cores)
     FlowSOM.results <- as_inflect_som(FlowSOM.results)
 
     set.i <- normalize_set_i(set.i, FlowSOM.results)
-    markers <- resolve_inflect_markers(
-      FlowSOM.results = FlowSOM.results,
-      only.clustering.markers = only.clustering.markers,
-      acquired_markers = acquired_markers
+    requested_markers <- markers
+    prep <- .inflect_prepare_qc(
+      view = FlowSOM.results,
+      markers = markers
     )
+    selected_markers <- prep$ordered.markers
+    rm(prep)
 
+    .inflect_progress_message(
+      progress,
+      "[fastINFLECT 2/4] Building ",
+      length(set.i),
+      " metaclusterings"
+    )
     metaclustering.list <-
       iteration.metacluster(
         FlowSOM.results = FlowSOM.results,
-        set.i = set.i,
-        multicore = multicore,
-        cores = cores
+        set.i = set.i
       )
 
+    .inflect_progress_message(progress, "[fastINFLECT 3/4] Scoring marker QC")
     qc <-
       iteration.QC(
         FlowSOM.results = FlowSOM.results,
         metaclustering.list = metaclustering.list,
         set.i = set.i,
-        multicore = multicore,
-        cores = cores,
-        zeroes.in = zeroes.in,
-        only.clustering.markers = only.clustering.markers,
-        acquired_markers = acquired_markers,
+        workers = workers,
+        markers = markers,
         uniform.test = uniform.test,
         th.pvalue = th.pvalue,
         th.IQR = th.IQR,
         max.n.diptest = max.n.diptest,
         max.events.per.node = max.events.per.node,
         seed = seed,
-        verbose = verbose,
-        ...
+        progress = progress
       )
 
-
+    .inflect_progress_message(progress, "[fastINFLECT 4/4] Fitting diagnostic curve")
     diagnostic.graph <-
-      QC.to.curve(collection.U = qc,
-                  basedata = basedata,
-                  ggtitle = ggtitle)
+      QC.to.curve(collection.U = qc)
     diagnostic_scores <- diagnostic.graph$scores
     if (is.null(diagnostic_scores)) {
       diagnostic_scores <- .inflect_score_frame(diagnostic.graph$collection.U)
@@ -166,13 +151,14 @@ INFLECT <-
       uniform.test = uniform.test,
       th.pvalue = th.pvalue,
       th.IQR = th.IQR,
-      zeroes.in = zeroes.in,
-      basedata = basedata,
-      only.clustering.markers = only.clustering.markers,
-      acquired_markers = acquired_markers,
-      markers = markers,
+      marker_selection = if (is.null(requested_markers)) {
+        "clustering_markers"
+      } else {
+        "explicit"
+      },
+      requested_markers = requested_markers,
+      markers = selected_markers,
       elapsed_seconds = proc.time()[["elapsed"]] - start_time,
-      diptest_args = diptest_args,
       max.n.diptest = max.n.diptest,
       max.events.per.node = max.events.per.node,
       seed = seed,
@@ -180,7 +166,7 @@ INFLECT <-
       qc_provenance = qc$provenance
     )
 
-    return(new_inflect_results(
+    result <- new_inflect_results(
       scores = diagnostic_scores,
       collection.U = diagnostic.graph$collection.U,
       fittedcurve = diagnostic.graph$fittedcurve,
@@ -203,5 +189,7 @@ INFLECT <-
       },
       selection = selection,
       provenance = provenance
-    ))
+    )
+    .inflect_progress_message(progress, "[fastINFLECT] Done")
+    result
   }

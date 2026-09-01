@@ -26,7 +26,7 @@ test_that("iteration.metacluster matches repeated hclust metaclustering calls", 
     lapply(set.i, function(k) metaClusteringhclust(codes, nClus = k)),
     as.character(set.i)
   )
-  observed <- iteration.metacluster(flowsom, set.i = set.i, multicore = FALSE)
+  observed <- iteration.metacluster(flowsom, set.i = set.i)
 
   expect_named(observed, as.character(set.i))
   expect_equal(observed, expected)

@@ -3,9 +3,10 @@
 Computes separate Hartigan dip-test and IQR-spread evidence for every
 cluster-marker pair. The returned matrix contains the pass decision
 selected by `uniform.test`; its `qc.details` attribute contains
-`dip_pass`, `iqr_pass`, `combined_pass`, p-values, IQRs, counts,
-exclusions, and failure reasons. A pass is criterion-specific and does
-not prove true unimodality.
+`dip_pass`, `iqr_pass`, `combined_pass`, p-values, IQRs, counts, and
+failure reasons. All selected marker values must be finite; negative and
+zero values are retained unchanged. A pass is criterion-specific and
+does not prove true unimodality.
 
 ## Usage
 
@@ -13,16 +14,13 @@ not prove true unimodality.
 FlowSOMQC(
   FlowSOM.results,
   metaclustering,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
   max.n.diptest = NULL,
   seed = 1L,
-  verbose = TRUE,
-  ...
+  progress = interactive()
 )
 ```
 
@@ -36,19 +34,9 @@ FlowSOMQC(
 
   Integer vector with one metacluster label per SOM node.
 
-- zeroes.in:
+- markers:
 
-  If `TRUE` (default), retain all finite transformed values. If `FALSE`,
-  exclude every non-positive value and warn when negative values are
-  present.
-
-- only.clustering.markers:
-
-  Evaluate only clustering markers.
-
-- acquired_markers:
-
-  Marker names used when `only.clustering.markers = FALSE`.
+  Marker names to score. `NULL` uses the SOM clustering markers.
 
 - uniform.test:
 
@@ -73,14 +61,10 @@ FlowSOMQC(
   deterministic subtree-marker streams and preserve the caller's RNG
   state.
 
-- verbose:
+- progress:
 
-  Logical.
-
-- ...:
-
-  Additional arguments passed to
-  [`dip.test`](https://rdrr.io/pkg/diptest/man/dip.test.html).
+  Show scoring progress. Defaults to
+  [`interactive()`](https://rdrr.io/r/base/interactive.html).
 
 ## Value
 

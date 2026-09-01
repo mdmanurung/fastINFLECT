@@ -80,7 +80,8 @@
 <span>  set.i <span class="op">=</span> <span class="fl">5</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>  uniform.test <span class="op">=</span> <span class="st">"both"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>set.i</code> is the exact schedule to evaluate. Supply at least five unique, increasing integers within the number of SOM nodes. The default <code>zeroes.in = TRUE</code> retains every finite transformed value, including zero and negative values.</p>
+<p><code>set.i</code> is the exact schedule to evaluate. Supply at least five unique, increasing integers within the number of SOM nodes. All selected marker values must be finite. Negative and zero values are retained unchanged; <code>NA</code>, <code>NaN</code>, <code>Inf</code>, and <code>-Inf</code> stop the analysis before metaclustering begins.</p>
+<p>Use <code>markers</code> only to override the SOM clustering markers, <code>workers</code> only when parallel QC is useful, and <code>progress = TRUE</code> for stage messages and a serial progress bar. Event caps are sensitivity-analysis controls and emit a warning when active.</p>
 </div>
 <div class="section level2">
 <h2 id="read-the-result">Read the result<a class="anchor" aria-label="anchor" href="#read-the-result"></a>
@@ -127,7 +128,7 @@
 </tr>
 <tr>
 <td><code>qc.details</code></td>
-<td>P-values, IQRs, event counts, exclusions, and failure reasons</td>
+<td>P-values, IQRs, event counts, and failure reasons</td>
 </tr>
 <tr>
 <td><code>provenance</code></td>

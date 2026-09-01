@@ -5,7 +5,8 @@ and IQR-spread criteria. Each distinct SOM-node subtree is evaluated
 once and the per-k matrices are assembled from that cache. The aggregate
 `qc_pass_rate` is explicitly tied to the criterion selected by
 `uniform.test`; it is not evidence that a distribution is truly
-unimodal.
+unimodal. All selected marker values must be finite; negative and zero
+values are retained unchanged.
 
 ## Usage
 
@@ -14,19 +15,15 @@ iteration.QC(
   FlowSOM.results,
   metaclustering.list,
   set.i,
-  multicore = FALSE,
-  cores = NULL,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
+  workers = 1L,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
-  verbose = FALSE,
   max.n.diptest = NULL,
   max.events.per.node = NULL,
   seed = 1L,
-  ...
+  progress = interactive()
 )
 ```
 
@@ -48,31 +45,15 @@ iteration.QC(
 
   Literal, unique, strictly increasing integer cluster counts.
 
-- multicore:
+- workers:
 
-  Logical. On Unix, use fork-based
-  [`mclapply`](https://rdrr.io/r/parallel/mclapply.html) over distinct
-  SOM-node subtrees. Other platforms validate the same arguments and use
-  a recorded serial fallback. Default `FALSE`.
+  Number of QC workers. `1L` is serial; values above one use fork-based
+  [`mclapply`](https://rdrr.io/r/parallel/mclapply.html) where
+  supported.
 
-- cores:
+- markers:
 
-  Worker count when `multicore = TRUE`; must be at least two.
-
-- zeroes.in:
-
-  Logical. If `TRUE` (the default), retain negative, zero, and positive
-  finite transformed values. If `FALSE`, every non-positive value is
-  excluded, per-marker counts are recorded, and negative inputs trigger
-  a warning.
-
-- only.clustering.markers:
-
-  If `TRUE`, evaluate only clustering markers.
-
-- acquired_markers:
-
-  Marker names to evaluate when `only.clustering.markers = FALSE`.
+  Marker names to score. `NULL` uses the SOM clustering markers.
 
 - uniform.test:
 
@@ -88,10 +69,6 @@ iteration.QC(
 
   IQR-spread pass threshold. A cell passes when `IQR < th.IQR`.
 
-- verbose:
-
-  Logical.
-
 - max.n.diptest:
 
   Optional positive dip-test sample cap of at least four. Sampling is
@@ -106,10 +83,10 @@ iteration.QC(
 
   Non-negative base seed.
 
-- ...:
+- progress:
 
-  Additional arguments passed to
-  [`dip.test`](https://rdrr.io/pkg/diptest/man/dip.test.html).
+  Show stage messages and a serial progress bar. Defaults to
+  [`interactive()`](https://rdrr.io/r/base/interactive.html).
 
 ## Value
 

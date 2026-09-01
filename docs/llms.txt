@@ -9,7 +9,6 @@ before choosing a partition.
 ## Install fastINFLECT
 
 ``` r
-
 # install.packages("pak")
 pak::pak("mdmanurung/fastINFLECT")
 ```
@@ -17,7 +16,6 @@ pak::pak("mdmanurung/fastINFLECT")
 Install `kohonen` only when the input is a kohonen SOM:
 
 ``` r
-
 install.packages("kohonen")
 ```
 
@@ -26,7 +24,6 @@ install.packages("kohonen")
 The package includes a downsampled Levine32 FlowSOM object.
 
 ``` r
-
 library(fastINFLECT)
 
 load(system.file(
@@ -43,14 +40,19 @@ result <- INFLECT(
 ```
 
 `set.i` is the exact schedule to evaluate. Supply at least five unique,
-increasing integers within the number of SOM nodes. The default
-`zeroes.in = TRUE` retains every finite transformed value, including
-zero and negative values.
+increasing integers within the number of SOM nodes. All selected marker
+values must be finite. Negative and zero values are retained unchanged;
+`NA`, `NaN`, `Inf`, and `-Inf` stop the analysis before metaclustering
+begins.
+
+Use `markers` only to override the SOM clustering markers, `workers`
+only when parallel QC is useful, and `progress = TRUE` for stage
+messages and a serial progress bar. Event caps are sensitivity-analysis
+controls and emit a warning when active.
 
 ## Read the result
 
 ``` r
-
 result
 plot(result)
 as.data.frame(result)
@@ -66,7 +68,7 @@ The main fields answer different questions:
 | `metaclustering.list` | Node labels for every tested partition |
 | `criterion_pass` | Decision matrix selected by `uniform.test` and used for `qc_pass_rate` |
 | `dip_pass`, `iqr_pass`, `combined_pass` | Separate cluster-by-marker decisions |
-| `qc.details` | P-values, IQRs, event counts, exclusions, and failure reasons |
+| `qc.details` | P-values, IQRs, event counts, and failure reasons |
 | `provenance` | Schedule, markers, thresholds, sampling, and run settings |
 
 Candidate rows are diagnostic summaries, not a ranking. The example
@@ -80,7 +82,6 @@ return the same `k` are not independent confirmation.
 ## Inspect a candidate partition
 
 ``` r
-
 candidate_method <- "inflection"
 candidate <- result$selection[
   result$selection$method == candidate_method,

@@ -3,11 +3,15 @@
 IQR-spread criteria. Each distinct SOM-node subtree is evaluated once and the
 per-k matrices are assembled from that cache. The aggregate
 qc_pass_rate is explicitly tied to the criterion selected by
-uniform.test; it is not evidence that a distribution is truly unimodal."><meta property="og:description" content="Scores every requested metaclustering using separate Hartigan dip-test and
+uniform.test; it is not evidence that a distribution is truly unimodal.
+All selected marker values must be finite; negative and zero values are
+retained unchanged."><meta property="og:description" content="Scores every requested metaclustering using separate Hartigan dip-test and
 IQR-spread criteria. Each distinct SOM-node subtree is evaluated once and the
 per-k matrices are assembled from that cache. The aggregate
 qc_pass_rate is explicitly tied to the criterion selected by
-uniform.test; it is not evidence that a distribution is truly unimodal."></head><body>
+uniform.test; it is not evidence that a distribution is truly unimodal.
+All selected marker values must be finite; negative and zero values are
+retained unchanged."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -46,7 +50,9 @@ uniform.test; it is not evidence that a distribution is truly unimodal."></head>
 IQR-spread criteria. Each distinct SOM-node subtree is evaluated once and the
 per-k matrices are assembled from that cache. The aggregate
 <code>qc_pass_rate</code> is explicitly tied to the criterion selected by
-<code>uniform.test</code>; it is not evidence that a distribution is truly unimodal.</p>
+<code>uniform.test</code>; it is not evidence that a distribution is truly unimodal.
+All selected marker values must be finite; negative and zero values are
+retained unchanged.</p>
     </div>
 
     <div class="section level2">
@@ -55,19 +61,15 @@ per-k matrices are assembled from that cache. The aggregate
 <span>  <span class="va">FlowSOM.results</span>,</span>
 <span>  <span class="va">metaclustering.list</span>,</span>
 <span>  <span class="va">set.i</span>,</span>
-<span>  multicore <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  zeroes.in <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  only.clustering.markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  acquired_markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  workers <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  uniform.test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"spread"</span>, <span class="st">"unimodality"</span><span class="op">)</span>,</span>
 <span>  th.pvalue <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  th.IQR <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  max.n.diptest <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max.events.per.node <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1L</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,31 +92,13 @@ vector for every value in <code>set.i</code>.</p></dd>
 <dd><p>Literal, unique, strictly increasing integer cluster counts.</p></dd>
 
 
-<dt id="arg-multicore">multicore<a class="anchor" aria-label="anchor" href="#arg-multicore"></a></dt>
-<dd><p>Logical. On Unix, use fork-based
-<code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">mclapply</a></code> over distinct SOM-node subtrees.
-Other platforms validate the same arguments and use a recorded serial
-fallback. Default <code>FALSE</code>.</p></dd>
+<dt id="arg-workers">workers<a class="anchor" aria-label="anchor" href="#arg-workers"></a></dt>
+<dd><p>Number of QC workers. <code>1L</code> is serial; values above one use
+fork-based <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">mclapply</a></code> where supported.</p></dd>
 
 
-<dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
-<dd><p>Worker count when <code>multicore = TRUE</code>; must be at least two.</p></dd>
-
-
-<dt id="arg-zeroes-in">zeroes.in<a class="anchor" aria-label="anchor" href="#arg-zeroes-in"></a></dt>
-<dd><p>Logical. If <code>TRUE</code> (the default), retain negative, zero, and
-positive finite transformed values. If <code>FALSE</code>, every non-positive value is
-excluded, per-marker counts are recorded, and negative inputs trigger a
-warning.</p></dd>
-
-
-<dt id="arg-only-clustering-markers">only.clustering.markers<a class="anchor" aria-label="anchor" href="#arg-only-clustering-markers"></a></dt>
-<dd><p>If <code>TRUE</code>, evaluate only clustering markers.</p></dd>
-
-
-<dt id="arg-acquired-markers">acquired_markers<a class="anchor" aria-label="anchor" href="#arg-acquired-markers"></a></dt>
-<dd><p>Marker names to evaluate when
-<code>only.clustering.markers = FALSE</code>.</p></dd>
+<dt id="arg-markers">markers<a class="anchor" aria-label="anchor" href="#arg-markers"></a></dt>
+<dd><p>Marker names to score. <code>NULL</code> uses the SOM clustering markers.</p></dd>
 
 
 <dt id="arg-uniform-test">uniform.test<a class="anchor" aria-label="anchor" href="#arg-uniform-test"></a></dt>
@@ -132,10 +116,6 @@ dip test only. Both component tests are always retained in <code>qc.details</cod
 <dd><p>IQR-spread pass threshold. A cell passes when <code>IQR &lt; th.IQR</code>.</p></dd>
 
 
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Logical.</p></dd>
-
-
 <dt id="arg-max-n-diptest">max.n.diptest<a class="anchor" aria-label="anchor" href="#arg-max-n-diptest"></a></dt>
 <dd><p>Optional positive dip-test sample cap of at least four.
 Sampling is deterministic per subtree and marker.</p></dd>
@@ -151,8 +131,9 @@ and both tests.</p></dd>
 <dd><p>Non-negative base seed.</p></dd>
 
 
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to <code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">dip.test</a></code>.</p></dd>
+<dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>
+<dd><p>Show stage messages and a serial progress bar. Defaults to
+<code><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

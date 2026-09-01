@@ -12,7 +12,6 @@ completed FlowSOM or kohonen SOM. The example below uses the downsampled
 Levine32 FlowSOM object included with fastINFLECT.
 
 ``` r
-
 load(system.file(
   "extdata",
   "Levine32sample.Rdata",
@@ -25,8 +24,7 @@ result <- INFLECT(
   FlowSOM.results = dataset,
   set.i = schedule,
   uniform.test = "both",
-  zeroes.in = TRUE,
-  multicore = FALSE
+  progress = FALSE
 )
 ```
 
@@ -42,13 +40,21 @@ when you want a denser low-k schedule with a fixed upper bound.
 | `uniform.test = "both"` | Build the aggregate from pairs that pass both dip and IQR criteria |
 | `uniform.test = "unimodality"` | Build the aggregate from the dip criterion |
 | `uniform.test = "spread"` | Build the aggregate from the IQR criterion |
-| `zeroes.in = TRUE` | Retain all finite transformed values |
-| `only.clustering.markers = FALSE` | Evaluate the names supplied in `acquired_markers` |
-| `multicore = TRUE, cores = 2L` | Use two workers on platforms with fork support |
+| `markers = c("CD3", "CD4")` | Override the default SOM clustering markers |
+| `workers = 2L` | Use two QC workers where fork-based parallelism is supported |
+| `progress = TRUE` | Show stage messages and a serial progress bar |
+
+All selected marker values must be finite. Negative and zero values are
+kept unchanged. `NA`, `NaN`, `Inf`, or `-Inf` produces an early error
+that reports the affected markers before metaclustering or QC scoring
+starts.
 
 For event sampling, the default analysis uses all events. Treat
 `max.events.per.node` and `max.n.diptest` as sensitivity-analysis
 controls. Compare several caps and seeds before using a sampled result.
+fastINFLECT warns whenever either cap is active. A request for multiple
+workers on an unsupported platform also warns and falls back to one
+worker.
 
 ## Read candidate values
 
@@ -57,7 +63,6 @@ run and its candidate values. The plot shows how the selected QC pass
 rate changes across the tested schedule.
 
 ``` r
-
 result
 #> fastINFLECT result
 #>   knee: 9
@@ -66,7 +71,7 @@ result
 #>   tested k values: 8
 #>   tested k range: 5-12
 #>   markers: 32
-#>   provenance: uniform.test=both, zeroes.in=TRUE
+#>   provenance: uniform.test=both
 #>   k estimates and tested thresholds:
 #>     inflection k=9 (71.2% QC pass) [tested_partition]
 #>     kneedle    k=7 (69.2% QC pass) [tested_partition]
@@ -79,7 +84,6 @@ plot(result)
 The tested scores and candidate table are available as data frames.
 
 ``` r
-
 as.data.frame(result)
 #>    k qc_pass_rate criterion
 #> 1  5     56.25000  combined
@@ -126,7 +130,6 @@ use its character value as the list key. Each pass matrix has one row
 per metacluster and one column per marker.
 
 ``` r
-
 candidate_method <- "inflection"
 candidate <- result$selection[
   result$selection$method == candidate_method,
@@ -249,7 +252,6 @@ Interpret the screening evidence within these limits:
   biologically better.
 
 ``` r
-
 details <- result$qc.details[[key]]
 details$dip_p_value[1:5, 1:5]
 #>   CD3(Er170)Di CD4(Nd145)Di CD7(Dy162)Di CD8(Nd146)Di CD11b(Nd144)Di
@@ -275,7 +277,6 @@ Use marker summaries next to check whether a small set of markers drives
 the aggregate curve.
 
 ``` r
-
 marker_qc <- marker.performance(result)
 head(marker_qc$marker.dataframe)
 #>    k       marker qc_pass_rate  i       Marker Performance
@@ -298,14 +299,16 @@ schedule, marker panel, criterion, thresholds, value handling, sampling,
 seed, and worker backend.
 
 ``` r
-
 result$provenance[c(
   "set.i",
   "markers",
+  "marker_selection",
   "uniform.test",
   "th.pvalue",
   "th.IQR",
-  "zeroes.in",
+  "value_handling",
+  "parallel",
+  "max.n.diptest",
   "max.events.per.node",
   "seed"
 )]
@@ -322,6 +325,9 @@ result$provenance[c(
 #> [25] "CD117(Yb171)Di"   "CD123(Eu151)Di"   "CD133(Pr141)Di"   "CD235ab(Sm152)Di"
 #> [29] "CD321(Eu153)Di"   "CXCR4(Sm149)Di"   "Flt3(Nd150)Di"    "HLA-DR(Yb174)Di" 
 #> 
+#> $marker_selection
+#> [1] "clustering_markers"
+#> 
 #> $uniform.test
 #> [1] "both"
 #> 
@@ -331,8 +337,33 @@ result$provenance[c(
 #> $th.IQR
 #> [1] 2
 #> 
-#> $zeroes.in
-#> [1] TRUE
+#> $value_handling
+#> $value_handling$rule
+#> [1] "require finite QC marker data and retain all values unchanged"
+#> 
+#> $value_handling$validation
+#> [1] "passed"
+#> 
+#> 
+#> $parallel
+#> $parallel$use_parallel
+#> [1] FALSE
+#> 
+#> $parallel$requested_workers
+#> [1] 1
+#> 
+#> $parallel$effective_workers
+#> [1] 1
+#> 
+#> $parallel$backend
+#> [1] "serial"
+#> 
+#> $parallel$os_type
+#> [1] "unix"
+#> 
+#> 
+#> $max.n.diptest
+#> [1] NA
 #> 
 #> $max.events.per.node
 #> [1] NA

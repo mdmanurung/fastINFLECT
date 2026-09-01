@@ -39,9 +39,16 @@
 <h3 id="package-interface-1-0-0">Package interface<a class="anchor" aria-label="anchor" href="#package-interface-1-0-0"></a></h3>
 <ul><li>
 <code>set.i</code> is required and literal. It must contain at least five unique, strictly increasing integer cluster counts within the SOM-node range. Two-value inputs such as <code>c(25, 100)</code> fail because their spacing is ambiguous. Use <code>seq.int(25L, 100L, by = 5L)</code> for that exact scan, or <code>inflect_adaptive_set_i(n_nodes, max_k)</code> for an explicitly bounded adaptive schedule.</li>
-<li>Serial QC is the default. Parallel QC requires <code>multicore = TRUE</code> and at least two effective workers. Worker and subtree results are validated before result matrices are assembled. Platforms without fork support use a recorded serial fallback after the same validation.</li>
 <li>
-<code>zeroes.in = TRUE</code> retains negative, zero, and positive finite transformed values. Setting <code>zeroes.in = FALSE</code> excludes every non-positive value, warns when negatives are present, and records per-marker exclusion counts.</li>
+<code>workers</code> replaces the redundant <code>multicore</code> and <code>cores</code> arguments. <code>1L</code> is the serial default; larger values request fork-based QC and warn before a recorded one-worker fallback on unsupported platforms.</li>
+<li>
+<code>markers</code> replaces <code>only.clustering.markers</code> plus <code>acquired_markers</code>. <code>NULL</code> uses the SOM clustering markers; otherwise supply their names directly.</li>
+<li>
+<code>zeroes.in</code> has been removed. All finite negative, zero, and positive values are retained unchanged. Selected-marker <code>NA</code>, <code>NaN</code>, <code>Inf</code>, or <code>-Inf</code> values now stop the analysis before metaclustering or QC scoring starts.</li>
+<li>
+<code>progress</code> replaces <code>verbose</code> with stage messages and a serial progress bar. Active event caps and unsupported parallel requests produce explicit warnings.</li>
+<li>
+<code>basedata</code>, <code>ggtitle</code>, and arbitrary dip-test arguments were removed from <code><a href="../reference/INFLECT.html">INFLECT()</a></code>. The fitted diagnostic curve is now the single candidate-fitting path; plot titles can be added to the returned ggplot object.</li>
 <li>Canonical output uses <code>scores</code> and <code>qc_pass_rate</code>. Separate <code>dip_pass</code>, <code>iqr_pass</code>, <code>combined_pass</code>, and <code>criterion_pass</code> matrices retain the component evidence. The historical <code>U.set</code>, <code>collection.U</code>, <code>Unimodality</code>, <code>Accuracy.sets</code>, and <code>Accuracy.matrixes</code> names remain as deprecated compatibility aliases.</li>
 </ul></div>
 <div class="section level3">
@@ -59,14 +66,14 @@
 <div class="section level3">
 <h3 id="statistical-evidence-and-reproducibility-1-0-0">Statistical evidence and reproducibility<a class="anchor" aria-label="anchor" href="#statistical-evidence-and-reproducibility-1-0-0"></a></h3>
 <ul><li>
-<code>qc.details</code> retains dip p-values, IQR values, original and testable event counts, non-finite and non-positive exclusions, and explicit failure reasons. Both component criteria remain available regardless of <code>uniform.test</code>.</li>
-<li>Simulated dip p-values and optional event samples use overflow-safe seeds derived for each subtree and marker. The implementation preserves the caller RNG state and returns identical tested results with serial and two-worker execution.</li>
+<code>qc.details</code> retains dip p-values, IQR values, event counts, and explicit failure reasons. Both component criteria remain available regardless of <code>uniform.test</code>.</li>
+<li>Optional event samples use overflow-safe seeds derived for each subtree and marker. The implementation preserves the caller RNG state and returns identical tested results with serial and two-worker execution.</li>
 <li>Small-sample dip interpolation uses <code>ties = mean</code>, which avoids duplicate-grid interpolation warnings without changing the tested p-values.</li>
 <li>
 <code>max.n.diptest</code> provides a deterministic marker-level sample cap for sensitivity analysis of dip-test sample-size effects. The default <code>NULL</code> retains all testable events.</li>
 <li>
 <code><a href="../reference/bimodality.coefficient.html">bimodality.coefficient()</a></code> provides Sarle’s bimodality coefficient as an additional diagnostic. Its documentation notes that skewed unimodal distributions can be flagged.</li>
-<li>Provenance records the selected criterion, thresholds, marker panel, zero handling, sampling order and seeds, effective workers, model layer weights, retained events, and per-criterion summaries.</li>
+<li>Provenance records the selected criterion, thresholds, marker panel, finite value validation, sampling order and seeds, effective workers, model layer weights, retained events, and per-criterion summaries.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="selecting-k-1-0-0">Selecting k<a class="anchor" aria-label="anchor" href="#selecting-k-1-0-0"></a></h3>

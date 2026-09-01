@@ -82,8 +82,7 @@ Levine32 FlowSOM object included with fastINFLECT.</p>
 <span>  FlowSOM.results <span class="op">=</span> <span class="va">dataset</span>,</span>
 <span>  set.i <span class="op">=</span> <span class="va">schedule</span>,</span>
 <span>  uniform.test <span class="op">=</span> <span class="st">"both"</span>,</span>
-<span>  zeroes.in <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  multicore <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  progress <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code>set.i</code> is literal. The call above evaluates every integer
 from 5 through 12 and stores a partition for each one. Supply at least
@@ -114,24 +113,29 @@ criteria</td>
 <td>Build the aggregate from the IQR criterion</td>
 </tr>
 <tr class="even">
-<td><code>zeroes.in = TRUE</code></td>
-<td>Retain all finite transformed values</td>
+<td><code>markers = c("CD3", "CD4")</code></td>
+<td>Override the default SOM clustering markers</td>
 </tr>
 <tr class="odd">
-<td><code>only.clustering.markers = FALSE</code></td>
-<td>Evaluate the names supplied in <code>acquired_markers</code>
-</td>
+<td><code>workers = 2L</code></td>
+<td>Use two QC workers where fork-based parallelism is supported</td>
 </tr>
 <tr class="even">
-<td><code>multicore = TRUE, cores = 2L</code></td>
-<td>Use two workers on platforms with fork support</td>
+<td><code>progress = TRUE</code></td>
+<td>Show stage messages and a serial progress bar</td>
 </tr>
 </tbody>
 </table>
+<p>All selected marker values must be finite. Negative and zero values
+are kept unchanged. <code>NA</code>, <code>NaN</code>, <code>Inf</code>,
+or <code>-Inf</code> produces an early error that reports the affected
+markers before metaclustering or QC scoring starts.</p>
 <p>For event sampling, the default analysis uses all events. Treat
 <code>max.events.per.node</code> and <code>max.n.diptest</code> as
 sensitivity-analysis controls. Compare several caps and seeds before
-using a sampled result.</p>
+using a sampled result. fastINFLECT warns whenever either cap is active.
+A request for multiple workers on an unsupported platform also warns and
+falls back to one worker.</p>
 </div>
 <div class="section level2">
 <h2 id="read-candidate-values">Read candidate values<a class="anchor" aria-label="anchor" href="#read-candidate-values"></a>
@@ -148,7 +152,7 @@ pass rate changes across the tested schedule.</p>
 <span><span class="co">#&gt;   tested k values: 8</span></span>
 <span><span class="co">#&gt;   tested k range: 5-12</span></span>
 <span><span class="co">#&gt;   markers: 32</span></span>
-<span><span class="co">#&gt;   provenance: uniform.test=both, zeroes.in=TRUE</span></span>
+<span><span class="co">#&gt;   provenance: uniform.test=both</span></span>
 <span><span class="co">#&gt;   k estimates and tested thresholds:</span></span>
 <span><span class="co">#&gt;     inflection k=9 (71.2% QC pass) [tested_partition]</span></span>
 <span><span class="co">#&gt;     kneedle    k=7 (69.2% QC pass) [tested_partition]</span></span>
@@ -383,10 +387,13 @@ seed, and worker backend.</p>
 <code class="sourceCode R"><span><span class="va">result</span><span class="op">$</span><span class="va">provenance</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"set.i"</span>,</span>
 <span>  <span class="st">"markers"</span>,</span>
+<span>  <span class="st">"marker_selection"</span>,</span>
 <span>  <span class="st">"uniform.test"</span>,</span>
 <span>  <span class="st">"th.pvalue"</span>,</span>
 <span>  <span class="st">"th.IQR"</span>,</span>
-<span>  <span class="st">"zeroes.in"</span>,</span>
+<span>  <span class="st">"value_handling"</span>,</span>
+<span>  <span class="st">"parallel"</span>,</span>
+<span>  <span class="st">"max.n.diptest"</span>,</span>
 <span>  <span class="st">"max.events.per.node"</span>,</span>
 <span>  <span class="st">"seed"</span></span>
 <span><span class="op">)</span><span class="op">]</span></span>
@@ -403,6 +410,9 @@ seed, and worker backend.</p>
 <span><span class="co">#&gt; [25] "CD117(Yb171)Di"   "CD123(Eu151)Di"   "CD133(Pr141)Di"   "CD235ab(Sm152)Di"</span></span>
 <span><span class="co">#&gt; [29] "CD321(Eu153)Di"   "CXCR4(Sm149)Di"   "Flt3(Nd150)Di"    "HLA-DR(Yb174)Di" </span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $marker_selection</span></span>
+<span><span class="co">#&gt; [1] "clustering_markers"</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $uniform.test</span></span>
 <span><span class="co">#&gt; [1] "both"</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -412,8 +422,33 @@ seed, and worker backend.</p>
 <span><span class="co">#&gt; $th.IQR</span></span>
 <span><span class="co">#&gt; [1] 2</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $zeroes.in</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co">#&gt; $value_handling</span></span>
+<span><span class="co">#&gt; $value_handling$rule</span></span>
+<span><span class="co">#&gt; [1] "require finite QC marker data and retain all values unchanged"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $value_handling$validation</span></span>
+<span><span class="co">#&gt; [1] "passed"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $parallel</span></span>
+<span><span class="co">#&gt; $parallel$use_parallel</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $parallel$requested_workers</span></span>
+<span><span class="co">#&gt; [1] 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $parallel$effective_workers</span></span>
+<span><span class="co">#&gt; [1] 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $parallel$backend</span></span>
+<span><span class="co">#&gt; [1] "serial"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $parallel$os_type</span></span>
+<span><span class="co">#&gt; [1] "unix"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $max.n.diptest</span></span>
+<span><span class="co">#&gt; [1] NA</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $max.events.per.node</span></span>
 <span><span class="co">#&gt; [1] NA</span></span>

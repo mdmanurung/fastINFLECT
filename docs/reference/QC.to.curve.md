@@ -8,7 +8,7 @@ it does not create a corresponding metaclustering partition.
 ## Usage
 
 ``` r
-QC.to.curve(collection.U, basedata, ggtitle = NULL)
+QC.to.curve(collection.U)
 ```
 
 ## Arguments
@@ -19,14 +19,6 @@ QC.to.curve(collection.U, basedata, ggtitle = NULL)
   [`iteration.QC`](https://mdmanurung.github.io/fastINFLECT/reference/iteration.QC.md),
   a canonical score data frame with `k` and `qc_pass_rate`, or the
   deprecated score aliases.
-
-- basedata:
-
-  `"Curve"` or `"Points"`.
-
-- ggtitle:
-
-  Optional plot title.
 
 ## Value
 

@@ -45,7 +45,7 @@ each requested k, rather than recomputing a separate clustering per k.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">iteration.metacluster</span><span class="op">(</span><span class="va">FlowSOM.results</span>, <span class="va">set.i</span>, multicore <span class="op">=</span> <span class="cn">FALSE</span>, cores <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">iteration.metacluster</span><span class="op">(</span><span class="va">FlowSOM.results</span>, <span class="va">set.i</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -59,15 +59,6 @@ each requested k, rather than recomputing a separate clustering per k.</p>
 <dt id="arg-set-i">set.i<a class="anchor" aria-label="anchor" href="#arg-set-i"></a></dt>
 <dd><p>Literal, unique, strictly increasing integer cluster counts
 within the SOM-node range.</p></dd>
-
-
-<dt id="arg-multicore">multicore<a class="anchor" aria-label="anchor" href="#arg-multicore"></a></dt>
-<dd><p>Retained for backward compatibility. Hierarchical
-clustering is computed once and is not parallelized.</p></dd>
-
-
-<dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
-<dd><p>Retained for backward compatibility.</p></dd>
 
 </dl></div>
     <div class="section level2">

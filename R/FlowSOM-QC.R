@@ -4,17 +4,14 @@
 #' Computes separate Hartigan dip-test and IQR-spread evidence for every
 #' cluster-marker pair. The returned matrix contains the pass decision selected
 #' by `uniform.test`; its `qc.details` attribute contains `dip_pass`,
-#' `iqr_pass`, `combined_pass`, p-values, IQRs, counts, exclusions, and failure
-#' reasons. A pass is criterion-specific and does not prove true unimodality.
+#' `iqr_pass`, `combined_pass`, p-values, IQRs, counts, and failure
+#' reasons. All selected marker values must be finite; negative and zero values
+#' are retained unchanged. A pass is criterion-specific and does not prove true
+#' unimodality.
 #'
 #' @param FlowSOM.results A supported \pkg{FlowSOM} or \pkg{kohonen} SOM object.
 #' @param metaclustering Integer vector with one metacluster label per SOM node.
-#' @param zeroes.in If `TRUE` (default), retain all finite transformed values.
-#'   If `FALSE`, exclude every non-positive value and warn when negative values
-#'   are present.
-#' @param only.clustering.markers Evaluate only clustering markers.
-#' @param acquired_markers Marker names used when
-#'   `only.clustering.markers = FALSE`.
+#' @param markers Marker names to score. `NULL` uses the SOM clustering markers.
 #' @param uniform.test Aggregate criterion: `"both"` (dip and IQR), `"spread"`
 #'   (IQR), or `"unimodality"` (dip).
 #' @param th.pvalue Dip-test pass threshold.
@@ -23,8 +20,7 @@
 #' @param seed Non-negative seed. Simulated dip p-values and optional
 #'   subsampling use deterministic subtree-marker streams and preserve the
 #'   caller's RNG state.
-#' @param verbose Logical.
-#' @param ... Additional arguments passed to \code{\link[diptest]{dip.test}}.
+#' @param progress Show scoring progress. Defaults to `interactive()`.
 #'
 #' @return Invisibly, the selected-criterion logical matrix. Attributes
 #'   `qc.details` and `provenance` retain the separated evidence.
@@ -32,20 +28,19 @@
 #' @export
 FlowSOMQC <- function(FlowSOM.results,
                       metaclustering,
-                      zeroes.in = TRUE,
-                      only.clustering.markers = TRUE,
-                      acquired_markers = NULL,
+                      markers = NULL,
                       uniform.test = c("both", "spread", "unimodality"),
                       th.pvalue = 0.05,
                       th.IQR = 2,
                       max.n.diptest = NULL,
                       seed = 1L,
-                      verbose = TRUE,
-                      ...) {
+                      progress = interactive()) {
   uniform.test <- match.arg(uniform.test)
-  .inflect_validate_qc_arguments(zeroes.in, th.pvalue, th.IQR)
+  progress <- .inflect_validate_progress(progress)
+  .inflect_validate_qc_arguments(th.pvalue, th.IQR)
   max.n.diptest <- .inflect_validate_max_n_diptest(max.n.diptest)
   seed <- .inflect_validate_seed(seed)
+  .inflect_warn_sampling(max.n.diptest = max.n.diptest)
 
   if (is.null(FlowSOM.results)) {
     stop("`FlowSOM.results` cannot be NULL.", call. = FALSE)
@@ -62,28 +57,34 @@ FlowSOMQC <- function(FlowSOM.results,
 
   prep <- .inflect_prepare_qc(
     view = FlowSOM.results,
-    only.clustering.markers = only.clustering.markers,
-    acquired_markers = acquired_markers
+    markers = markers
   )
-  zero_handling <- .inflect_zero_handling(prep, zeroes.in, warn = TRUE)
-  diptest_args <- list(...)
-  p_of <- .inflect_make_p_of(diptest_args)
+  p_of <- .inflect_make_p_of()
   event_cluster <- metaclustering[prep$mapping]
   cluster_rows <- split(
     seq_len(nrow(prep$data)),
     factor(event_cluster, levels = seq_len(max(metaclustering)))
   )
 
-  rows <- lapply(seq_along(cluster_rows), function(cluster) {
-    if (verbose) {
-      message("Cluster: ", cluster, " on ", length(cluster_rows))
-    }
+  .inflect_progress_message(
+    progress,
+    "[fastINFLECT] Scoring ",
+    length(cluster_rows),
+    " metaclusters"
+  )
+  progress_bar <- if (progress) {
+    utils::txtProgressBar(min = 0, max = length(cluster_rows), style = 3)
+  } else {
+    NULL
+  }
+  on.exit(if (!is.null(progress_bar)) close(progress_bar), add = TRUE)
+  rows <- vector("list", length(cluster_rows))
+  for (cluster in seq_along(cluster_rows)) {
     nodes <- which(metaclustering == cluster)
     subtree_key <- paste0(nodes, collapse = ",")
-    .inflect_qc_row_indexed(
+    rows[[cluster]] <- .inflect_qc_row_indexed(
       data = prep$data,
       rows = cluster_rows[[cluster]],
-      zeroes.in = zeroes.in,
       uniform.test = uniform.test,
       th.pvalue = th.pvalue,
       th.IQR = th.IQR,
@@ -94,7 +95,14 @@ FlowSOMQC <- function(FlowSOM.results,
       marker_indices = prep$marker_indices,
       marker_names = prep$ordered.markers
     )
-  })
+    if (!is.null(progress_bar)) {
+      utils::setTxtProgressBar(progress_bar, cluster)
+    }
+  }
+  if (!is.null(progress_bar)) {
+    close(progress_bar)
+    progress_bar <- NULL
+  }
   details <- .inflect_qc_rows_to_detail(
     rows,
     prep$ordered.markers,
@@ -109,15 +117,15 @@ FlowSOMQC <- function(FlowSOM.results,
     uniform.test = uniform.test,
     thresholds = list(dip_p_value = th.pvalue, iqr = th.IQR),
     markers = prep$ordered.markers,
-    zero_handling = zero_handling,
-    zeroes.in = zeroes.in,
+    marker_selection = if (is.null(markers)) "clustering_markers" else "explicit",
+    value_handling = list(
+      rule = "require finite QC marker data and retain all values unchanged",
+      validation = "passed"
+    ),
     seed = seed,
-    max.n.diptest = if (is.null(max.n.diptest)) NA_integer_ else max.n.diptest,
-    diptest_args = diptest_args
+    max.n.diptest = if (is.null(max.n.diptest)) NA_integer_ else max.n.diptest
   )
 
-  if (verbose) {
-    message("[END] - generated criterion-level cluster QC")
-  }
+  .inflect_progress_message(progress, "[fastINFLECT] QC scoring complete")
   invisible(result)
 }

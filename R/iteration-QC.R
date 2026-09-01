@@ -6,6 +6,8 @@
 #' per-k matrices are assembled from that cache. The aggregate
 #' `qc_pass_rate` is explicitly tied to the criterion selected by
 #' `uniform.test`; it is not evidence that a distribution is truly unimodal.
+#' All selected marker values must be finite; negative and zero values are
+#' retained unchanged.
 #'
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering.
 #'   Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by
@@ -13,18 +15,9 @@
 #' @param metaclustering.list Named list containing exactly one node-label
 #'   vector for every value in `set.i`.
 #' @param set.i Literal, unique, strictly increasing integer cluster counts.
-#' @param multicore Logical. On Unix, use fork-based
-#'   \code{\link[parallel]{mclapply}} over distinct SOM-node subtrees.
-#'   Other platforms validate the same arguments and use a recorded serial
-#'   fallback. Default `FALSE`.
-#' @param cores Worker count when `multicore = TRUE`; must be at least two.
-#' @param zeroes.in Logical. If `TRUE` (the default), retain negative, zero, and
-#'   positive finite transformed values. If `FALSE`, every non-positive value is
-#'   excluded, per-marker counts are recorded, and negative inputs trigger a
-#'   warning.
-#' @param only.clustering.markers If `TRUE`, evaluate only clustering markers.
-#' @param acquired_markers Marker names to evaluate when
-#'   `only.clustering.markers = FALSE`.
+#' @param workers Number of QC workers. `1L` is serial; values above one use
+#'   fork-based \code{\link[parallel]{mclapply}} where supported.
+#' @param markers Marker names to score. `NULL` uses the SOM clustering markers.
 #' @param uniform.test Aggregate criterion: `"both"` selects the combined dip
 #'   and IQR pass, `"spread"` selects IQR only, and `"unimodality"` selects the
 #'   dip test only. Both component tests are always retained in `qc.details`.
@@ -37,8 +30,8 @@
 #'   sampled once before subtree assembly; the retained rows feed every marker
 #'   and both tests.
 #' @param seed Non-negative base seed.
-#' @param verbose Logical.
-#' @param ... Additional arguments passed to \code{\link[diptest]{dip.test}}.
+#' @param progress Show stage messages and a serial progress bar. Defaults to
+#'   `interactive()`.
 #'
 #' @return A list containing canonical `scores`, separate named lists of
 #'   `dip_pass`, `iqr_pass`, `combined_pass`, and selected `criterion_pass`
@@ -50,24 +43,26 @@
 iteration.QC <- function(FlowSOM.results,
                          metaclustering.list,
                          set.i,
-                         multicore = FALSE,
-                         cores = NULL,
-                         zeroes.in = TRUE,
-                         only.clustering.markers = TRUE,
-                         acquired_markers = NULL,
+                         workers = 1L,
+                         markers = NULL,
                          uniform.test = c("both", "spread", "unimodality"),
                          th.pvalue = 0.05,
                          th.IQR = 2,
-                         verbose = FALSE,
                          max.n.diptest = NULL,
                          max.events.per.node = NULL,
                          seed = 1L,
-                         ...) {
+                         progress = interactive()) {
   uniform.test <- match.arg(uniform.test)
-  .inflect_validate_qc_arguments(zeroes.in, th.pvalue, th.IQR)
+  progress <- .inflect_validate_progress(progress)
+  workers <- .inflect_validate_workers(workers)
+  .inflect_validate_qc_arguments(th.pvalue, th.IQR)
   max.n.diptest <- .inflect_validate_max_n_diptest(max.n.diptest)
   max.events.per.node <- .inflect_validate_max_events_per_node(max.events.per.node)
   seed <- .inflect_validate_seed(seed)
+  .inflect_warn_sampling(
+    max.n.diptest = max.n.diptest,
+    max.events.per.node = max.events.per.node
+  )
   view <- as_inflect_som(FlowSOM.results)
   n_nodes <- as.integer(view$map$nNodes)
   set.i <- .inflect_validate_qc_schedule(set.i, n_nodes)
@@ -79,12 +74,9 @@ iteration.QC <- function(FlowSOM.results,
 
   prep <- .inflect_prepare_qc(
     view = view,
-    only.clustering.markers = only.clustering.markers,
-    acquired_markers = acquired_markers
+    markers = markers
   )
-  zero_handling <- .inflect_zero_handling(prep, zeroes.in, warn = TRUE)
-  diptest_args <- list(...)
-  p_of <- .inflect_make_p_of(diptest_args)
+  p_of <- .inflect_make_p_of()
 
   all_node_events <- split(
     seq_len(nrow(prep$data)),
@@ -118,9 +110,22 @@ iteration.QC <- function(FlowSOM.results,
 
   subtree_keys <- names(unique_members)
   parallel_plan <- .inflect_parallel_plan(
-    multicore = multicore,
-    cores = cores,
+    workers = workers,
     n_tasks = length(subtree_keys)
+  )
+  if (identical(parallel_plan$backend, "serial_platform_fallback")) {
+    warning(
+      "Parallel QC is unavailable on this platform; using one worker.",
+      call. = FALSE
+    )
+  }
+  .inflect_progress_message(
+    progress,
+    "[fastINFLECT] Scoring ",
+    length(subtree_keys),
+    " unique subtrees with ",
+    parallel_plan$effective_workers,
+    " worker(s)"
   )
   eval_one <- function(idx) {
     subtree_key <- subtree_keys[[idx]]
@@ -133,7 +138,6 @@ iteration.QC <- function(FlowSOM.results,
     .inflect_qc_row_indexed(
       data = prep$data,
       rows = rows,
-      zeroes.in = zeroes.in,
       uniform.test = uniform.test,
       th.pvalue = th.pvalue,
       th.IQR = th.IQR,
@@ -160,7 +164,23 @@ iteration.QC <- function(FlowSOM.results,
       }
     )
   } else {
-    rows_list <- lapply(seq_along(subtree_keys), eval_one)
+    progress_bar <- if (progress) {
+      utils::txtProgressBar(min = 0, max = length(subtree_keys), style = 3)
+    } else {
+      NULL
+    }
+    on.exit(if (!is.null(progress_bar)) close(progress_bar), add = TRUE)
+    rows_list <- vector("list", length(subtree_keys))
+    for (idx in seq_along(subtree_keys)) {
+      rows_list[[idx]] <- eval_one(idx)
+      if (!is.null(progress_bar)) {
+        utils::setTxtProgressBar(progress_bar, idx)
+      }
+    }
+    if (!is.null(progress_bar)) {
+      close(progress_bar)
+      progress_bar <- NULL
+    }
   }
   rows_list <- .inflect_validate_worker_results(
     rows_list = rows_list,
@@ -176,9 +196,6 @@ iteration.QC <- function(FlowSOM.results,
   for (idx in seq_along(set.i)) {
     k <- set.i[[idx]]
     keys <- keys_per_k[[as.character(k)]]
-    if (verbose) {
-      message("Metaclustering k=", k, ": ", length(keys), " clusters")
-    }
     qc.details[[idx]] <- .inflect_qc_rows_to_detail(
       rows = rows_list[keys],
       marker_names = prep$ordered.markers,
@@ -219,18 +236,17 @@ iteration.QC <- function(FlowSOM.results,
     th.IQR = th.IQR,
     markers = prep$ordered.markers,
     marker_indices = prep$marker_indices,
-    zero_handling = zero_handling,
-    zeroes.in = zeroes.in,
+    marker_selection = if (is.null(markers)) "clustering_markers" else "explicit",
+    value_handling = list(
+      rule = "require finite QC marker data and retain all values unchanged",
+      validation = "passed"
+    ),
     sampling_order = c(
       "sample each SOM node once",
       "assemble subtrees in ascending SOM-node order",
       "select one marker at a time",
-      "exclude non-finite values",
-      if (isTRUE(zeroes.in)) {
-        "retain non-positive transformed values"
-      } else {
-        "exclude non-positive transformed values"
-      },
+      "require finite selected marker values",
+      "retain negative, zero, and positive values unchanged",
       "apply marker-specific dip cap if requested"
     ),
     seeds = list(
@@ -263,9 +279,10 @@ iteration.QC <- function(FlowSOM.results,
     } else {
       "indexed_node_capped"
     },
-    criterion_summary = criterion_summary,
-    diptest_args = diptest_args
+    criterion_summary = criterion_summary
   )
+
+  .inflect_progress_message(progress, "[fastINFLECT] QC scoring complete")
 
   list(
     scores = scores,

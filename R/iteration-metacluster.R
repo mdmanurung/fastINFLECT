@@ -7,21 +7,17 @@
 #' @param FlowSOM.results A supported SOM object with completed SOM clustering. Supports \pkg{FlowSOM} objects and \pkg{kohonen} objects returned by \code{\link[kohonen]{som}} or \code{\link[kohonen]{xyf}}.
 #' @param set.i Literal, unique, strictly increasing integer cluster counts
 #'   within the SOM-node range.
-#' @param multicore Retained for backward compatibility. Hierarchical
-#'   clustering is computed once and is not parallelized.
-#' @param cores Retained for backward compatibility.
 #'
 #' @return metaclustering.list A \code{list} of \code{arrays} with metacluster-codes for the SOM nodes within the input object.
 #' @seealso \code{\link{INFLECT}}
 #'
 #' @export
-iteration.metacluster <- function(FlowSOM.results, set.i, multicore = FALSE, cores = NULL) {
+iteration.metacluster <- function(FlowSOM.results, set.i) {
   FlowSOM.results <- as_inflect_som(FlowSOM.results)
   set.i <- .inflect_validate_qc_schedule(
     set.i,
     as.integer(FlowSOM.results$map$nNodes)
   )
-  invisible(.inflect_resolve_cores(multicore, cores))
   codes <- FlowSOM.results$map$codes
   fit <- stats::hclust(stats::dist(codes, method = "minkowski"), method = "ward.D2")
   cutree.result <- stats::cutree(fit, k = set.i)

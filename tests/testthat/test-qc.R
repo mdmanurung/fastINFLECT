@@ -10,9 +10,8 @@ test_that("FlowSOMQC spread-only test handles constant marker values", {
   result <- FlowSOMQC(
     FlowSOM.results = fake,
     metaclustering = as.integer(1),
-    zeroes.in = TRUE,
     uniform.test = "spread",
-    verbose = FALSE
+    progress = FALSE
   )
 
   expect_true(all(result, na.rm = TRUE))

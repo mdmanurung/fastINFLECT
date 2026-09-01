@@ -136,7 +136,7 @@ selection_source_files <- function() {
 selection_contract <- function(stage) {
   source_files <- selection_source_files()
   list(
-    schema_version = 2L,
+    schema_version = 3L,
     model_path = stage$model_path,
     model_md5 = stage$model_md5,
     model_size_bytes = stage$model_size_bytes,
@@ -154,7 +154,7 @@ selection_contract <- function(stage) {
     consensus_plateau_width = consensus_plateau_width,
     iqr_threshold = iqr_threshold,
     sample_iqr_events = 5000L,
-    zeroes_in = TRUE,
+    finite_marker_values_required = TRUE,
     max_n_diptest = NA_integer_,
     max_events_per_node = NA_integer_,
     derived_metrics_version = derived_metrics_version
@@ -360,10 +360,7 @@ criterion_selections <- function(criterion_summary) {
     scores$criterion <- criterion
     selected <- tryCatch(
       {
-        diagnostic <- fastINFLECT::QC.to.curve(
-          collection.U = scores,
-          basedata = "Curve"
-        )
+        diagnostic <- fastINFLECT::QC.to.curve(collection.U = scores)
         value <- select_internal(
           collection.U = scores,
           lfunction = diagnostic$lfunction,
@@ -411,11 +408,8 @@ candidate_details <- function(result) {
     "iqr_pass",
     "combined_pass",
     "criterion_pass",
-    "n_input",
-    "n_finite",
-    "n_tested",
-    "excluded_nonfinite",
-    "excluded_nonpositive",
+    "event_count",
+    "test_event_count",
     "failure_reason"
   )
   output <- list()
@@ -541,14 +535,12 @@ run_full_inflect <- function() {
       fastINFLECT::INFLECT(
         FlowSOM.results = model,
         set.i = schedule,
-        multicore = TRUE,
-        cores = 2L,
-        zeroes.in = TRUE,
+        workers = 2L,
         uniform.test = "both",
         max.n.diptest = NULL,
         max.events.per.node = NULL,
         seed = 42L,
-        verbose = FALSE
+        progress = FALSE
       ),
       warning = function(w) {
         run_warnings <<- c(run_warnings, conditionMessage(w))
@@ -916,7 +908,7 @@ run_analysis <- function() {
       consensus_plateau_width = consensus_plateau_width,
       iqr_threshold = iqr_threshold,
       sample_iqr_events = 5000L,
-      sample_iqr_zero_handling = "retain all finite transformed values"
+      sample_iqr_value_handling = "require finite and retain all transformed values"
     ),
     source_provenance = source_provenance(),
     wall_seconds = proc.time()[["elapsed"]] - started,

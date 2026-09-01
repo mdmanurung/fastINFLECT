@@ -12,13 +12,20 @@ continuity.
   ambiguous. Use `seq.int(25L, 100L, by = 5L)` for that exact scan, or
   `inflect_adaptive_set_i(n_nodes, max_k)` for an explicitly bounded adaptive
   schedule.
-* Serial QC is the default. Parallel QC requires `multicore = TRUE` and at
-  least two effective workers. Worker and subtree results are validated before
-  result matrices are assembled. Platforms without fork support use a recorded
-  serial fallback after the same validation.
-* `zeroes.in = TRUE` retains negative, zero, and positive finite transformed
-  values. Setting `zeroes.in = FALSE` excludes every non-positive value, warns
-  when negatives are present, and records per-marker exclusion counts.
+* `workers` replaces the redundant `multicore` and `cores` arguments. `1L` is
+  the serial default; larger values request fork-based QC and warn before a
+  recorded one-worker fallback on unsupported platforms.
+* `markers` replaces `only.clustering.markers` plus `acquired_markers`. `NULL`
+  uses the SOM clustering markers; otherwise supply their names directly.
+* `zeroes.in` has been removed. All finite negative, zero, and positive values
+  are retained unchanged. Selected-marker `NA`, `NaN`, `Inf`, or `-Inf` values
+  now stop the analysis before metaclustering or QC scoring starts.
+* `progress` replaces `verbose` with stage messages and a serial progress bar.
+  Active event caps and unsupported parallel requests produce explicit
+  warnings.
+* `basedata`, `ggtitle`, and arbitrary dip-test arguments were removed from
+  `INFLECT()`. The fitted diagnostic curve is now the single candidate-fitting
+  path; plot titles can be added to the returned ggplot object.
 * Canonical output uses `scores` and `qc_pass_rate`. Separate `dip_pass`,
   `iqr_pass`, `combined_pass`, and `criterion_pass` matrices retain the
   component evidence. The historical `U.set`, `collection.U`, `Unimodality`,
@@ -51,13 +58,12 @@ continuity.
 
 ## Statistical evidence and reproducibility
 
-* `qc.details` retains dip p-values, IQR values, original and testable event
-  counts, non-finite and non-positive exclusions, and explicit failure reasons.
-  Both component criteria remain available regardless of `uniform.test`.
-* Simulated dip p-values and optional event samples use overflow-safe seeds
-  derived for each subtree and marker. The implementation preserves the caller
-  RNG state and returns identical tested results with serial and two-worker
-  execution.
+* `qc.details` retains dip p-values, IQR values, event counts, and explicit
+  failure reasons. Both component criteria remain available regardless of
+  `uniform.test`.
+* Optional event samples use overflow-safe seeds derived for each subtree and
+  marker. The implementation preserves the caller RNG state and returns
+  identical tested results with serial and two-worker execution.
 * Small-sample dip interpolation uses `ties = mean`, which avoids
   duplicate-grid interpolation warnings without changing the tested p-values.
 * `max.n.diptest` provides a deterministic marker-level sample cap for
@@ -66,8 +72,8 @@ continuity.
 * `bimodality.coefficient()` provides Sarle's bimodality coefficient as an
   additional diagnostic. Its documentation notes that skewed unimodal
   distributions can be flagged.
-* Provenance records the selected criterion, thresholds, marker panel, zero
-  handling, sampling order and seeds, effective workers, model layer weights,
+* Provenance records the selected criterion, thresholds, marker panel, finite
+  value validation, sampling order and seeds, effective workers, model layer weights,
   retained events, and per-criterion summaries.
 
 ## Selecting k

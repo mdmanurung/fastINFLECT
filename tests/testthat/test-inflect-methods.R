@@ -116,8 +116,6 @@ test_that("summary.inflect.results includes provenance columns when present", {
     uniform.test = "both",
     th.pvalue = 0.05,
     th.IQR = 2,
-    zeroes.in = FALSE,
-    basedata = "Curve",
     package_version = "0.2.1"
   ))
   result_summary <- summary(result)
@@ -126,8 +124,6 @@ test_that("summary.inflect.results includes provenance columns when present", {
     "uniform.test",
     "th.pvalue",
     "th.IQR",
-    "zeroes.in",
-    "basedata",
     "package_version"
   )
 

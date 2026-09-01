@@ -5,9 +5,8 @@
 ##      `diptest::dip.test()` from the raw dip statistic returned by the
 ##      ~12x-cheaper `diptest::dip()`. The public p-value closure also mirrors
 ##      `dip.test()`'s incomplete-case handling before calling the fast path.
-##   2. `.inflect_prepare_qc()` / `.inflect_accuracy_matrix()` factor the QC of a
-##      single metaclustering so that `iteration.QC()` can memoise the accuracy
-##      of each distinct dendrogram subtree (SOM-node set) across all k.
+##   2. `.inflect_prepare_qc()` validates and orders marker data once so that
+##      `iteration.QC()` can memoise each distinct SOM-node subtree across k.
 ##
 ## Nothing here is exported; it is an implementation detail of the public API.
 
@@ -206,14 +205,8 @@
   as.integer(seed)
 }
 
-.inflect_validate_qc_arguments <- function(zeroes.in,
-                                           th.pvalue,
+.inflect_validate_qc_arguments <- function(th.pvalue,
                                            th.IQR) {
-  if (length(zeroes.in) != 1L ||
-      !is.logical(zeroes.in) ||
-      is.na(zeroes.in)) {
-    stop("`zeroes.in` must be TRUE or FALSE.", call. = FALSE)
-  }
   if (length(th.pvalue) != 1L ||
       !is.numeric(th.pvalue) ||
       is.na(th.pvalue) ||
@@ -252,46 +245,54 @@
   )
 }
 
-.inflect_resolve_cores <- function(multicore, cores) {
-  if (length(multicore) != 1L || !is.logical(multicore) || is.na(multicore)) {
-    stop("`multicore` must be TRUE or FALSE.", call. = FALSE)
+.inflect_validate_workers <- function(workers) {
+  if (length(workers) != 1L ||
+      !is.numeric(workers) ||
+      is.na(workers) ||
+      !is.finite(workers) ||
+      workers < 1L ||
+      workers > .Machine$integer.max ||
+      workers != floor(workers)) {
+    stop("`workers` must be a single positive integer.", call. = FALSE)
   }
-  if (!isTRUE(multicore)) {
-    return(cores)
+  as.integer(workers)
+}
+
+.inflect_validate_progress <- function(progress) {
+  if (length(progress) != 1L || !is.logical(progress) || is.na(progress)) {
+    stop("`progress` must be TRUE or FALSE.", call. = FALSE)
   }
-  if (is.null(cores)) {
-    detected <- parallel::detectCores()
-    if (length(detected) != 1L ||
-        is.na(detected) ||
-        !is.finite(detected) ||
-        detected < 3L) {
-      stop(
-        "Could not resolve at least two workers; supply `cores >= 2` explicitly.",
-        call. = FALSE
-      )
-    }
-    cores <- detected - 1
+  isTRUE(progress)
+}
+
+.inflect_progress_message <- function(progress, ...) {
+  if (isTRUE(progress)) {
+    message(...)
   }
-  if (length(cores) != 1L ||
-      !is.numeric(cores) ||
-      is.na(cores) ||
-      !is.finite(cores) ||
-      cores < 2L ||
-      cores > .Machine$integer.max ||
-      cores != floor(cores)) {
-    stop(
-      "`cores` must be a single integer >= 2 when `multicore = TRUE`.",
+  invisible(NULL)
+}
+
+.inflect_warn_sampling <- function(max.n.diptest = NULL,
+                                   max.events.per.node = NULL) {
+  active <- c(
+    if (!is.null(max.events.per.node)) "`max.events.per.node`",
+    if (!is.null(max.n.diptest)) "`max.n.diptest`"
+  )
+  if (length(active) > 0L) {
+    warning(
+      paste(active, collapse = " and "),
+      " subsampling is active. Treat capped results as a sensitivity ",
+      "analysis and report the cap and seed.",
       call. = FALSE
     )
   }
-  as.integer(cores)
+  invisible(NULL)
 }
 
-.inflect_parallel_plan <- function(multicore,
-                                   cores,
+.inflect_parallel_plan <- function(workers,
                                    n_tasks,
                                    os_type = .Platform$OS.type) {
-  cores <- .inflect_resolve_cores(multicore, cores)
+  workers <- .inflect_validate_workers(workers)
   if (length(n_tasks) != 1L ||
       !is.numeric(n_tasks) ||
       is.na(n_tasks) ||
@@ -300,25 +301,24 @@
       n_tasks != floor(n_tasks)) {
     stop("`n_tasks` must be a non-negative integer.", call. = FALSE)
   }
-  use_parallel <- isTRUE(multicore) &&
+  use_parallel <- workers > 1L &&
     n_tasks > 1L &&
     identical(os_type, "unix")
   effective_workers <- if (use_parallel) {
-    min(as.integer(cores), as.integer(n_tasks))
+    min(workers, as.integer(n_tasks))
   } else {
     1L
   }
   backend <- if (use_parallel) {
     "parallel::mclapply"
-  } else if (isTRUE(multicore) && !identical(os_type, "unix")) {
+  } else if (workers > 1L && !identical(os_type, "unix")) {
     "serial_platform_fallback"
   } else {
     "serial"
   }
   list(
     use_parallel = use_parallel,
-    requested_multicore = isTRUE(multicore),
-    requested_cores = if (is.null(cores)) NA_integer_ else as.integer(cores),
+    requested_workers = workers,
     effective_workers = effective_workers,
     backend = backend,
     os_type = os_type
@@ -361,55 +361,9 @@
   as.integer(metaclustering)
 }
 
-## Apply the requested zero rule literally. The default retains the complete
-## transformed distribution. Compatibility mode excludes every non-positive
-## value and never manufactures padding observations.
-.inflect_marker_expression <- function(values, zeroes.in) {
-  if (isFALSE(zeroes.in)) {
-    return(values[values > 0])
-  }
-  values
-}
-
-## Build the p-value closure. With simulate.p.value / B in `dots` we cannot use the
-## table and fall back to diptest::dip.test()'s Monte-Carlo branch; otherwise we use
-## the fast statistic-plus-table path.
-.inflect_with_seed <- function(seed, code) {
-  seed <- .inflect_validate_seed(seed)
-  old <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-    get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-  } else {
-    NULL
-  }
-  on.exit({
-    if (is.null(old)) {
-      if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
-        rm(".Random.seed", envir = .GlobalEnv)
-      }
-    } else {
-      assign(".Random.seed", old, envir = .GlobalEnv)
-    }
-  }, add = TRUE)
-  set.seed(seed)
-  force(code)
-}
-
-.inflect_make_p_of <- function(dots = list()) {
-  if (isTRUE(dots$simulate.p.value)) {
-    force(dots)
-    function(me, seed = 1L) {
-      .inflect_with_seed(
-        seed,
-        do.call(diptest::dip.test, c(list(me), dots))$p.value
-      )
-    }
-  } else {
-    function(me, seed = NULL) {
-      ## dip.test() drops incomplete cases before computing dip(); mirror that
-      ## cleanup before the faster statistic-plus-table route.
-      me <- me[stats::complete.cases(me)]
-      .inflect_dip_pvalue(diptest::dip(me), length(me))
-    }
+.inflect_make_p_of <- function() {
+  function(me, seed = NULL) {
+    .inflect_dip_pvalue(diptest::dip(me), length(me))
   }
 }
 
@@ -557,8 +511,6 @@
     iqr = "double",
     event_count = "integer",
     test_event_count = "integer",
-    excluded_nonpositive = "integer",
-    excluded_nonfinite = "integer",
     failure_reason = "character"
   )
   for (idx in seq_len(checked)) {
@@ -653,8 +605,6 @@
     iqr = .inflect_named(NA_real_, markers, "double"),
     event_count = .inflect_named(0L, markers, "integer"),
     test_event_count = .inflect_named(0L, markers, "integer"),
-    excluded_nonpositive = .inflect_named(0L, markers, "integer"),
-    excluded_nonfinite = .inflect_named(0L, markers, "integer"),
     failure_reason = .inflect_named(NA_character_, markers, "character")
   )
 }
@@ -680,7 +630,6 @@
 ## an IQR pass from a dip pass and can audit discordant cells.
 .inflect_qc_row_indexed <- function(data,
                                     rows,
-                                    zeroes.in,
                                     uniform.test,
                                     th.pvalue,
                                     th.IQR,
@@ -701,21 +650,10 @@
   for (j in seq_along(markers)) {
     marker <- markers[[j]]
     marker_index <- marker_indices[[j]]
-    raw_values <- data[rows, marker_index]
-    finite <- is.finite(raw_values)
-    values <- raw_values[finite]
-    excluded_nonfinite <- sum(!finite)
-    excluded_nonpositive <- if (isFALSE(zeroes.in)) {
-      sum(values <= 0)
-    } else {
-      0L
-    }
-    me <- .inflect_marker_expression(values, zeroes.in)
+    me <- data[rows, marker_index]
 
-    out$event_count[[j]] <- as.integer(length(raw_values))
+    out$event_count[[j]] <- as.integer(length(me))
     out$test_event_count[[j]] <- as.integer(length(me))
-    out$excluded_nonpositive[[j]] <- as.integer(excluded_nonpositive)
-    out$excluded_nonfinite[[j]] <- as.integer(excluded_nonfinite)
 
     if (length(me) <= 1L) {
       out$failure_reason[[j]] <- if (length(me) == 0L) {
@@ -804,7 +742,6 @@
 ## Deprecated Boolean-row wrapper retained for exact comparison tests. New
 ## code should consume `.inflect_qc_row_indexed()`.
 .inflect_accuracy_row <- function(expr,
-                                  zeroes.in,
                                   uniform.test,
                                   th.pvalue,
                                   th.IQR,
@@ -814,7 +751,6 @@
   .inflect_accuracy_row_indexed(
     data = expr,
     rows = seq_len(nrow(expr)),
-    zeroes.in = zeroes.in,
     uniform.test = uniform.test,
     th.pvalue = th.pvalue,
     th.IQR = th.IQR,
@@ -828,7 +764,6 @@
 ## materialised at a time, avoiding full events-by-markers subtree copies.
 .inflect_accuracy_row_indexed <- function(data,
                                           rows,
-                                          zeroes.in,
                                           uniform.test,
                                           th.pvalue,
                                           th.IQR,
@@ -840,7 +775,6 @@
   .inflect_qc_row_indexed(
     data = data,
     rows = rows,
-    zeroes.in = zeroes.in,
     uniform.test = uniform.test,
     th.pvalue = th.pvalue,
     th.IQR = th.IQR,
@@ -852,36 +786,80 @@
   )$criterion_pass
 }
 
-## Prepare the (unscaled, marker-ordered) event matrix and metadata once. Mirrors the
-## data handling in FlowSOMQC so downstream QC works on identical inputs.
-.inflect_prepare_qc <- function(view,
-                                only.clustering.markers = TRUE,
-                                acquired_markers = NULL) {
+## Validate each selected marker without materialising an events-by-markers copy.
+## QC criteria are undefined for NA, NaN, Inf, and -Inf, so public entry points
+## reject them before any scoring or metaclustering work begins.
+.inflect_validate_finite_qc_data <- function(data,
+                                             marker_indices,
+                                             marker_names) {
+  nonfinite_counts <- vapply(seq_along(marker_indices), function(j) {
+    sum(!is.finite(data[, marker_indices[[j]]]))
+  }, numeric(1))
+  invalid <- nonfinite_counts > 0
+  if (!any(invalid)) {
+    return(invisible(TRUE))
+  }
+
+  details <- paste0(
+    marker_names[invalid],
+    " (",
+    format(nonfinite_counts[invalid], scientific = FALSE, trim = TRUE),
+    ")"
+  )
+  stop(
+    "QC marker data must contain only finite values; found ",
+    format(sum(nonfinite_counts), scientific = FALSE, trim = TRUE),
+    " non-finite value(s) across ",
+    sum(invalid),
+    " marker(s): ",
+    paste(details, collapse = ", "),
+    ". Replace or remove NA, NaN, Inf, and -Inf before running fastINFLECT.",
+    call. = FALSE
+  )
+}
+
+.inflect_select_markers <- function(view, markers = NULL) {
+  clustering_markers <- view$prettyColnames[view$map$colsUsed]
+  if (is.null(markers)) {
+    markers <- clustering_markers
+  } else if (!is.character(markers) ||
+             length(markers) == 0L ||
+             anyNA(markers) ||
+             any(!nzchar(markers)) ||
+             anyDuplicated(markers) ||
+             !all(markers %in% view$prettyColnames)) {
+    stop(
+      "`markers` must be NULL or unique marker names present in the SOM data.",
+      call. = FALSE
+    )
+  }
+
+  c(
+    gtools::mixedsort(intersect(markers, clustering_markers)),
+    gtools::mixedsort(setdiff(markers, clustering_markers))
+  )
+}
+
+## Prepare the (unscaled, marker-ordered) event matrix and metadata once. Mirrors
+## the data handling in FlowSOMQC so downstream QC works on identical inputs.
+.inflect_prepare_qc <- function(view, markers = NULL) {
   data <- view$data
   if (isTRUE(view$scale)) {
     for (j in seq_len(ncol(data))) {
       data[, j] <- data[, j] * view$scaled.scale[j] + view$scaled.center[j]
     }
   }
-  clustering.markers <- view$prettyColnames[view$map$colsUsed]
-  if (only.clustering.markers) {
-    markers <- clustering.markers
-  } else {
-    if (!is.null(acquired_markers) && all(acquired_markers %in% view$prettyColnames)) {
-      markers <- acquired_markers
-    } else {
-      stop("Error in acquired_markers: The 'acquired_markers' vector must match names in 'FlowSOM.result$prettyColnames' ")
-    }
-  }
-
-  ordered.markers <- c(
-    gtools::mixedsort(intersect(markers, clustering.markers)),
-    gtools::mixedsort(setdiff(markers, clustering.markers))
+  ordered.markers <- .inflect_select_markers(view, markers)
+  marker_indices <- match(ordered.markers, view$prettyColnames)
+  .inflect_validate_finite_qc_data(
+    data = data,
+    marker_indices = marker_indices,
+    marker_names = ordered.markers
   )
 
   list(
     data = data,
-    marker_indices = match(ordered.markers, view$prettyColnames),
+    marker_indices = marker_indices,
     ordered.markers = ordered.markers,
     mapping = view$map$mapping[, 1]
   )
@@ -963,65 +941,6 @@
   normalized
 }
 
-.inflect_zero_handling <- function(prep, zeroes.in, warn = TRUE) {
-  rows <- lapply(seq_along(prep$ordered.markers), function(j) {
-    values <- prep$data[, prep$marker_indices[[j]]]
-    finite <- is.finite(values)
-    negative <- sum(values[finite] < 0)
-    zero <- sum(values[finite] == 0)
-    data.frame(
-      marker = prep$ordered.markers[[j]],
-      total_events = length(values),
-      finite_events = sum(finite),
-      negative_values = negative,
-      zero_values = zero,
-      nonpositive_values = negative + zero,
-      excluded_nonpositive = if (isFALSE(zeroes.in)) {
-        negative + zero
-      } else {
-        0
-      },
-      excluded_nonfinite = sum(!finite),
-      stringsAsFactors = FALSE
-    )
-  })
-  per_marker <- do.call(rbind, rows)
-  per_marker$excluded_fraction <- if (isFALSE(zeroes.in)) {
-    per_marker$excluded_nonpositive / pmax(1, per_marker$finite_events)
-  } else {
-    0
-  }
-
-  negative_markers <- per_marker$marker[per_marker$negative_values > 0]
-  if (isFALSE(zeroes.in) &&
-      isTRUE(warn) &&
-      length(negative_markers) > 0L) {
-    exclusion_range <- range(
-      100 * per_marker$excluded_fraction[per_marker$negative_values > 0]
-    )
-    warning(
-      "`zeroes.in = FALSE` excludes every non-positive value. Negative ",
-      "transformed values were found in ",
-      length(negative_markers),
-      " marker(s); their per-marker exclusion fractions range from ",
-      format(round(exclusion_range[[1]], 2), trim = TRUE),
-      "% to ",
-      format(round(exclusion_range[[2]], 2), trim = TRUE),
-      "%. Use `zeroes.in = TRUE` to score complete transformed distributions.",
-      call. = FALSE
-    )
-  }
-  list(
-    zeroes_in = isTRUE(zeroes.in),
-    rule = if (isTRUE(zeroes.in)) {
-      "retain finite negative, zero, and positive transformed values"
-    } else {
-      "exclude all non-positive transformed values"
-    },
-    per_marker = per_marker
-  )
-}
-
 .inflect_qc_rows_to_detail <- function(rows,
                                        marker_names,
                                        cluster_names) {
@@ -1066,70 +985,4 @@
     }
   }
   do.call(rbind, rows)
-}
-
-## Full accuracy matrix for one metaclustering, given a prepared QC context. Rows are
-## clusters seq_len(max(metaclustering)); columns are the ordered markers. An optional
-## `cache` environment memoises rows by the metacluster's sorted SOM-node set, so
-## identical node sets appearing at different k are computed only once.
-.inflect_accuracy_matrix <- function(prep,
-                                     metaclustering,
-                                     zeroes.in,
-                                     uniform.test,
-                                     th.pvalue,
-                                     th.IQR,
-                                     p_of,
-                                     node_events = NULL,
-                                     cache = NULL,
-                                     subsample = NULL,
-                                     seed = 1L,
-                                     verbose = FALSE) {
-  ordered.markers <- prep$ordered.markers
-  clusters <- seq_len(max(metaclustering))
-  accuracy.matrix <- matrix(
-    nrow = length(clusters), ncol = length(ordered.markers),
-    dimnames = list(clusters, ordered.markers)
-  )
-
-  event_cluster <- metaclustering[prep$mapping]
-  cluster.rows <- split(seq_len(nrow(prep$data)), event_cluster)
-
-  for (cl in clusters) {
-    if (verbose) {
-      message("Cluster: ", cl, " on ", length(clusters))
-    }
-    key <- NULL
-    if (!is.null(cache)) {
-      nodes <- which(metaclustering == cl)
-      key <- paste0(nodes, collapse = ",")
-      cached <- cache[[key]]
-      if (!is.null(cached)) {
-        accuracy.matrix[cl, ] <- cached
-        next
-      }
-    }
-
-    rows <- cluster.rows[[as.character(cl)]]
-    if (is.null(rows)) {
-      rows <- integer(0)
-    }
-    row <- .inflect_accuracy_row_indexed(
-      data = prep$data,
-      rows = rows,
-      zeroes.in = zeroes.in,
-      uniform.test = uniform.test,
-      th.pvalue = th.pvalue,
-      th.IQR = th.IQR,
-      p_of = p_of,
-      subsample = subsample,
-      seed = seed,
-      marker_indices = prep$marker_indices,
-      marker_names = prep$ordered.markers
-    )
-    accuracy.matrix[cl, ] <- row
-    if (!is.null(cache)) {
-      assign(key, row, envir = cache)
-    }
-  }
-  accuracy.matrix
 }

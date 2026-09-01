@@ -54,12 +54,8 @@ test_that("leastError rejects too-short input clearly", {
   )
 })
 
-test_that("QC.to.curve validates basedata before fitting", {
+test_that("QC.to.curve exposes only the score input", {
   source_pkg_file("QC-to-curve.R")
 
-  collection <- list(
-    U.set = data.frame(i = 1:6, Unimodality = c(1, 2, 3, 4, 4.5, 4.7))
-  )
-
-  expect_error(QC.to.curve(collection, basedata = "bad"), "basedata")
+  expect_identical(names(formals(QC.to.curve)), "collection.U")
 })

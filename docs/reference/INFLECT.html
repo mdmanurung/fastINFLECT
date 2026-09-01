@@ -54,22 +54,16 @@ screening result, not proof that a partition is biologically valid.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">INFLECT</span><span class="op">(</span></span>
 <span>  <span class="va">FlowSOM.results</span>,</span>
 <span>  <span class="va">set.i</span>,</span>
-<span>  multicore <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  zeroes.in <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  only.clustering.markers <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  acquired_markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  basedata <span class="op">=</span> <span class="st">"Curve"</span>,</span>
-<span>  ggtitle <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  workers <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  markers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  uniform.test <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"both"</span>, <span class="st">"spread"</span>, <span class="st">"unimodality"</span><span class="op">)</span>,</span>
 <span>  th.pvalue <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  th.IQR <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  max.n.diptest <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max.events.per.node <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  target <span class="op">=</span> <span class="fl">0.95</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  progress <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,39 +82,13 @@ See <code><a href="inflect_adaptive_set_i.html">inflect_adaptive_set_i</a></code
 adaptive schedule.</p></dd>
 
 
-<dt id="arg-multicore">multicore<a class="anchor" aria-label="anchor" href="#arg-multicore"></a></dt>
-<dd><p>Use parallel QC scoring on platforms with fork support.
-Default <code>FALSE</code>.</p></dd>
+<dt id="arg-workers">workers<a class="anchor" aria-label="anchor" href="#arg-workers"></a></dt>
+<dd><p>Number of QC workers. <code>1L</code> is serial; values above one use
+fork-based parallelism where supported.</p></dd>
 
 
-<dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
-<dd><p>Worker count when <code>multicore = TRUE</code>. Must be at least two. A
-<code>NULL</code> value uses the detected core count minus one.</p></dd>
-
-
-<dt id="arg-zeroes-in">zeroes.in<a class="anchor" aria-label="anchor" href="#arg-zeroes-in"></a></dt>
-<dd><p>If <code>TRUE</code> (default), retain negative, zero, and positive
-finite transformed values. If <code>FALSE</code>, exclude all non-positive values,
-record per-marker counts, and warn when negatives are present.</p></dd>
-
-
-<dt id="arg-only-clustering-markers">only.clustering.markers<a class="anchor" aria-label="anchor" href="#arg-only-clustering-markers"></a></dt>
-<dd><p>Evaluate only clustering markers. For a
-kohonen object, these are the markers in the first data layer.</p></dd>
-
-
-<dt id="arg-acquired-markers">acquired_markers<a class="anchor" aria-label="anchor" href="#arg-acquired-markers"></a></dt>
-<dd><p>Marker names to evaluate when
-<code>only.clustering.markers = FALSE</code>.</p></dd>
-
-
-<dt id="arg-basedata">basedata<a class="anchor" aria-label="anchor" href="#arg-basedata"></a></dt>
-<dd><p>Use the fitted <code>"Curve"</code> or observed <code>"Points"</code> to estimate
-the inflection.</p></dd>
-
-
-<dt id="arg-ggtitle">ggtitle<a class="anchor" aria-label="anchor" href="#arg-ggtitle"></a></dt>
-<dd><p>Optional title for the diagnostic plot.</p></dd>
+<dt id="arg-markers">markers<a class="anchor" aria-label="anchor" href="#arg-markers"></a></dt>
+<dd><p>Marker names to score. <code>NULL</code> uses the SOM clustering markers.</p></dd>
 
 
 <dt id="arg-uniform-test">uniform.test<a class="anchor" aria-label="anchor" href="#arg-uniform-test"></a></dt>
@@ -136,10 +104,6 @@ when its p-value is at least this value. Default is <code>0.05</code>.</p></dd>
 
 <dt id="arg-th-iqr">th.IQR<a class="anchor" aria-label="anchor" href="#arg-th-iqr"></a></dt>
 <dd><p>Threshold for rejecting marker distribution based on inter-quartile range. Default is arc-sinh transformed value of <code>2</code>.</p></dd>
-
-
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Print progress messages. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-max-n-diptest">max.n.diptest<a class="anchor" aria-label="anchor" href="#arg-max-n-diptest"></a></dt>
@@ -167,8 +131,9 @@ Default <code>1L</code>.</p></dd>
 Default <code>0.95</code>. See <code><a href="inflect_threshold_k.html">inflect_threshold_k</a></code>.</p></dd>
 
 
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Arguments to pass to <code><a href="https://rdrr.io/pkg/diptest/man/dip.test.html" class="external-link">dip.test</a></code> through <code><a href="FlowSOMQC.html">FlowSOMQC</a></code>.</p></dd>
+<dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>
+<dd><p>Show stage messages and a serial progress bar. Defaults to
+<code><a href="https://rdrr.io/r/base/interactive.html" class="external-link">interactive()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -208,7 +173,7 @@ Default <code>0.95</code>. See <code><a href="inflect_threshold_k.html">inflect_
 <span class="r-out co"><span class="r-pr">#&gt;</span>   tested k values: 8</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   tested k range: 5-12</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   markers: 32</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   provenance: uniform.test=both, zeroes.in=TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   provenance: uniform.test=both</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   k estimates and tested thresholds:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     inflection k=9 (71.2% QC pass) [tested_partition]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     kneedle    k=7 (69.2% QC pass) [tested_partition]</span>

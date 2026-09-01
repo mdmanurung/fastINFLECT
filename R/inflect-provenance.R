@@ -109,39 +109,15 @@ inflect_adaptive_set_i <- function(n_nodes,
   as.integer(schedule)
 }
 
-resolve_inflect_markers <- function(FlowSOM.results,
-                                    only.clustering.markers = TRUE,
-                                    acquired_markers = NULL) {
-  FlowSOM.results <- as_inflect_som(FlowSOM.results)
-  clustering.markers <- FlowSOM.results$prettyColnames[FlowSOM.results$map$colsUsed]
-  if (only.clustering.markers) {
-    markers <- clustering.markers
-  } else {
-    if (!is.null(acquired_markers) && all(acquired_markers %in% FlowSOM.results$prettyColnames)) {
-      markers <- acquired_markers
-    } else {
-      stop("Error in acquired_markers: The 'acquired_markers' vector must match names in 'FlowSOM.result$prettyColnames' ")
-    }
-  }
-
-  c(
-    gtools::mixedsort(intersect(markers, clustering.markers)),
-    gtools::mixedsort(setdiff(markers, clustering.markers))
-  )
-}
-
 build_inflect_provenance <- function(FlowSOM.results,
                                      set.i,
                                      uniform.test,
                                      th.pvalue,
                                      th.IQR,
-                                     zeroes.in,
-                                     basedata,
-                                     only.clustering.markers,
-                                     acquired_markers,
+                                     marker_selection,
+                                     requested_markers,
                                      markers,
                                      elapsed_seconds,
-                                     diptest_args = list(),
                                      max.n.diptest = NULL,
                                      max.events.per.node = NULL,
                                      seed = 1L,
@@ -173,10 +149,9 @@ build_inflect_provenance <- function(FlowSOM.results,
   }
   fit_provenance <- list(
     set.i = set.i,
-    basedata = basedata,
     target = target,
-    only.clustering.markers = only.clustering.markers,
-    acquired_markers = acquired_markers,
+    marker_selection = marker_selection,
+    requested_markers = requested_markers,
     markers = markers,
     n_nodes = FlowSOM.results$map$nNodes,
     n_clustering_markers = length(FlowSOM.results$map$colsUsed),
@@ -199,7 +174,6 @@ build_inflect_provenance <- function(FlowSOM.results,
   provenance$uniform.test <- uniform.test
   provenance$th.pvalue <- th.pvalue
   provenance$th.IQR <- th.IQR
-  provenance$zeroes.in <- zeroes.in
   provenance$max.n.diptest <- if (is.null(max.n.diptest)) {
     NA_integer_
   } else {
@@ -214,7 +188,6 @@ build_inflect_provenance <- function(FlowSOM.results,
   provenance$n_events <- event_sampling$original_events
   provenance$n_events_retained <- event_sampling$retained_events
   provenance$event_sampling <- event_sampling
-  provenance$diptest_args <- diptest_args
   provenance
 }
 

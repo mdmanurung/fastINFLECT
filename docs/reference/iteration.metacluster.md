@@ -7,7 +7,7 @@ requested k, rather than recomputing a separate clustering per k.
 ## Usage
 
 ``` r
-iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
+iteration.metacluster(FlowSOM.results, set.i)
 ```
 
 ## Arguments
@@ -23,15 +23,6 @@ iteration.metacluster(FlowSOM.results, set.i, multicore = FALSE, cores = NULL)
 
   Literal, unique, strictly increasing integer cluster counts within the
   SOM-node range.
-
-- multicore:
-
-  Retained for backward compatibility. Hierarchical clustering is
-  computed once and is not parallelized.
-
-- cores:
-
-  Retained for backward compatibility.
 
 ## Value
 

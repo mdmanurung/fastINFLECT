@@ -13,22 +13,16 @@ biologically valid.
 INFLECT(
   FlowSOM.results,
   set.i,
-  multicore = FALSE,
-  cores = NULL,
-  zeroes.in = TRUE,
-  only.clustering.markers = TRUE,
-  acquired_markers = NULL,
-  basedata = "Curve",
-  ggtitle = NULL,
+  workers = 1L,
+  markers = NULL,
   uniform.test = c("both", "spread", "unimodality"),
   th.pvalue = 0.05,
   th.IQR = 2,
-  verbose = FALSE,
   max.n.diptest = NULL,
   max.events.per.node = NULL,
   seed = 1L,
   target = 0.95,
-  ...
+  progress = interactive()
 )
 ```
 
@@ -49,39 +43,14 @@ INFLECT(
   [`inflect_adaptive_set_i`](https://mdmanurung.github.io/fastINFLECT/reference/inflect_adaptive_set_i.md)
   to construct an explicitly bounded adaptive schedule.
 
-- multicore:
+- workers:
 
-  Use parallel QC scoring on platforms with fork support. Default
-  `FALSE`.
+  Number of QC workers. `1L` is serial; values above one use fork-based
+  parallelism where supported.
 
-- cores:
+- markers:
 
-  Worker count when `multicore = TRUE`. Must be at least two. A `NULL`
-  value uses the detected core count minus one.
-
-- zeroes.in:
-
-  If `TRUE` (default), retain negative, zero, and positive finite
-  transformed values. If `FALSE`, exclude all non-positive values,
-  record per-marker counts, and warn when negatives are present.
-
-- only.clustering.markers:
-
-  Evaluate only clustering markers. For a kohonen object, these are the
-  markers in the first data layer.
-
-- acquired_markers:
-
-  Marker names to evaluate when `only.clustering.markers = FALSE`.
-
-- basedata:
-
-  Use the fitted `"Curve"` or observed `"Points"` to estimate the
-  inflection.
-
-- ggtitle:
-
-  Optional title for the diagnostic plot.
+  Marker names to score. `NULL` uses the SOM clustering markers.
 
 - uniform.test:
 
@@ -98,10 +67,6 @@ INFLECT(
 
   Threshold for rejecting marker distribution based on inter-quartile
   range. Default is arc-sinh transformed value of `2`.
-
-- verbose:
-
-  Print progress messages. Default `FALSE`.
 
 - max.n.diptest:
 
@@ -129,11 +94,10 @@ INFLECT(
   `0.95`. See
   [`inflect_threshold_k`](https://mdmanurung.github.io/fastINFLECT/reference/inflect_threshold_k.md).
 
-- ...:
+- progress:
 
-  Arguments to pass to
-  [`dip.test`](https://rdrr.io/pkg/diptest/man/dip.test.html) through
-  [`FlowSOMQC`](https://mdmanurung.github.io/fastINFLECT/reference/FlowSOMQC.md).
+  Show stage messages and a serial progress bar. Defaults to
+  [`interactive()`](https://rdrr.io/r/base/interactive.html).
 
 ## Value
 
@@ -158,7 +122,6 @@ criterion matrices plus `qc.details` for marker-level interpretation.
 ## Examples
 
 ``` r
-
 # Load the bundled, downsampled Levine32 FlowSOM object.
 flowsom <- system.file(
   "extdata",
@@ -181,7 +144,7 @@ result
 #>   tested k values: 8
 #>   tested k range: 5-12
 #>   markers: 32
-#>   provenance: uniform.test=both, zeroes.in=TRUE
+#>   provenance: uniform.test=both
 #>   k estimates and tested thresholds:
 #>     inflection k=9 (71.2% QC pass) [tested_partition]
 #>     kneedle    k=7 (69.2% QC pass) [tested_partition]
